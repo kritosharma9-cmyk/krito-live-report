@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KRITO — Live Tertiary Sales Tracker</title>
+<title>KRITO — Live Sales & Operations Tracker</title>
 <style>
   * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
   body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 14px; }
-  .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .wrap { max-width: 1020px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
   .top-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 16px 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.18); }
   .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 900; }
   .st-completed { background: #10b981; color: #ffffff; }
   .st-updating  { background: #f59e0b; color: #0f172a; }
   .st-partial   { background: #f97316; color: #ffffff; }
-  .brand-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .brand-btn { padding: 8px 16px; border-radius: 9px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 12.5px; font-weight: 900; cursor: pointer; }
+  .tab-row { display: flex; gap: 7px; flex-wrap: wrap; }
+  .dtype-btn { padding: 7px 13px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #e2e8f0; font-size: 12px; font-weight: 900; cursor: pointer; }
+  .dtype-btn.active { background: #10b981; color: #ffffff; border-color: #34d399; box-shadow: 0 4px 12px rgba(16,185,129,0.35); }
+  .brand-btn { padding: 7px 14px; border-radius: 9px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 12px; font-weight: 900; cursor: pointer; }
   .brand-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
   .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 18px 20px; border: 2px solid #4f46e5; }
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
@@ -31,12 +33,23 @@
 </head>
 <body>
 <div id="app" class="wrap">
-  <div class="lock-screen">⏳ Loading Live Tertiary Report...</div>
+  <div class="lock-screen">⏳ Loading Live KRITO Report...</div>
 </div>
 
 <script>
+var TYPE_META = {
+  TERTIARY:     { label: '🔥 Tertiary Data', valTitle: 'Tertiary Net Value' },
+  STOCK:        { label: '📦 Stock Data',    valTitle: 'Stock Value' },
+  SELL_IN:      { label: '📥 Sell In',       valTitle: 'Sell-In Value' },
+  SELL_OUT:     { label: '📤 Sell Out',      valTitle: 'Sell-Out Value' },
+  BRAND_ORDER:  { label: '📝 Brand Order',   valTitle: 'Order Value' },
+  PAYMENT_COLL: { label: '💳 Payment Coll',  valTitle: 'Collection Value' },
+  TARGET_SHEET: { label: '🎯 Target Sheet',  valTitle: 'Target Value' }
+};
+
 var LIVE_PAYLOAD = null;
 var ACTIVE_LINK = null;
+var ACTIVE_DATA_TYPE = '';
 var ACTIVE_BRAND = '';
 var ACTIVE_MONTH = '';
 var PIN_UNLOCKED = false;
@@ -71,13 +84,26 @@ function verifyPin() {
   }
 }
 
+function getActiveDatasetBucket() {
+  if (!LIVE_PAYLOAD) return {};
+  if (LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE]) {
+    return LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE];
+  }
+  if (ACTIVE_DATA_TYPE === 'TERTIARY' && LIVE_PAYLOAD.brands) {
+    return LIVE_PAYLOAD.brands;
+  }
+  return {};
+}
+
 function downloadLiveCsv() {
-  var bData = (LIVE_PAYLOAD.brands[ACTIVE_BRAND] || {})[ACTIVE_MONTH];
+  var bucket = getActiveDatasetBucket();
+  var bData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH];
   if (!bData || !bData.stores) return;
   var r = ACTIVE_LINK.rights || {};
+  var vTitle = (TYPE_META[ACTIVE_DATA_TYPE] && TYPE_META[ACTIVE_DATA_TYPE].valTitle) || 'Net Value';
   var hdr = r.showMrpAndDisc
-    ? ['S.No', 'Party Name', 'Manager', 'Qty', 'MRP Value', 'Tertiary Net Value', 'Discount', 'Disc %']
-    : ['S.No', 'Party Name', 'Manager', 'Qty', 'Tertiary Net Value'];
+    ? ['S.No', 'Party Name', 'Manager', 'Qty', 'MRP Value', vTitle, 'Discount', 'Disc %']
+    : ['S.No', 'Party Name', 'Manager', 'Qty', vTitle];
   var lines = [hdr.join(',')];
   bData.stores.forEach(function(s, i) {
     var row = r.showMrpAndDisc
@@ -88,7 +114,7 @@ function downloadLiveCsv() {
   var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = ACTIVE_BRAND + '_' + ACTIVE_MONTH + '_Live_Tertiary.csv';
+  a.download = ACTIVE_DATA_TYPE + '_' + ACTIVE_BRAND + '_' + ACTIVE_MONTH + '_Live.csv';
   a.click();
 }
 
@@ -109,7 +135,7 @@ function renderApp() {
   }
 
   if (ACTIVE_LINK.expiresAt && new Date(ACTIVE_LINK.expiresAt).getTime() < Date.now()) {
-    app.innerHTML = '<div class="lock-screen"><h2>⏰ Link Expired</h2><p style="color:#b91c1c;font-weight:700;font-size:13px;">Is Live Report Link ka valid time (' + ACTIVE_LINK.validityLabel + ') khatam ho chuka hai. Naye link ke liye Admin se contact karein.</p></div>';
+    app.innerHTML = '<div class="lock-screen"><h2>⏰ Link Expired</h2><p style="color:#b91c1c;font-weight:700;font-size:13px;">Is Live Report Link ka valid time (' + ACTIVE_LINK.validityLabel + ') khatam ho chuka hai.</p></div>';
     return;
   }
 
@@ -118,15 +144,29 @@ function renderApp() {
     return;
   }
 
-  var allowedBrands = (ACTIVE_LINK.brands && ACTIVE_LINK.brands.length > 0) ? ACTIVE_LINK.brands : Object.keys(LIVE_PAYLOAD.brands || {});
-  if (!ACTIVE_BRAND || !allowedBrands.includes(ACTIVE_BRAND)) ACTIVE_BRAND = allowedBrands[0] || 'ARROW';
+  // Strictly enforce ONLY the Data Types allowed for this Link!
+  var allowedDataTypes = (Array.isArray(ACTIVE_LINK.dataTypes) && ACTIVE_LINK.dataTypes.length > 0)
+    ? ACTIVE_LINK.dataTypes
+    : ['TERTIARY'];
+  if (!ACTIVE_DATA_TYPE || !allowedDataTypes.includes(ACTIVE_DATA_TYPE)) {
+    ACTIVE_DATA_TYPE = allowedDataTypes[0];
+  }
 
-  var brandMonthsObj = (LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[ACTIVE_BRAND]) || {};
+  var activeBucket = getActiveDatasetBucket();
+  var allowedBrands = (Array.isArray(ACTIVE_LINK.brands) && ACTIVE_LINK.brands.length > 0)
+    ? ACTIVE_LINK.brands
+    : Object.keys(activeBucket);
+  if (!ACTIVE_BRAND || !allowedBrands.includes(ACTIVE_BRAND)) {
+    ACTIVE_BRAND = allowedBrands[0] || 'ARROW';
+  }
+
+  var brandMonthsObj = activeBucket[ACTIVE_BRAND] || {};
   var availMonths = Object.keys(brandMonthsObj).sort().reverse();
   if (!ACTIVE_MONTH || !brandMonthsObj[ACTIVE_MONTH]) {
     ACTIVE_MONTH = (ACTIVE_LINK.defaultMonth && brandMonthsObj[ACTIVE_LINK.defaultMonth]) ? ACTIVE_LINK.defaultMonth : (availMonths[0] || '');
   }
 
+  var dtMeta = TYPE_META[ACTIVE_DATA_TYPE] || { label: ACTIVE_DATA_TYPE, valTitle: 'Net Value' };
   var rights = ACTIVE_LINK.rights || { showGrandTotal: true, showManagers: true, showStores: true, showPending: true, showMrpAndDisc: true };
   var gStatus = LIVE_PAYLOAD.globalStatus || { status: 'UPDATING', statusNote: '' };
   var effStatus = (ACTIVE_LINK.statusOverride && ACTIVE_LINK.statusOverride !== 'GLOBAL') ? ACTIVE_LINK.statusOverride : gStatus.status;
@@ -152,8 +192,18 @@ function renderApp() {
         </div>
       </div>
       ${gStatus.statusNote ? `<div style="margin-top:8px; font-size:12px; color:#fde68a; font-weight:700;">💬 Note: ${gStatus.statusNote}</div>` : ''}
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px;">
-        <div class="brand-tabs" style="margin:0;">
+
+      <!-- ALLOWED DATA TYPE TABS (ONLY SHOWS TICKED DATA TYPES FOR THIS LINK!) -->
+      <div class="tab-row" style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.14);">
+        ${allowedDataTypes.map(function(dk) {
+          var lbl = (TYPE_META[dk] && TYPE_META[dk].label) || dk;
+          return `<button class="dtype-btn ${dk === ACTIVE_DATA_TYPE ? 'active' : ''}" onclick="ACTIVE_DATA_TYPE='${dk}'; ACTIVE_MONTH=''; renderApp();">${lbl}</button>`;
+        }).join('')}
+      </div>
+
+      <!-- ALLOWED BRAND TABS + MONTH SELECTOR -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;">
+        <div class="tab-row">
           ${allowedBrands.map(function(b) {
             return `<button class="brand-btn ${b === ACTIVE_BRAND ? 'active' : ''}" onclick="ACTIVE_BRAND='${b}'; ACTIVE_MONTH=''; renderApp();">${b}</button>`;
           }).join('')}
@@ -170,12 +220,12 @@ function renderApp() {
     ${rights.showGrandTotal ? `
       <div class="grand-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div style="font-size:15px; font-weight:900;">🏆 OVERALL GRAND TOTAL — ${ACTIVE_BRAND} (${gt.stores} Updated Stores${gt.pendingStores > 0 ? ' | ' + gt.pendingStores + ' Pending' : ''})</div>
+          <div style="font-size:15px; font-weight:900;">🏆 ${dtMeta.label} — ${ACTIVE_BRAND} (${gt.stores} Updated Stores${gt.pendingStores > 0 ? ' | ' + gt.pendingStores + ' Pending' : ''})</div>
           <span style="background:#10b981; color:#fff; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:900;">🗓️ ${ACTIVE_MONTH || '-'}</span>
         </div>
         <div class="kpi-grid">
           <div class="kpi-box"><div class="kpi-lbl">Total Qty</div><div class="kpi-val" style="color:#ffffff;">${fmtNum(gt.qty)}</div></div>
-          <div class="kpi-box"><div class="kpi-lbl">Tertiary Net Value</div><div class="kpi-val" style="color:#38bdf8;">${fmtINR(gt.net)}</div></div>
+          <div class="kpi-box"><div class="kpi-lbl">${dtMeta.valTitle}</div><div class="kpi-val" style="color:#38bdf8;">${fmtINR(gt.net)}</div></div>
           ${rights.showMrpAndDisc ? `
             <div class="kpi-box"><div class="kpi-lbl">Total MRP</div><div class="kpi-val" style="color:#fbbf24;">${fmtINR(gt.mrp)}</div></div>
             <div class="kpi-box"><div class="kpi-lbl">Discount</div><div class="kpi-val" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:13px;">(${gt.discPct}%)</span></div></div>
@@ -189,11 +239,11 @@ function renderApp() {
         <div style="font-size:14px; font-weight:900; color:#1e1b4b; margin-bottom:10px;">👨‍💼 MANAGER-WISE SUMMARY (${mData.managers.length})</div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Manager</th><th class="num">Stores</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">Tertiary Net</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
+            <thead><tr><th>Manager</th><th class="num">Stores</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">${dtMeta.valTitle}</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
             <tbody>
               ${mData.managers.map(function(m) {
                 return `<tr><td><b>${m.manager}</b></td><td class="num">${m.stores}</td><td class="num">${fmtNum(m.qty)}</td>${rights.showMrpAndDisc ? `<td class="num">${fmtINR(m.mrp)}</td>` : ''}<td class="num" style="color:#0284c7;">${fmtINR(m.net)}</td>${rights.showMrpAndDisc ? `<td class="num" style="color:#dc2626;">${m.discPct}%</td>` : ''}</tr>`;
-              }).join('') || '<tr><td colspan="6" style="text-align:center;color:#64748b;">No manager data yet.</td></tr>'}
+              }).join('') || '<tr><td colspan="6" style="text-align:center;color:#64748b;">No manager data available for this selection.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -208,11 +258,11 @@ function renderApp() {
         </div>
         <div style="overflow-x:auto; max-height:420px;">
           <table>
-            <thead><tr><th>#</th><th>Party / Store Name</th><th>Manager</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">Tertiary Net</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
+            <thead><tr><th>#</th><th>Party / Store Name</th><th>Manager</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">${dtMeta.valTitle}</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
             <tbody>
               ${filteredStores.map(function(s, idx) {
                 return `<tr><td>${idx + 1}</td><td><b>${s.party}</b></td><td>${s.manager}</td><td class="num">${fmtNum(s.qty)}</td>${rights.showMrpAndDisc ? `<td class="num">${fmtINR(s.mrp)}</td>` : ''}<td class="num" style="color:#0284c7;">${fmtINR(s.net)}</td>${rights.showMrpAndDisc ? `<td class="num" style="color:#dc2626;">${s.discPct}%</td>` : ''}</tr>`;
-              }).join('') || '<tr><td colspan="7" style="text-align:center;color:#64748b;">No store data found.</td></tr>'}
+              }).join('') || '<tr><td colspan="7" style="text-align:center;color:#64748b;">No store data available for this selection.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -233,7 +283,6 @@ function renderApp() {
 }
 
 fetchLiveReportData();
-// Auto-refresh live report every 60 seconds automatically
 setInterval(fetchLiveReportData, 60000);
 </script>
 </body>
