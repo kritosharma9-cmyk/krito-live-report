@@ -4,50 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KRITO — Live Sales & Operations Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
-  body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 12px; }
-  .wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-  .top-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 15px 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.18); }
-  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 11.5px; font-weight: 900; }
+  *, *::before, *::after {
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    background: #f1f5f9;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-optical-sizing: auto;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  body { padding: 14px; }
+  .wrap { max-width: 1380px; margin: 0 auto; display: flex; flex-direction: column; gap: 13px; }
+
+  .top-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 12px 30px rgba(15,23,42,0.16);
+  }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: 0.01em; }
   .st-completed { background: #10b981; color: #ffffff; }
   .st-updating  { background: #f59e0b; color: #0f172a; }
   .st-partial   { background: #f97316; color: #ffffff; }
-  .timer-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.18); border: 1px solid #34d399; color: #6ee7b7; padding: 5px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 900; font-variant-numeric: tabular-nums; }
-  .tab-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
-  .dtype-btn { padding: 7px 13px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #e2e8f0; font-size: 12px; font-weight: 900; cursor: pointer; }
-  .dtype-btn.active { background: #10b981; color: #ffffff; border-color: #34d399; box-shadow: 0 4px 12px rgba(16,185,129,0.35); }
-  .brand-btn { padding: 7px 14px; border-radius: 9px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 12px; font-weight: 900; cursor: pointer; }
-  .brand-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
-  .ctrl-select { padding: 7px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 900; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; cursor: pointer; }
-  .compare-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 900; cursor: pointer; user-select: none; border: 1.5px solid #34d399; background: rgba(16,185,129,0.16); color: #ecfdf5; }
+  .timer-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.16); border: 1px solid #34d399; color: #6ee7b7; padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+
+  .tab-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .dtype-btn { padding: 7px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #e2e8f0; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: 0.15s; }
+  .dtype-btn.active { background: #10b981; color: #ffffff; border-color: #34d399; box-shadow: 0 4px 12px rgba(16,185,129,0.32); }
+  .brand-btn { padding: 7px 15px; border-radius: 9px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: 0.15s; }
+  .brand-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.32); }
+  .ctrl-select { padding: 7px 11px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; cursor: pointer; }
+  .compare-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; border: 1.5px solid #34d399; background: rgba(16,185,129,0.16); color: #ecfdf5; }
   .compare-pill.off { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); color: #cbd5e1; }
-  .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 16px 20px; border: 2px solid #4f46e5; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 11px; margin-top: 12px; }
-  .kpi-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 11px 13px; }
-  .kpi-lbl { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-  .kpi-val { font-size: 19px; font-weight: 900; margin-top: 4px; }
-  .kpi-sub { font-size: 11px; font-weight: 800; margin-top: 4px; color: #cbd5e1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .section-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 13px 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.04); }
-  .attr-bar { background: #f5f3ff; border: 2px solid #c4b5fd; border-radius: 14px; padding: 12px 15px; display: flex; flex-direction: column; gap: 9px; }
-  .attr-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 7px; font-size: 11px; font-weight: 800; cursor: pointer; border: 1.5px solid #c4b5fd; background: #ffffff; color: #3b0764; user-select: none; }
+
+  .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 17px 20px; border: 1.5px solid #4f46e5; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-top: 12px; }
+  .kpi-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 14px; }
+  .kpi-lbl { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
+  .kpi-val { font-size: 21px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
+  .kpi-sub { font-size: 11.5px; font-weight: 600; margin-top: 4px; color: #cbd5e1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .section-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px 18px; box-shadow: 0 4px 12px rgba(15,23,42,0.04); }
+  .attr-bar { background: #f8f6ff; border: 1.5px solid #c4b5fd; border-radius: 14px; padding: 13px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .attr-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 7px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1.5px solid #c4b5fd; background: #ffffff; color: #3b0764; user-select: none; }
   .attr-chip.checked { background: #ede9fe; border-color: #7c3aed; color: #4c1d95; }
   .attr-chip.missing { background: #fef2f2; border-color: #ef4444; color: #b91c1c; }
-  .table-scroll { overflow: auto; max-height: 460px; border: 1px solid #e2e8f0; border-radius: 9px; }
-  table { width: 100%; border-collapse: collapse; font-size: 11.8px; white-space: nowrap; }
-  th { background: #f8fafc; color: #334155; padding: 8px 10px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 900; position: sticky; top: 0; z-index: 5; }
-  th.attr-th { background: #ede9fe; color: #4c1d95; border-left: 1px solid #ddd6fe; text-align: right; }
-  th.missing-th { background: #fee2e2; color: #b91c1c; border-left: 1px solid #fecaca; text-align: right; }
+
+  .table-scroll { overflow: auto; max-height: 500px; border: 1px solid #e2e8f0; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { background: #f8fafc; color: #334155; padding: 9px 11px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 700; position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+  th.attr-compact-th { background: #ede9fe; color: #4c1d95; border-left: 1px solid #ddd6fe; border-right: 1px solid #ddd6fe; text-align: center; }
   th.ly-th { background: #ecfdf5; color: #065f46; border-left: 1px solid #a7f3d0; text-align: right; }
-  td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
-  td.attr-td { text-align: right; color: #4c1d95; background: #faf5ff; border-left: 1px solid #f3e8ff; font-weight: 800; }
-  td.missing-td { text-align: right; color: #b91c1c; background: #fef2f2; border-left: 1px solid #fee2e2; font-weight: 900; }
-  td.ly-td { text-align: right; color: #475569; background: #f8fafc; border-left: 1px solid #e2e8f0; }
+  td { padding: 8px 11px; border-bottom: 1px solid #e2e8f0; font-weight: 500; white-space: nowrap; color: #0f172a; }
+  td.ly-td { text-align: right; color: #475569; background: #f8fafc; border-left: 1px solid #e2e8f0; font-weight: 600; }
   .num { text-align: right; }
-  .gr-pos { background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 900; display: inline-block; }
-  .gr-neg { background: #fee2e2; color: #b91c1c; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 900; display: inline-block; }
-  .gr-new { background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 900; display: inline-block; }
-  .gr-flat { background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 800; display: inline-block; }
+
+  /* Compact [+] Expand Buttons & Sub-Row Drawer */
+  .plus-hdr-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    background: #6d28d9; color: #ffffff; border: none; border-radius: 6px;
+    padding: 3px 8px; margin-left: 6px; font-size: 11px; font-weight: 800;
+    cursor: pointer; transition: 0.15s; box-shadow: 0 2px 5px rgba(109,40,217,0.28);
+  }
+  .plus-hdr-btn:hover { background: #5b21b6; }
+  .plus-cell-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f5f3ff; color: #4c1d95; border: 1.5px solid #a78bfa;
+    padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: 0.15s;
+  }
+  .plus-cell-btn:hover { background: #ede9fe; border-color: #7c3aed; }
+  .plus-cell-btn.open { background: #6d28d9; color: #ffffff; border-color: #5b21b6; }
+  .plus-icon-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 5px;
+    background: #7c3aed; color: #ffffff; font-size: 13px; font-weight: 800; line-height: 1;
+  }
+  .plus-cell-btn.open .plus-icon-badge { background: #ffffff; color: #5b21b6; }
+
+  .expand-drawer-row td {
+    background: #faf5ff !important;
+    padding: 11px 14px !important;
+    border-bottom: 2px solid #c4b5fd !important;
+    white-space: normal !important;
+  }
+  .drawer-box {
+    background: #ffffff;
+    border: 1.5px solid #c4b5fd;
+    border-radius: 10px;
+    padding: 10px 13px;
+    box-shadow: 0 4px 12px rgba(109,40,217,0.06);
+  }
+  .drawer-head {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    padding-bottom: 8px; margin-bottom: 9px; border-bottom: 1px solid #ede9fe;
+  }
+  .drawer-grid {
+    display: flex; flex-wrap: wrap; gap: 7px;
+  }
+  .drawer-item {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 600; color: #1e293b;
+  }
+  .drawer-item.missing {
+    background: #fef2f2; border-color: #fca5a5; color: #b91c1c;
+  }
+  .drawer-qty {
+    background: #4c1d95; color: #ffffff; padding: 2px 7px; border-radius: 5px;
+    font-size: 11.5px; font-weight: 700;
+  }
+  .drawer-item.missing .drawer-qty { background: #dc2626; }
+
+  .gr-pos { background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+  .gr-neg { background: #fee2e2; color: #b91c1c; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+  .gr-new { background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+  .gr-flat { background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
   .lock-screen { max-width: 420px; margin: 70px auto; background: #fff; border-radius: 16px; padding: 28px; text-align: center; border: 2px solid #cbd5e1; box-shadow: 0 18px 40px rgba(15,23,42,0.12); }
 </style>
 </head>
@@ -75,16 +159,23 @@ var ACTIVE_DATA_TYPE = '';
 var ACTIVE_BRAND = '';
 var ACTIVE_YEAR2 = 'ALL';
 var ACTIVE_MONTH = '';
-var COMPARE_LY_ENABLED = true; // Default Ticked!
-var ACTIVE_HEADER = '';
+var COMPARE_LY_ENABLED = true;
+
+// Multi-Header Compact Column Support
+var ACTIVE_HEADERS_LIST = []; // e.g. ['Master_GROUP NAME5'] or multiple headers added
+var FOCUSED_CHIP_HEADER = ''; // Which active header's sub-value chips are shown in the purple bar
 var HEADER_DEFAULT_INIT = false;
 var UNCHECKED_ATTR_VALS = {}; // headerName -> Set of unchecked sub-values
 var ATTR_VAL_SEARCH = '';
+
+// Compact [+] Expand States (key = "headerName||rowName")
+var EXPANDED_MGR_KEYS = new Set();
+var EXPANDED_STORE_KEYS = new Set();
+
 var PIN_UNLOCKED = false;
 var SEARCH_Q = '';
 var SEARCH_TIMER = null;
 
-// Live 30-Second Countdown Timer State
 var TIMER_SECONDS = 30;
 var TIMER_INTERVAL = null;
 var IS_FETCHING_NOW = false;
@@ -92,29 +183,24 @@ var IS_FETCHING_NOW = false;
 function fmtINR(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
 function fmtNum(n) { return Math.round(Number(n) || 0).toLocaleString('en-IN'); }
 function escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s) { return String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 function getQueryId() {
   return new URLSearchParams(window.location.search).get('id') || '';
 }
 
-// Compute Previous Year Period Key ("OCT-2026" -> "OCT-2025", "FULL_FY::2026-27" -> "FULL_FY::2025-26")
 function getLastYearPeriodKey(periodKey) {
   if (!periodKey) return '';
   if (periodKey.startsWith('FULL_FY::')) {
-    var fy = periodKey.slice(9); // e.g. "2026-27"
-    var fm = fy.match(/^(\d{4})-(\d{2})$/);
+    var fm = periodKey.slice(9).match(/^(\d{4})-(\d{2})$/);
     if (fm) {
       var prevStart = parseInt(fm[1], 10) - 1;
-      var prevEnd = String((prevStart + 1) % 100).padStart(2, '0');
-      return 'FULL_FY::' + prevStart + '-' + prevEnd;
+      return 'FULL_FY::' + prevStart + '-' + String((prevStart + 1) % 100).padStart(2, '0');
     }
     return '';
   }
   var mm = periodKey.match(/^([A-Z]{3})-(\d{4})$/);
-  if (mm) {
-    return mm[1] + '-' + (parseInt(mm[2], 10) - 1);
-  }
-  return '';
+  return mm ? (mm[1] + '-' + (parseInt(mm[2], 10) - 1)) : '';
 }
 
 function getPeriodDisplayLabel(periodKey) {
@@ -124,19 +210,15 @@ function getPeriodDisplayLabel(periodKey) {
 }
 
 function calcGrowthBadgeHtml(cyVal, lyVal) {
-  var cy = Number(cyVal) || 0;
-  var ly = Number(lyVal) || 0;
+  var cy = Number(cyVal) || 0, ly = Number(lyVal) || 0;
   if (ly <= 0 && cy > 0) return '<span class="gr-new">★ NEW</span>';
   if (ly <= 0 && cy <= 0) return '<span class="gr-flat">0.0%</span>';
   var pct = ((cy - ly) / ly) * 100;
-  var sign = pct >= 0 ? '▲ +' : '▼ ';
-  var cls = pct >= 0 ? 'gr-pos' : 'gr-neg';
-  return '<span class="' + cls + '">' + sign + pct.toFixed(1) + '%</span>';
+  return '<span class="' + (pct >= 0 ? 'gr-pos' : 'gr-neg') + '">' + (pct >= 0 ? '▲ +' : '▼ ') + pct.toFixed(1) + '%</span>';
 }
 
 function calcGrowthPlainText(cyVal, lyVal) {
-  var cy = Number(cyVal) || 0;
-  var ly = Number(lyVal) || 0;
+  var cy = Number(cyVal) || 0, ly = Number(lyVal) || 0;
   if (ly <= 0 && cy > 0) return 'NEW';
   if (ly <= 0 && cy <= 0) return '0.0%';
   var pct = ((cy - ly) / ly) * 100;
@@ -145,23 +227,18 @@ function calcGrowthPlainText(cyVal, lyVal) {
 
 function sortMonthKeysDesc(keysArr) {
   return keysArr.slice().sort(function(a, b) {
-    var aIsFy = a.startsWith('FULL_FY::');
-    var bIsFy = b.startsWith('FULL_FY::');
+    var aIsFy = a.startsWith('FULL_FY::'), bIsFy = b.startsWith('FULL_FY::');
     if (aIsFy && !bIsFy) return 1;
     if (!aIsFy && bIsFy) return -1;
     if (aIsFy && bIsFy) return b.localeCompare(a);
-    var ma = a.match(/^([A-Z]{3})-(\d{4})$/);
-    var mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+    var ma = a.match(/^([A-Z]{3})-(\d{4})$/), mb = b.match(/^([A-Z]{3})-(\d{4})$/);
     if (ma && mb) {
-      var na = parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0);
-      var nb = parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0);
-      return nb - na;
+      return (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) - (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0));
     }
     return b.localeCompare(a);
   });
 }
 
-// Live 30-Second Countdown Engine (Updates ONLY the single timer span -> Zero Flicker / Zero Hang!)
 function start30SecCountdownLoop() {
   if (TIMER_INTERVAL) clearInterval(TIMER_INTERVAL);
   TIMER_INTERVAL = setInterval(function() {
@@ -192,12 +269,10 @@ async function fetchLiveReportData(isAutoTick) {
     var res = await fetch('./live_data.json?_t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('Live data file not found yet.');
     var freshPayload = await res.json();
-
     var prevIso = LIVE_PAYLOAD ? LIVE_PAYLOAD.generatedAtIso : '';
     var changed = !LIVE_PAYLOAD || (freshPayload.generatedAtIso !== prevIso);
     LIVE_PAYLOAD = freshPayload;
 
-    // On auto-refresh, skip full DOM re-render if no new data arrived (Zero flicker & smooth browsing!)
     if (!isAutoTick || changed) {
       var winY = window.scrollY || 0;
       var tblEl = document.getElementById('liveStoreScrollWrap');
@@ -209,7 +284,7 @@ async function fetchLiveReportData(isAutoTick) {
     }
   } catch (err) {
     if (!LIVE_PAYLOAD) {
-      document.getElementById('app').innerHTML = '<div class="lock-screen"><h3>⚠️ Unable to Load Live Data</h3><p style="color:#64748b;font-size:13px;">' + escHtml(err.message) + '</p><button onclick="manualRefreshClick()" style="background:#2563eb;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;">🔄 Retry</button></div>';
+      document.getElementById('app').innerHTML = '<div class="lock-screen"><h3>⚠️ Unable to Load Live Data</h3><p style="color:#64748b;font-size:13px;">' + escHtml(err.message) + '</p><button onclick="manualRefreshClick()" style="background:#2563eb;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Retry</button></div>';
     }
   } finally {
     IS_FETCHING_NOW = false;
@@ -231,58 +306,155 @@ function verifyPin() {
 
 function getActiveDatasetBucket() {
   if (!LIVE_PAYLOAD) return {};
-  if (LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE]) {
-    return LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE];
-  }
-  if (ACTIVE_DATA_TYPE === 'TERTIARY' && LIVE_PAYLOAD.brands) {
-    return LIVE_PAYLOAD.brands;
-  }
+  if (LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE]) return LIVE_PAYLOAD.datasets[ACTIVE_DATA_TYPE];
+  if (ACTIVE_DATA_TYPE === 'TERTIARY' && LIVE_PAYLOAD.brands) return LIVE_PAYLOAD.brands;
   return {};
 }
 
-function getSelectedAttrColsForRender(mData, rights) {
-  if (!rights.showHeaderBreakdown || !ACTIVE_HEADER) return [];
-  var aObj = (mData && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? mData.attributes[ACTIVE_HEADER] : null;
+// Get Admin-allowed sub-values for a header (strictly enforces Admin's Panel Rights!)
+function getAdminPermittedSubValues(mData, headerName) {
+  var aObj = (mData && mData.attributes && mData.attributes[headerName]) ? mData.attributes[headerName] : null;
   if (!aObj || !Array.isArray(aObj.values)) return [];
-  var unchk = UNCHECKED_ATTR_VALS[ACTIVE_HEADER] || new Set();
-  return aObj.values.filter(function(v) { return !unchk.has(v); });
+  var adminAllowedMap = ACTIVE_LINK && ACTIVE_LINK.allowedHeaderValues;
+  if (adminAllowedMap && Array.isArray(adminAllowedMap[headerName])) {
+    var allowSet = new Set(adminAllowedMap[headerName]);
+    return aObj.values.filter(function(v) { return allowSet.has(v); });
+  }
+  return aObj.values;
 }
 
-function toggleAttrSubVal(valName, checked) {
-  if (!ACTIVE_HEADER) return;
-  if (!UNCHECKED_ATTR_VALS[ACTIVE_HEADER]) UNCHECKED_ATTR_VALS[ACTIVE_HEADER] = new Set();
-  if (checked) UNCHECKED_ATTR_VALS[ACTIVE_HEADER].delete(valName);
-  else UNCHECKED_ATTR_VALS[ACTIVE_HEADER].add(valName);
+// Get currently ticked sub-values for a header (Admin-allowed minus Viewer-unticked)
+function getSelectedSubValuesForHeader(mData, headerName) {
+  var permitted = getAdminPermittedSubValues(mData, headerName);
+  var unchk = UNCHECKED_ATTR_VALS[headerName] || new Set();
+  return permitted.filter(function(v) { return !unchk.has(v); });
+}
+
+function onSelectPrimaryHeader(val) {
+  if (!val) {
+    ACTIVE_HEADERS_LIST = [];
+    FOCUSED_CHIP_HEADER = '';
+  } else {
+    if (!ACTIVE_HEADERS_LIST.includes(val)) {
+      ACTIVE_HEADERS_LIST = [val];
+    }
+    FOCUSED_CHIP_HEADER = val;
+  }
+  ATTR_VAL_SEARCH = '';
   renderApp();
 }
 
-function setAllAttrSubVals(shouldSelectAll) {
-  if (!ACTIVE_HEADER) return;
+function toggleAdditionalHeaderColumn(hName, checked) {
+  if (checked) {
+    if (!ACTIVE_HEADERS_LIST.includes(hName)) ACTIVE_HEADERS_LIST.push(hName);
+    FOCUSED_CHIP_HEADER = hName;
+  } else {
+    ACTIVE_HEADERS_LIST = ACTIVE_HEADERS_LIST.filter(function(x) { return x !== hName; });
+    if (FOCUSED_CHIP_HEADER === hName) FOCUSED_CHIP_HEADER = ACTIVE_HEADERS_LIST[0] || '';
+  }
+  renderApp();
+}
+
+function toggleAttrSubVal(headerName, valName, checked) {
+  if (!UNCHECKED_ATTR_VALS[headerName]) UNCHECKED_ATTR_VALS[headerName] = new Set();
+  if (checked) UNCHECKED_ATTR_VALS[headerName].delete(valName);
+  else UNCHECKED_ATTR_VALS[headerName].add(valName);
+  renderApp();
+}
+
+function setAllAttrSubVals(headerName, shouldSelectAll) {
   var bucket = getActiveDatasetBucket();
   var mData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH];
-  var aObj = (mData && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? mData.attributes[ACTIVE_HEADER] : null;
-  if (!aObj) return;
-  UNCHECKED_ATTR_VALS[ACTIVE_HEADER] = shouldSelectAll ? new Set() : new Set(aObj.values);
+  var permitted = getAdminPermittedSubValues(mData, headerName);
+  UNCHECKED_ATTR_VALS[headerName] = shouldSelectAll ? new Set() : new Set(permitted);
   renderApp();
 }
 
-function showOnlyMissingAttrVal() {
-  if (!ACTIVE_HEADER) return;
+function showOnlyMissingAttrVal(headerName) {
   var bucket = getActiveDatasetBucket();
   var mData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH];
-  var aObj = (mData && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? mData.attributes[ACTIVE_HEADER] : null;
-  if (!aObj) return;
-  UNCHECKED_ATTR_VALS[ACTIVE_HEADER] = new Set(aObj.values.filter(function(v) { return v !== '(ENTER ATTRIBUTES)'; }));
+  var permitted = getAdminPermittedSubValues(mData, headerName);
+  UNCHECKED_ATTR_VALS[headerName] = new Set(permitted.filter(function(v) { return v !== '(ENTER ATTRIBUTES)'; }));
   renderApp();
+}
+
+// Toggle [+] on Single Manager Row or Header (Expand All / Collapse All)
+function toggleMgrExpand(hName, mgrName) {
+  var key = hName + '||' + mgrName;
+  if (EXPANDED_MGR_KEYS.has(key)) EXPANDED_MGR_KEYS.delete(key);
+  else EXPANDED_MGR_KEYS.add(key);
+  renderApp();
+}
+
+function toggleAllMgrExpandForHeader(hName) {
+  var bucket = getActiveDatasetBucket();
+  var mData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH] || { managers: [] };
+  var mgrs = mData.managers || [];
+  var allOpen = mgrs.length > 0 && mgrs.every(function(m) { return EXPANDED_MGR_KEYS.has(hName + '||' + m.manager); });
+  mgrs.forEach(function(m) {
+    var k = hName + '||' + m.manager;
+    if (allOpen) EXPANDED_MGR_KEYS.delete(k);
+    else EXPANDED_MGR_KEYS.add(k);
+  });
+  renderApp();
+}
+
+// Toggle [+] on Single Store Row or Header (Fast In-Place Table Update!)
+function toggleStoreExpand(hName, partyName) {
+  var key = hName + '||' + partyName;
+  if (EXPANDED_STORE_KEYS.has(key)) EXPANDED_STORE_KEYS.delete(key);
+  else EXPANDED_STORE_KEYS.add(key);
+  updateStoreTableBodyOnly();
+}
+
+function toggleAllStoreExpandForHeader(hName) {
+  var bucket = getActiveDatasetBucket();
+  var mData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH] || { stores: [] };
+  var filtered = (mData.stores || []).filter(function(s) {
+    return !SEARCH_Q || s.party.toLowerCase().includes(SEARCH_Q) || s.manager.toLowerCase().includes(SEARCH_Q);
+  });
+  var allOpen = filtered.length > 0 && filtered.every(function(s) { return EXPANDED_STORE_KEYS.has(hName + '||' + s.party); });
+  filtered.forEach(function(s) {
+    var k = hName + '||' + s.party;
+    if (allOpen) EXPANDED_STORE_KEYS.delete(k);
+    else EXPANDED_STORE_KEYS.add(k);
+  });
+  renderApp();
+}
+
+function buildCompactDrawerHtml(titleLeftHtml, hName, subValsList, rowAttrMap, totalSelectedQty, closeFnCall) {
+  var itemsHtml = subValsList.map(function(v) {
+    var q = Number(rowAttrMap[v] || 0);
+    if (q <= 0) return '';
+    var isMiss = (v === '(ENTER ATTRIBUTES)');
+    var pct = totalSelectedQty > 0 ? ((q / totalSelectedQty) * 100).toFixed(1) : '0.0';
+    return '<div class="drawer-item ' + (isMiss ? 'missing' : '') + '">' +
+      '<span>' + (isMiss ? '⚠️ ' + escHtml(v) : escHtml(v)) + '</span>' +
+      '<span class="drawer-qty">' + fmtNum(q) + '</span>' +
+      '<span style="font-size:10.5px; color:#64748b; font-weight:600;">(' + pct + '%)</span>' +
+    '</div>';
+  }).filter(Boolean).join('') || '<span style="font-size:12px; color:#64748b; font-weight:600;">Is selection mein koi Qty nahi hai.</span>';
+
+  return '<div class="drawer-box">' +
+    '<div class="drawer-head">' +
+      '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; font-weight:700; color:#1e1b4b;">' +
+        titleLeftHtml +
+        '<span style="background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:6px; font-size:11.5px;">📌 ' + escHtml(hName) + '</span>' +
+        '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:6px; font-size:11.5px;">Total Qty: ' + fmtNum(totalSelectedQty) + '</span>' +
+      '</div>' +
+      '<button type="button" onclick="' + closeFnCall + '" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">− Hide</button>' +
+    '</div>' +
+    '<div class="drawer-grid">' + itemsHtml + '</div>' +
+  '</div>';
 }
 
 function onStoreSearchTyped(val) {
   SEARCH_Q = String(val || '').toLowerCase();
   if (SEARCH_TIMER) clearTimeout(SEARCH_TIMER);
-  SEARCH_TIMER = setTimeout(updateStoreTableBodyOnly, 100);
+  SEARCH_TIMER = setTimeout(updateStoreTableBodyOnly, 90);
 }
 
-// Fast In-Place Store Table Updater (Zero lag while typing in Store Search!)
+// Fast In-Place Store Table Updater with Compact [+] Expandable Columns
 function updateStoreTableBodyOnly() {
   var tbody = document.getElementById('liveStoreTbody');
   var cntBadge = document.getElementById('liveStoreCountBadge');
@@ -300,17 +472,16 @@ function updateStoreTableBodyOnly() {
     lyData.stores.forEach(function(s) { lyStoreMap[String(s.party || '').trim().toUpperCase()] = s; });
   }
 
-  var activeAttrCols = getSelectedAttrColsForRender(mData, rights);
-  var attrByStore = (ACTIVE_HEADER && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? (mData.attributes[ACTIVE_HEADER].byStore || {}) : {};
+  var activeHeaders = rights.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
+  var totalColsCount = 5 + activeHeaders.length + (compareOn ? 3 : 0) + (rights.showMrpAndDisc ? 2 : 0);
 
   var filtered = (mData.stores || []).filter(function(s) {
     return !SEARCH_Q || s.party.toLowerCase().includes(SEARCH_Q) || s.manager.toLowerCase().includes(SEARCH_Q);
   });
 
   if (cntBadge) cntBadge.textContent = '(' + filtered.length + ' Stores)';
-
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="40" style="text-align:center;color:#64748b;padding:24px;">No store data found for this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="' + totalColsCount + '" style="text-align:center;color:#64748b;padding:24px;">No store data found for this filter.</td></tr>';
     return;
   }
 
@@ -319,14 +490,40 @@ function updateStoreTableBodyOnly() {
     var s = filtered[i];
     var pKey = String(s.party || '').trim().toUpperCase();
     var lyS = lyStoreMap[pKey] || { qty: 0, net: 0 };
-    var sAttrs = attrByStore[pKey] || attrByStore[s.party] || {};
 
-    var attrTds = '';
-    for (var a = 0; a < activeAttrCols.length; a++) {
-      var av = activeAttrCols[a];
-      var aq = sAttrs[av] || 0;
-      var isMiss = (av === '(ENTER ATTRIBUTES)');
-      attrTds += '<td class="' + (isMiss ? 'missing-td' : 'attr-td') + '">' + (aq > 0 ? fmtNum(aq) : '<span style="color:#cbd5e1;">-</span>') + '</td>';
+    var compactHeaderTds = '';
+    var expandedDrawersHtml = [];
+
+    for (var h = 0; h < activeHeaders.length; h++) {
+      var hName = activeHeaders[h];
+      var subVals = getSelectedSubValuesForHeader(mData, hName);
+      var byStore = (mData.attributes && mData.attributes[hName]) ? (mData.attributes[hName].byStore || {}) : {};
+      var sAttrMap = byStore[pKey] || byStore[s.party] || {};
+
+      var sumQty = 0, nonZeroCount = 0;
+      for (var sv = 0; sv < subVals.length; sv++) {
+        var qv = Number(sAttrMap[subVals[sv]] || 0);
+        if (qv > 0) { sumQty += qv; nonZeroCount++; }
+      }
+
+      var expKey = hName + '||' + s.party;
+      var isOpen = EXPANDED_STORE_KEYS.has(expKey);
+      var clickJs = "toggleStoreExpand('" + escJs(hName) + "','" + escJs(s.party) + "')";
+
+      compactHeaderTds += '<td style="text-align:center; border-left:1px solid #ede9fe; border-right:1px solid #ede9fe; background:#fcfaff;">' +
+        '<button type="button" class="plus-cell-btn ' + (isOpen ? 'open' : '') + '" onclick="' + clickJs + '" title="Click to view ' + escHtml(hName) + ' breakdown">' +
+          '<span class="plus-icon-badge">' + (isOpen ? '−' : '+') + '</span>' +
+          '<span>' + fmtNum(sumQty) + ' Qty</span>' +
+          '<span style="font-size:10.5px; opacity:0.8;">(' + nonZeroCount + ')</span>' +
+        '</button>' +
+      '</td>';
+
+      if (isOpen) {
+        var titleLeft = '<span>🏢 <b>' + escHtml(s.party) + '</b></span>' +
+                        '<span style="color:#475569;">|</span>' +
+                        '<span>👨‍💼 Manager: <b>' + escHtml(s.manager) + '</b></span>';
+        expandedDrawersHtml.push(buildCompactDrawerHtml(titleLeft, hName, subVals, sAttrMap, sumQty, clickJs));
+      }
     }
 
     var lyTds = compareOn
@@ -334,7 +531,7 @@ function updateStoreTableBodyOnly() {
       : '';
 
     var mrpDiscTds = rights.showMrpAndDisc
-      ? '<td class="num">' + fmtINR(s.mrp) + '</td><td class="num" style="color:#dc2626;">' + s.discPct + '%</td>'
+      ? '<td class="num">' + fmtINR(s.mrp) + '</td><td class="num" style="color:#dc2626; font-weight:700;">' + s.discPct + '%</td>'
       : '';
 
     htmlRows.push(
@@ -342,13 +539,21 @@ function updateStoreTableBodyOnly() {
         '<td>' + (i + 1) + '</td>' +
         '<td><b>' + escHtml(s.party) + '</b></td>' +
         '<td>' + escHtml(s.manager) + '</td>' +
-        attrTds +
+        compactHeaderTds +
         '<td class="num"><b>' + fmtNum(s.qty) + '</b></td>' +
         '<td class="num" style="color:#0284c7;"><b>' + fmtINR(s.net) + '</b></td>' +
         lyTds +
         mrpDiscTds +
       '</tr>'
     );
+
+    if (expandedDrawersHtml.length > 0) {
+      htmlRows.push(
+        '<tr class="expand-drawer-row"><td colspan="' + totalColsCount + '">' +
+          '<div style="display:flex; flex-direction:column; gap:8px;">' + expandedDrawersHtml.join('') + '</div>' +
+        '</td></tr>'
+      );
+    }
   }
   tbody.innerHTML = htmlRows.join('');
 }
@@ -368,11 +573,16 @@ function downloadLiveCsv() {
     lyData.stores.forEach(function(s) { lyStoreMap[String(s.party || '').trim().toUpperCase()] = s; });
   }
 
-  var activeAttrCols = getSelectedAttrColsForRender(mData, r);
-  var attrByStore = (ACTIVE_HEADER && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? (mData.attributes[ACTIVE_HEADER].byStore || {}) : {};
-  var vTitle = (TYPE_META[ACTIVE_DATA_TYPE] && TYPE_META[ACTIVE_DATA_TYPE].valTitle) || 'Net Value';
+  var activeHeaders = r.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
+  var flatAttrSpecs = [];
+  activeHeaders.forEach(function(hName) {
+    getSelectedSubValuesForHeader(mData, hName).forEach(function(v) {
+      flatAttrSpecs.push({ hName: hName, val: v, colTitle: activeHeaders.length > 1 ? (hName + ': ' + v) : v });
+    });
+  });
 
-  var hdr = ['S.No', 'Party Name', 'Manager'].concat(activeAttrCols).concat(['Qty', vTitle]);
+  var vTitle = (TYPE_META[ACTIVE_DATA_TYPE] && TYPE_META[ACTIVE_DATA_TYPE].valTitle) || 'Net Value';
+  var hdr = ['S.No', 'Party Name', 'Manager'].concat(flatAttrSpecs.map(function(x) { return x.colTitle; })).concat(['Qty', vTitle]);
   if (compareOn) hdr = hdr.concat(['LY Qty', 'LY ' + vTitle, 'Growth %']);
   if (r.showMrpAndDisc) hdr = hdr.concat(['MRP Value', 'Discount', 'Disc %']);
 
@@ -380,10 +590,12 @@ function downloadLiveCsv() {
   mData.stores.forEach(function(s, i) {
     var pKey = String(s.party || '').trim().toUpperCase();
     var lyS = lyStoreMap[pKey] || { qty: 0, net: 0 };
-    var sAttrs = attrByStore[pKey] || attrByStore[s.party] || {};
-
     var row = [i + 1, '"' + s.party.replace(/"/g,'""') + '"', '"' + s.manager.replace(/"/g,'""') + '"'];
-    activeAttrCols.forEach(function(av) { row.push(sAttrs[av] || 0); });
+    flatAttrSpecs.forEach(function(sp) {
+      var byS = (mData.attributes && mData.attributes[sp.hName]) ? (mData.attributes[sp.hName].byStore || {}) : {};
+      var mp = byS[pKey] || byS[s.party] || {};
+      row.push(mp[sp.val] || 0);
+    });
     row.push(s.qty, s.net);
     if (compareOn) row.push(lyS.qty, lyS.net, '"' + calcGrowthPlainText(s.net, lyS.net) + '"');
     if (r.showMrpAndDisc) row.push(s.mrp, s.disc, s.discPct + '%');
@@ -416,7 +628,7 @@ function renderApp() {
     return;
   }
   if (ACTIVE_LINK.pin && !PIN_UNLOCKED) {
-    app.innerHTML = '<div class="lock-screen"><h2>🔐 PIN Protected Report</h2><p style="color:#475569;font-size:13px;"><b>' + escHtml(ACTIVE_LINK.title) + '</b> dekhne ke liye Access PIN daalein:</p><input id="viewerPinInp" type="password" placeholder="Enter PIN" style="padding:10px;width:180px;text-align:center;font-size:16px;font-weight:900;border:2px solid #4f46e5;border-radius:8px;margin:10px 0;"><br><button onclick="verifyPin()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:900;cursor:pointer;">🔓 Unlock Report</button></div>';
+    app.innerHTML = '<div class="lock-screen"><h2>🔐 PIN Protected Report</h2><p style="color:#475569;font-size:13px;"><b>' + escHtml(ACTIVE_LINK.title) + '</b> dekhne ke liye Access PIN daalein:</p><input id="viewerPinInp" type="password" placeholder="Enter PIN" style="padding:10px;width:180px;text-align:center;font-size:16px;font-weight:800;border:2px solid #4f46e5;border-radius:8px;margin:10px 0;"><br><button onclick="verifyPin()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;cursor:pointer;">🔓 Unlock Report</button></div>';
     return;
   }
 
@@ -425,17 +637,19 @@ function renderApp() {
     showMrpAndDisc: true, showYear2: false, allowCompareLY: false, showHeaderBreakdown: false
   };
 
-  // Initialize Default Header once if configured
   var allowedHeaders = (rights.showHeaderBreakdown && Array.isArray(ACTIVE_LINK.allowedHeaders)) ? ACTIVE_LINK.allowedHeaders : [];
   if (!HEADER_DEFAULT_INIT) {
     HEADER_DEFAULT_INIT = true;
     if (ACTIVE_LINK.defaultHeader && allowedHeaders.includes(ACTIVE_LINK.defaultHeader)) {
-      ACTIVE_HEADER = ACTIVE_LINK.defaultHeader;
+      ACTIVE_HEADERS_LIST = [ACTIVE_LINK.defaultHeader];
+      FOCUSED_CHIP_HEADER = ACTIVE_LINK.defaultHeader;
     }
   }
-  if (ACTIVE_HEADER && !allowedHeaders.includes(ACTIVE_HEADER)) ACTIVE_HEADER = '';
+  ACTIVE_HEADERS_LIST = ACTIVE_HEADERS_LIST.filter(function(h) { return allowedHeaders.includes(h); });
+  if (FOCUSED_CHIP_HEADER && !ACTIVE_HEADERS_LIST.includes(FOCUSED_CHIP_HEADER)) {
+    FOCUSED_CHIP_HEADER = ACTIVE_HEADERS_LIST[0] || '';
+  }
 
-  // Strictly enforce Allowed Data Types
   var allowedDataTypes = (Array.isArray(ACTIVE_LINK.dataTypes) && ACTIVE_LINK.dataTypes.length > 0) ? ACTIVE_LINK.dataTypes : ['TERTIARY'];
   if (!ACTIVE_DATA_TYPE || !allowedDataTypes.includes(ACTIVE_DATA_TYPE)) ACTIVE_DATA_TYPE = allowedDataTypes[0];
 
@@ -446,7 +660,6 @@ function renderApp() {
   var brandPeriods = activeBucket[ACTIVE_BRAND] || {};
   var allPeriodKeys = Object.keys(brandPeriods);
 
-  // Collect available Year 2 (FY) values for this Brand
   var fySet = new Set();
   allPeriodKeys.forEach(function(pk) {
     var y2 = brandPeriods[pk] && brandPeriods[pk].year2;
@@ -456,7 +669,6 @@ function renderApp() {
   if (!rights.showYear2) ACTIVE_YEAR2 = 'ALL';
   else if (ACTIVE_YEAR2 !== 'ALL' && !fySet.has(ACTIVE_YEAR2)) ACTIVE_YEAR2 = availYear2[0] || 'ALL';
 
-  // Filter Month options by selected Year 2 (FY)
   var availMonths = sortMonthKeysDesc(allPeriodKeys.filter(function(pk) {
     if (ACTIVE_YEAR2 === 'ALL') return !pk.startsWith('FULL_FY::');
     var y2 = brandPeriods[pk] && brandPeriods[pk].year2;
@@ -476,130 +688,190 @@ function renderApp() {
   var mData = brandPeriods[ACTIVE_MONTH] || { grandTotal: { stores: 0, pendingStores: 0, qty: 0, mrp: 0, net: 0, disc: 0, discPct: 0 }, managers: [], stores: [], pending: [], attributes: {} };
   var gt = mData.grandTotal;
 
-  // Last Year Same-Month / Same-FY Comparison Data
   var compareOn = !!(rights.allowCompareLY && COMPARE_LY_ENABLED);
   var lyPeriodKey = compareOn ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
-  var lyData = (compareOn && lyPeriodKey && brandPeriods[lyPeriodKey]) ? brandPeriods[lyKey = lyPeriodKey] : null;
+  var lyData = (compareOn && lyPeriodKey && brandPeriods[lyPeriodKey]) ? brandPeriods[lyPeriodKey] : null;
   var lyGt = lyData ? lyData.grandTotal : { qty: 0, net: 0, mrp: 0, disc: 0 };
   var lyMgrMap = {};
   if (lyData && Array.isArray(lyData.managers)) {
     lyData.managers.forEach(function(m) { lyMgrMap[String(m.manager || '').trim().toUpperCase()] = m; });
   }
 
-  // Header Qty Breakdown Data
-  var activeAttrObj = (rights.showHeaderBreakdown && ACTIVE_HEADER && mData.attributes && mData.attributes[ACTIVE_HEADER]) ? mData.attributes[ACTIVE_HEADER] : null;
-  var activeAttrCols = getSelectedAttrColsForRender(mData, rights);
-  var attrByMgr = activeAttrObj ? (activeAttrObj.byManager || {}) : {};
-
-  // Build Header Breakdown Control Bar HTML (if right granted)
+  // Build Header Qty Breakdown Selector Bar (Purple Box)
   var headerBreakdownBarHtml = '';
   if (rights.showHeaderBreakdown && allowedHeaders.length > 0) {
+    var focusH = FOCUSED_CHIP_HEADER || ACTIVE_HEADERS_LIST[0] || '';
+    var focusAttrObj = (focusH && mData.attributes && mData.attributes[focusH]) ? mData.attributes[focusH] : null;
+    var permittedVals = focusH ? getAdminPermittedSubValues(mData, focusH) : [];
+
     var subChipsHtml = '';
-    if (ACTIVE_HEADER && activeAttrObj) {
-      var unchk = UNCHECKED_ATTR_VALS[ACTIVE_HEADER] || new Set();
+    if (focusH && focusAttrObj) {
+      var unchk = UNCHECKED_ATTR_VALS[focusH] || new Set();
       var qAttr = ATTR_VAL_SEARCH.trim().toLowerCase();
-      var missQty = activeAttrObj.totals['(ENTER ATTRIBUTES)'] || 0;
+      var missQty = permittedVals.includes('(ENTER ATTRIBUTES)') ? (focusAttrObj.totals['(ENTER ATTRIBUTES)'] || 0) : 0;
 
       subChipsHtml = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <input type="text" value="${escHtml(ATTR_VAL_SEARCH)}" oninput="ATTR_VAL_SEARCH=this.value; renderApp();" placeholder="🔍 Search values inside ${escHtml(ACTIVE_HEADER)} (e.g. SHIRTS, T-SHIRTS)..." style="padding:5px 9px; border:1px solid #a78bfa; border-radius:6px; font-size:11px; font-weight:700; width:260px;">
-          <div style="display:flex; gap:5px; flex-wrap:wrap;">
-            <button onclick="setAllAttrSubVals(true)" style="background:#7c3aed;color:#fff;border:none;padding:4px 9px;border-radius:5px;font-size:10.5px;font-weight:900;cursor:pointer;">☑️ Tick All (${activeAttrObj.values.length})</button>
-            <button onclick="setAllAttrSubVals(false)" style="background:#64748b;color:#fff;border:none;padding:4px 9px;border-radius:5px;font-size:10.5px;font-weight:900;cursor:pointer;">⬜ Untick All</button>
-            ${missQty > 0 ? `<button onclick="showOnlyMissingAttrVal()" style="background:#dc2626;color:#fff;border:none;padding:4px 9px;border-radius:5px;font-size:10.5px;font-weight:900;cursor:pointer;">⚠️ Only (ENTER ATTRIBUTES): ${fmtNum(missQty)} Qty</button>` : ''}
+          <input type="text" value="${escHtml(ATTR_VAL_SEARCH)}" oninput="ATTR_VAL_SEARCH=this.value; renderApp();" placeholder="🔍 Search values inside ${escHtml(focusH)}..." style="padding:6px 10px; border:1px solid #a78bfa; border-radius:7px; font-size:12px; font-weight:600; width:270px; background:#fff;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button onclick="setAllAttrSubVals('${escJs(focusH)}', true)" style="background:#7c3aed;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">☑️ Tick All (${permittedVals.length})</button>
+            <button onclick="setAllAttrSubVals('${escJs(focusH)}', false)" style="background:#64748b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⬜ Untick All</button>
+            ${missQty > 0 ? `<button onclick="showOnlyMissingAttrVal('${escJs(focusH)}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⚠️ Only (ENTER ATTRIBUTES): ${fmtNum(missQty)}</button>` : ''}
           </div>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:6px; max-height:115px; overflow-y:auto; padding-top:2px;">
-          ${activeAttrObj.values.filter(function(v) { return !qAttr || v.toLowerCase().includes(qAttr); }).map(function(v) {
+          ${permittedVals.filter(function(v) { return !qAttr || v.toLowerCase().includes(qAttr); }).map(function(v) {
             var isChk = !unchk.has(v);
             var isMiss = (v === '(ENTER ATTRIBUTES)');
-            var tQty = activeAttrObj.totals[v] || 0;
-            var safeV = v.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+            var tQty = focusAttrObj.totals[v] || 0;
             return `<label class="attr-chip ${isMiss ? 'missing' : (isChk ? 'checked' : '')}">
-              <input type="checkbox" ${isChk ? 'checked' : ''} onchange="toggleAttrSubVal('${safeV}', this.checked)" style="margin:0; accent-color:${isMiss ? '#dc2626' : '#7c3aed'};">
+              <input type="checkbox" ${isChk ? 'checked' : ''} onchange="toggleAttrSubVal('${escJs(focusH)}', '${escJs(v)}', this.checked)" style="margin:0; accent-color:${isMiss ? '#dc2626' : '#7c3aed'};">
               <span>${isMiss ? '⚠️ ' + escHtml(v) : escHtml(v)}</span>
-              <span style="background:${isMiss ? '#dc2626' : '#6d28d9'}; color:#fff; padding:1px 5px; border-radius:4px; font-size:9.5px;">${fmtNum(tQty)}</span>
+              <span style="background:${isMiss ? '#dc2626' : '#6d28d9'}; color:#fff; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;">${fmtNum(tQty)}</span>
             </label>`;
           }).join('')}
         </div>
       `;
-    } else if (ACTIVE_HEADER) {
-      subChipsHtml = `<div style="font-size:11.5px; color:#b45309; font-weight:800;">⚠️ Is period mein "${escHtml(ACTIVE_HEADER)}" ka data abhi available nahi hai. Software se ek baar "Push Live Data Now" karein.</div>`;
     }
+
+    var multiHeaderPillsHtml = allowedHeaders.length > 1 ? `
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-top:4px; border-top:1px dashed #ddd6fe;">
+        <span style="font-size:11px; font-weight:700; color:#5b21b6;">➕ Add / Toggle Compact [+] Columns:</span>
+        ${allowedHeaders.map(function(h) {
+          var isAdded = ACTIVE_HEADERS_LIST.includes(h);
+          var isFocused = (h === focusH);
+          return `<label style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid ${isFocused ? '#6d28d9' : '#cbd5e1'}; background:${isAdded ? '#ede9fe' : '#ffffff'}; color:${isAdded ? '#4c1d95' : '#475569'};">
+            <input type="checkbox" ${isAdded ? 'checked' : ''} onchange="toggleAdditionalHeaderColumn('${escJs(h)}', this.checked)" style="margin:0; accent-color:#6d28d9;">
+            <span onclick="if(${isAdded}){event.preventDefault(); FOCUSED_CHIP_HEADER='${escJs(h)}'; renderApp();}">${escHtml(h)}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    ` : '';
 
     headerBreakdownBarHtml = `
       <div class="attr-bar">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:12.5px; font-weight:900; color:#4c1d95;">🧩 Header Qty Breakdown (Manager & Party Wise):</span>
-            <select class="ctrl-select" style="border-color:#7c3aed; color:#4c1d95;" onchange="ACTIVE_HEADER=this.value; ATTR_VAL_SEARCH=''; renderApp();">
+            <span style="font-size:13px; font-weight:800; color:#4c1d95;">🧩 Header Qty Breakdown (Compact [+] Expand View):</span>
+            <select class="ctrl-select" style="border-color:#7c3aed; color:#4c1d95;" onchange="onSelectPrimaryHeader(this.value)">
               <option value="">-- Off (Standard View) --</option>
               ${allowedHeaders.map(function(h) {
-                return `<option value="${escHtml(h)}" ${h === ACTIVE_HEADER ? 'selected' : ''}>📌 ${escHtml(h)}</option>`;
+                return `<option value="${escHtml(h)}" ${h === focusH ? 'selected' : ''}>📌 ${escHtml(h)}</option>`;
               }).join('')}
             </select>
           </div>
-          ${ACTIVE_HEADER ? `<span style="font-size:11px; font-weight:800; color:#6d28d9;">Showing <b>${activeAttrCols.length}</b> Attribute Qty Columns right next to Manager & Party Name</span>` : `<span style="font-size:11px; font-weight:700; color:#64748b;">Select any header (e.g. Master_GROUP NAME5 / Category) to see Qty breakdown</span>`}
+          <span style="font-size:11.5px; font-weight:600; color:#6d28d9;">
+            ${ACTIVE_HEADERS_LIST.length > 0 ? '💡 Niche table mein <b>[ + ]</b> par click karke Manager / Party wise details dekhein (Row badi nahi hogi)' : 'Select any Header to add a compact [+] breakdown column'}
+          </span>
         </div>
+        ${multiHeaderPillsHtml}
         ${subChipsHtml}
       </div>
     `;
   }
 
-  // Manager Table Header & Rows
-  var attrHeaderThs = activeAttrCols.map(function(av) {
-    var isMiss = (av === '(ENTER ATTRIBUTES)');
-    return '<th class="' + (isMiss ? 'missing-th' : 'attr-th') + '">' + (isMiss ? '⚠️ ' + escHtml(av) : escHtml(av)) + '</th>';
+  // Compact Header THs for Manager Table & Store Table (1 compact column per selected Header with [+] button!)
+  var activeHeaders = rights.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
+  var mgrCompactThs = activeHeaders.map(function(hName) {
+    var mgrs = mData.managers || [];
+    var allOpen = mgrs.length > 0 && mgrs.every(function(m) { return EXPANDED_MGR_KEYS.has(hName + '||' + m.manager); });
+    return '<th class="attr-compact-th">' +
+      '<span>📌 ' + escHtml(hName) + '</span>' +
+      '<button type="button" class="plus-hdr-btn" onclick="toggleAllMgrExpandForHeader(\'' + escJs(hName) + '\')" title="' + (allOpen ? 'Collapse All Managers' : 'Expand All Managers') + '">' + (allOpen ? '−' : '+') + '</button>' +
+    '</th>';
+  }).join('');
+
+  var storeCompactThs = activeHeaders.map(function(hName) {
+    var filteredS = (mData.stores || []).filter(function(s) {
+      return !SEARCH_Q || s.party.toLowerCase().includes(SEARCH_Q) || s.manager.toLowerCase().includes(SEARCH_Q);
+    });
+    var allOpen = filteredS.length > 0 && filteredS.every(function(s) { return EXPANDED_STORE_KEYS.has(hName + '||' + s.party); });
+    return '<th class="attr-compact-th">' +
+      '<span>📌 ' + escHtml(hName) + '</span>' +
+      '<button type="button" class="plus-hdr-btn" onclick="toggleAllStoreExpandForHeader(\'' + escJs(hName) + '\')" title="' + (allOpen ? 'Collapse All Stores' : 'Expand All Stores') + '">' + (allOpen ? '−' : '+') + '</button>' +
+    '</th>';
   }).join('');
 
   var lyHeaderThs = compareOn
     ? '<th class="ly-th">LY Qty (' + escHtml(lyPeriodKey.replace('FULL_FY::','FY ')) + ')</th><th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Growth %</th>'
     : '';
 
+  // Build Manager Table Rows + Expandable Detail Drawers (With Manager Name prominently mentioned!)
+  var mgrTotalCols = 4 + activeHeaders.length + (compareOn ? 3 : 0) + (rights.showMrpAndDisc ? 2 : 0);
   var managerRowsHtml = (mData.managers || []).map(function(m) {
     var lyM = lyMgrMap[String(m.manager || '').trim().toUpperCase()] || { qty: 0, net: 0 };
-    var mAttrs = attrByMgr[m.manager] || {};
-    var mAttrTds = activeAttrCols.map(function(av) {
-      var aq = mAttrs[av] || 0;
-      var isMiss = (av === '(ENTER ATTRIBUTES)');
-      return '<td class="' + (isMiss ? 'missing-td' : 'attr-td') + '">' + (aq > 0 ? fmtNum(aq) : '<span style="color:#cbd5e1;">-</span>') + '</td>';
-    }).join('');
+    var compactTds = '';
+    var drawersHtml = [];
 
-    return `<tr>
+    activeHeaders.forEach(function(hName) {
+      var subVals = getSelectedSubValuesForHeader(mData, hName);
+      var byMgr = (mData.attributes && mData.attributes[hName]) ? (mData.attributes[hName].byManager || {}) : {};
+      var mAttrMap = byMgr[m.manager] || {};
+
+      var sumQty = 0, nonZeroCnt = 0;
+      subVals.forEach(function(sv) {
+        var qv = Number(mAttrMap[sv] || 0);
+        if (qv > 0) { sumQty += qv; nonZeroCnt++; }
+      });
+
+      var expKey = hName + '||' + m.manager;
+      var isOpen = EXPANDED_MGR_KEYS.has(expKey);
+      var clickJs = "toggleMgrExpand('" + escJs(hName) + "','" + escJs(m.manager) + "')";
+
+      compactTds += '<td style="text-align:center; border-left:1px solid #ede9fe; border-right:1px solid #ede9fe; background:#fcfaff;">' +
+        '<button type="button" class="plus-cell-btn ' + (isOpen ? 'open' : '') + '" onclick="' + clickJs + '" title="Click + to open ' + escHtml(hName) + ' details for ' + escHtml(m.manager) + '">' +
+          '<span class="plus-icon-badge">' + (isOpen ? '−' : '+') + '</span>' +
+          '<span>' + fmtNum(sumQty) + ' Qty</span>' +
+          '<span style="font-size:10.5px; opacity:0.8;">(' + nonZeroCnt + ')</span>' +
+        '</button>' +
+      '</td>';
+
+      if (isOpen) {
+        var titleLeft = '<span>👨‍💼 Manager: <b>' + escHtml(m.manager) + '</b></span>' +
+                        '<span style="color:#475569;">|</span>' +
+                        '<span style="font-size:11.5px; color:#475569;">Stores: <b>' + m.stores + '</b></span>';
+        drawersHtml.push(buildCompactDrawerHtml(titleLeft, hName, subVals, mAttrMap, sumQty, clickJs));
+      }
+    });
+
+    var mainRow = `<tr>
       <td><b>${escHtml(m.manager)}</b></td>
       <td class="num">${m.stores}</td>
-      ${mAttrTds}
+      ${compactTds}
       <td class="num"><b>${fmtNum(m.qty)}</b></td>
       <td class="num" style="color:#0284c7;"><b>${fmtINR(m.net)}</b></td>
       ${compareOn ? `<td class="ly-td">${fmtNum(lyM.qty)}</td><td class="ly-td">${fmtINR(lyM.net)}</td><td class="num">${calcGrowthBadgeHtml(m.net, lyM.net)}</td>` : ''}
-      ${rights.showMrpAndDisc ? `<td class="num">${fmtINR(m.mrp)}</td><td class="num" style="color:#dc2626;">${m.discPct}%</td>` : ''}
+      ${rights.showMrpAndDisc ? `<td class="num">${fmtINR(m.mrp)}</td><td class="num" style="color:#dc2626; font-weight:700;">${m.discPct}%</td>` : ''}
     </tr>`;
-  }).join('') || '<tr><td colspan="40" style="text-align:center;color:#64748b;padding:18px;">No manager data available for this selection.</td></tr>';
+
+    if (drawersHtml.length > 0) {
+      return mainRow + '<tr class="expand-drawer-row"><td colspan="' + mgrTotalCols + '"><div style="display:flex; flex-direction:column; gap:8px;">' + drawersHtml.join('') + '</div></td></tr>';
+    }
+    return mainRow;
+  }).join('') || '<tr><td colspan="' + mgrTotalCols + '" style="text-align:center;color:#64748b;padding:18px;">No manager data available for this selection.</td></tr>';
 
   app.innerHTML = `
     <div class="top-card">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
         <div>
-          <div style="font-size:18px; font-weight:900;">📊 ${escHtml(ACTIVE_LINK.title)}</div>
-          <div style="font-size:11.5px; color:#cbd5e1; margin-top:4px;">🕒 Last Live Update: <b>${escHtml(LIVE_PAYLOAD.generatedAtHuman)}</b> ${ACTIVE_LINK.validityLabel ? (' | ⏳ Valid Till: <b>' + escHtml(ACTIVE_LINK.validityLabel) + '</b>') : ''}</div>
+          <div style="font-size:19px; font-weight:800; letter-spacing:-0.02em;">📊 ${escHtml(ACTIVE_LINK.title)}</div>
+          <div style="font-size:12px; color:#cbd5e1; margin-top:4px; font-weight:500;">🕒 Last Live Update: <b style="color:#ffffff;">${escHtml(LIVE_PAYLOAD.generatedAtHuman)}</b> ${ACTIVE_LINK.validityLabel ? (' | ⏳ Valid Till: <b style="color:#ffffff;">' + escHtml(ACTIVE_LINK.validityLabel) + '</b>') : ''}</div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <span class="status-pill ${stClass}">${stText}</span>
-          <button onclick="manualRefreshClick()" style="background:rgba(255,255,255,0.16);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;">🔄 Refresh Live</button>
+          <button onclick="manualRefreshClick()" style="background:rgba(255,255,255,0.16);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh Live</button>
           <span class="timer-pill" title="Auto-refreshes every 30 seconds">⏱️ <span id="liveTimerText">${TIMER_SECONDS}s</span></span>
         </div>
       </div>
-      ${gStatus.statusNote ? `<div style="margin-top:8px; font-size:12px; color:#fde68a; font-weight:700;">💬 Note: ${escHtml(gStatus.statusNote)}</div>` : ''}
+      ${gStatus.statusNote ? `<div style="margin-top:8px; font-size:12.5px; color:#fde68a; font-weight:600;">💬 Note: ${escHtml(gStatus.statusNote)}</div>` : ''}
 
-      <!-- ALLOWED DATA TYPE TABS -->
-      <div class="tab-row" style="margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.14);">
+      <div class="tab-row" style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.14);">
         ${allowedDataTypes.map(function(dk) {
           var lbl = (TYPE_META[dk] && TYPE_META[dk].label) || dk;
           return `<button class="dtype-btn ${dk === ACTIVE_DATA_TYPE ? 'active' : ''}" onclick="ACTIVE_DATA_TYPE='${dk}'; ACTIVE_MONTH=''; renderApp();">${lbl}</button>`;
         }).join('')}
       </div>
 
-      <!-- BRAND TABS + YEAR 2 (FY) + MONTH + COMPARE LY (DEFAULT TICKED) + DOWNLOAD -->
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;">
         <div class="tab-row">
           ${allowedBrands.map(function(b) {
@@ -628,7 +900,7 @@ function renderApp() {
             </label>
           ` : ''}
 
-          ${rights.allowDownload ? `<button onclick="downloadLiveCsv()" style="background:#10b981;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11.5px;font-weight:900;cursor:pointer;">📥 CSV</button>` : ''}
+          ${rights.allowDownload ? `<button onclick="downloadLiveCsv()" style="background:#10b981;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">📥 CSV</button>` : ''}
         </div>
       </div>
     </div>
@@ -636,10 +908,10 @@ function renderApp() {
     ${rights.showGrandTotal ? `
       <div class="grand-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div style="font-size:15px; font-weight:900;">🏆 ${dtMeta.label} — ${escHtml(ACTIVE_BRAND)} (${gt.stores} Updated Stores${gt.pendingStores > 0 ? ' | ' + gt.pendingStores + ' Pending' : ''})</div>
+          <div style="font-size:15.5px; font-weight:800; letter-spacing:-0.01em;">🏆 ${dtMeta.label} — ${escHtml(ACTIVE_BRAND)} (${gt.stores} Updated Stores${gt.pendingStores > 0 ? ' | ' + gt.pendingStores + ' Pending' : ''})</div>
           <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-            <span style="background:#10b981; color:#fff; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:900;">${getPeriodDisplayLabel(ACTIVE_MONTH)}</span>
-            ${compareOn ? `<span style="background:rgba(255,255,255,0.14); color:#fde68a; padding:4px 10px; border-radius:8px; font-size:11px; font-weight:900;">vs LY: ${escHtml(lyPeriodKey.replace('FULL_FY::','FY ') || '-')}</span>` : ''}
+            <span style="background:#10b981; color:#fff; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">${getPeriodDisplayLabel(ACTIVE_MONTH)}</span>
+            ${compareOn ? `<span style="background:rgba(255,255,255,0.14); color:#fde68a; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">vs LY: ${escHtml(lyPeriodKey.replace('FULL_FY::','FY ') || '-')}</span>` : ''}
           </div>
         </div>
         <div class="kpi-grid">
@@ -661,7 +933,7 @@ function renderApp() {
             </div>
             <div class="kpi-box">
               <div class="kpi-lbl">Discount</div>
-              <div class="kpi-val" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:13px;">(${gt.discPct}%)</span></div>
+              <div class="kpi-val" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:13.5px; font-weight:700;">(${gt.discPct}%)</span></div>
             </div>
           ` : ''}
         </div>
@@ -672,14 +944,14 @@ function renderApp() {
 
     ${rights.showManagers ? `
       <div class="section-card">
-        <div style="font-size:14px; font-weight:900; color:#1e1b4b; margin-bottom:9px;">👨‍💼 MANAGER-WISE SUMMARY (${(mData.managers || []).length})</div>
+        <div style="font-size:14.5px; font-weight:800; color:#1e1b4b; margin-bottom:10px; letter-spacing:-0.01em;">👨‍💼 MANAGER-WISE SUMMARY (${(mData.managers || []).length})</div>
         <div class="table-scroll">
           <table>
             <thead>
               <tr>
                 <th>Manager</th>
                 <th class="num">Stores</th>
-                ${attrHeaderThs}
+                ${mgrCompactThs}
                 <th class="num">Qty</th>
                 <th class="num">${dtMeta.valTitle}</th>
                 ${lyHeaderThs}
@@ -694,9 +966,9 @@ function renderApp() {
 
     ${rights.showStores ? `
       <div class="section-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:9px;">
-          <div style="font-size:14px; font-weight:900; color:#0f172a;">🏪 INDIVIDUAL STORE DATA <span id="liveStoreCountBadge">(${(mData.stores || []).length} Stores)</span></div>
-          <input type="text" value="${escHtml(SEARCH_Q)}" oninput="onStoreSearchTyped(this.value)" placeholder="🔍 Search Party or Manager..." style="padding:6px 10px; border:1.5px solid #cbd5e1; border-radius:7px; font-size:12px; width:240px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+          <div style="font-size:14.5px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">🏪 INDIVIDUAL STORE DATA <span id="liveStoreCountBadge">(${(mData.stores || []).length} Stores)</span></div>
+          <input type="text" value="${escHtml(SEARCH_Q)}" oninput="onStoreSearchTyped(this.value)" placeholder="🔍 Search Party or Manager..." style="padding:7px 11px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:500; width:250px;">
         </div>
         <div id="liveStoreScrollWrap" class="table-scroll">
           <table>
@@ -705,7 +977,7 @@ function renderApp() {
                 <th>#</th>
                 <th>Party / Store Name</th>
                 <th>Manager</th>
-                ${attrHeaderThs}
+                ${storeCompactThs}
                 <th class="num">Qty</th>
                 <th class="num">${dtMeta.valTitle}</th>
                 ${lyHeaderThs}
@@ -720,11 +992,11 @@ function renderApp() {
 
     ${rights.showPending ? `
       <div class="section-card" style="border-color:#fca5a5; background:#fffafa;">
-        <div style="font-size:14px; font-weight:900; color:#b91c1c; margin-bottom:8px;">⏳ PENDING STORES (${(mData.pending || []).length} Stores Not Uploaded Yet)</div>
+        <div style="font-size:14px; font-weight:800; color:#b91c1c; margin-bottom:8px;">⏳ PENDING STORES (${(mData.pending || []).length} Stores Not Uploaded Yet)</div>
         <div style="display:flex; flex-wrap:wrap; gap:6px; max-height:200px; overflow-y:auto;">
           ${(mData.pending || []).map(function(p) {
-            return `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 9px; border-radius:7px; font-size:11px; font-weight:800;">• ${escHtml(p.party)} <small style="color:#475569;">(${escHtml(p.manager)})</small></span>`;
-          }).join('') || '<span style="color:#059669; font-weight:900; font-size:12.5px;">🎉 All Stores Updated! Zero Pending!</span>'}
+            return `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 10px; border-radius:7px; font-size:11.5px; font-weight:700;">• ${escHtml(p.party)} <small style="color:#475569; font-weight:600;">(${escHtml(p.manager)})</small></span>`;
+          }).join('') || '<span style="color:#059669; font-weight:700; font-size:12.5px;">🎉 All Stores Updated! Zero Pending!</span>'}
         </div>
       </div>
     ` : ''}
