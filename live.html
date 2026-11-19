@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KRITO — Live Tertiary Sales Tracker</title>
+<style>
+  * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+  body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 14px; }
+  .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .top-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 16px 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.18); }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 900; }
+  .st-completed { background: #10b981; color: #ffffff; }
+  .st-updating  { background: #f59e0b; color: #0f172a; }
+  .st-partial   { background: #f97316; color: #ffffff; }
+  .brand-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .brand-btn { padding: 8px 16px; border-radius: 9px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 12.5px; font-weight: 900; cursor: pointer; }
+  .brand-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+  .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 18px 20px; border: 2px solid #4f46e5; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+  .kpi-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px; }
+  .kpi-lbl { font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+  .kpi-val { font-size: 20px; font-weight: 900; margin-top: 4px; }
+  .section-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.04); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f8fafc; color: #334155; padding: 9px 10px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 900; }
+  td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
+  .num { text-align: right; }
+  .lock-screen { max-width: 420px; margin: 70px auto; background: #fff; border-radius: 16px; padding: 28px; text-align: center; border: 2px solid #cbd5e1; box-shadow: 0 18px 40px rgba(15,23,42,0.12); }
+</style>
+</head>
+<body>
+<div id="app" class="wrap">
+  <div class="lock-screen">⏳ Loading Live Tertiary Report...</div>
+</div>
+
+<script>
+var LIVE_PAYLOAD = null;
+var ACTIVE_LINK = null;
+var ACTIVE_BRAND = '';
+var ACTIVE_MONTH = '';
+var PIN_UNLOCKED = false;
+var SEARCH_Q = '';
+
+function fmtINR(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+function fmtNum(n) { return Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+
+function getQueryId() {
+  var p = new URLSearchParams(window.location.search);
+  return p.get('id') || '';
+}
+
+async function fetchLiveReportData() {
+  try {
+    var res = await fetch('./live_data.json?_t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('Live data file not found yet.');
+    LIVE_PAYLOAD = await res.json();
+    renderApp();
+  } catch (err) {
+    document.getElementById('app').innerHTML = '<div class="lock-screen"><h3>⚠️ Unable to Load Live Data</h3><p style="color:#64748b;font-size:13px;">' + err.message + '</p><button onclick="fetchLiveReportData()" style="background:#2563eb;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;">🔄 Retry</button></div>';
+  }
+}
+
+function verifyPin() {
+  var inp = document.getElementById('viewerPinInp')?.value.trim();
+  if (inp === String(ACTIVE_LINK.pin)) {
+    PIN_UNLOCKED = true;
+    renderApp();
+  } else {
+    alert('❌ Wrong Access PIN!');
+  }
+}
+
+function downloadLiveCsv() {
+  var bData = (LIVE_PAYLOAD.brands[ACTIVE_BRAND] || {})[ACTIVE_MONTH];
+  if (!bData || !bData.stores) return;
+  var r = ACTIVE_LINK.rights || {};
+  var hdr = r.showMrpAndDisc
+    ? ['S.No', 'Party Name', 'Manager', 'Qty', 'MRP Value', 'Tertiary Net Value', 'Discount', 'Disc %']
+    : ['S.No', 'Party Name', 'Manager', 'Qty', 'Tertiary Net Value'];
+  var lines = [hdr.join(',')];
+  bData.stores.forEach(function(s, i) {
+    var row = r.showMrpAndDisc
+      ? [i + 1, '"' + s.party + '"', '"' + s.manager + '"', s.qty, s.mrp, s.net, s.disc, s.discPct + '%']
+      : [i + 1, '"' + s.party + '"', '"' + s.manager + '"', s.qty, s.net];
+    lines.push(row.join(','));
+  });
+  var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = ACTIVE_BRAND + '_' + ACTIVE_MONTH + '_Live_Tertiary.csv';
+  a.click();
+}
+
+function renderApp() {
+  var app = document.getElementById('app');
+  var linkId = getQueryId();
+  var linksMap = (LIVE_PAYLOAD && LIVE_PAYLOAD.links) || {};
+  ACTIVE_LINK = linkId ? linksMap[linkId] : Object.values(linksMap)[0];
+
+  if (!ACTIVE_LINK) {
+    app.innerHTML = '<div class="lock-screen"><h2>🔒 Invalid Link</h2><p style="color:#64748b;font-size:13px;">Yeh Live Report Link valid nahi hai ya delete ho chuka hai.</p></div>';
+    return;
+  }
+
+  if (!ACTIVE_LINK.active) {
+    app.innerHTML = '<div class="lock-screen"><h2>🚫 Access Disabled</h2><p style="color:#dc2626;font-weight:700;font-size:13px;">Admin ne is Live Report Link ka access band (Revoke) kar diya hai.</p></div>';
+    return;
+  }
+
+  if (ACTIVE_LINK.expiresAt && new Date(ACTIVE_LINK.expiresAt).getTime() < Date.now()) {
+    app.innerHTML = '<div class="lock-screen"><h2>⏰ Link Expired</h2><p style="color:#b91c1c;font-weight:700;font-size:13px;">Is Live Report Link ka valid time (' + ACTIVE_LINK.validityLabel + ') khatam ho chuka hai. Naye link ke liye Admin se contact karein.</p></div>';
+    return;
+  }
+
+  if (ACTIVE_LINK.pin && !PIN_UNLOCKED) {
+    app.innerHTML = '<div class="lock-screen"><h2>🔐 PIN Protected Report</h2><p style="color:#475569;font-size:13px;"><b>' + ACTIVE_LINK.title + '</b> dekhne ke liye Access PIN daalein:</p><input id="viewerPinInp" type="password" placeholder="Enter PIN" style="padding:10px;width:180px;text-align:center;font-size:16px;font-weight:900;border:2px solid #4f46e5;border-radius:8px;margin:10px 0;"><br><button onclick="verifyPin()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:900;cursor:pointer;">🔓 Unlock Report</button></div>';
+    return;
+  }
+
+  var allowedBrands = (ACTIVE_LINK.brands && ACTIVE_LINK.brands.length > 0) ? ACTIVE_LINK.brands : Object.keys(LIVE_PAYLOAD.brands || {});
+  if (!ACTIVE_BRAND || !allowedBrands.includes(ACTIVE_BRAND)) ACTIVE_BRAND = allowedBrands[0] || 'ARROW';
+
+  var brandMonthsObj = (LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[ACTIVE_BRAND]) || {};
+  var availMonths = Object.keys(brandMonthsObj).sort().reverse();
+  if (!ACTIVE_MONTH || !brandMonthsObj[ACTIVE_MONTH]) {
+    ACTIVE_MONTH = (ACTIVE_LINK.defaultMonth && brandMonthsObj[ACTIVE_LINK.defaultMonth]) ? ACTIVE_LINK.defaultMonth : (availMonths[0] || '');
+  }
+
+  var rights = ACTIVE_LINK.rights || { showGrandTotal: true, showManagers: true, showStores: true, showPending: true, showMrpAndDisc: true };
+  var gStatus = LIVE_PAYLOAD.globalStatus || { status: 'UPDATING', statusNote: '' };
+  var effStatus = (ACTIVE_LINK.statusOverride && ACTIVE_LINK.statusOverride !== 'GLOBAL') ? ACTIVE_LINK.statusOverride : gStatus.status;
+  var stClass = effStatus === 'COMPLETED' ? 'st-completed' : (effStatus === 'PARTIAL' ? 'st-partial' : 'st-updating');
+  var stText  = effStatus === 'COMPLETED' ? '✅ STATUS: COMPLETED & UPDATED' : (effStatus === 'PARTIAL' ? '🟠 STATUS: PARTIALLY UPDATED' : '🟡 STATUS: LIVE UPDATING IN PROGRESS');
+
+  var mData = brandMonthsObj[ACTIVE_MONTH] || { grandTotal: { stores: 0, expectedStores: 0, pendingStores: 0, qty: 0, mrp: 0, net: 0, disc: 0, discPct: 0 }, managers: [], stores: [], pending: [] };
+  var gt = mData.grandTotal;
+  var filteredStores = (mData.stores || []).filter(function(s) {
+    return !SEARCH_Q || s.party.toLowerCase().includes(SEARCH_Q) || s.manager.toLowerCase().includes(SEARCH_Q);
+  });
+
+  app.innerHTML = `
+    <div class="top-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="font-size:18px; font-weight:900;">📊 ${ACTIVE_LINK.title}</div>
+          <div style="font-size:11.5px; color:#cbd5e1; margin-top:4px;">🕒 Last Live Update: <b>${LIVE_PAYLOAD.generatedAtHuman}</b> ${ACTIVE_LINK.validityLabel ? (' | ⏳ Valid Till: <b>' + ACTIVE_LINK.validityLabel + '</b>') : ''}</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <span class="status-pill ${stClass}">${stText}</span>
+          <button onclick="fetchLiveReportData()" style="background:rgba(255,255,255,0.16);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;">🔄 Refresh Live</button>
+        </div>
+      </div>
+      ${gStatus.statusNote ? `<div style="margin-top:8px; font-size:12px; color:#fde68a; font-weight:700;">💬 Note: ${gStatus.statusNote}</div>` : ''}
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px;">
+        <div class="brand-tabs" style="margin:0;">
+          ${allowedBrands.map(function(b) {
+            return `<button class="brand-btn ${b === ACTIVE_BRAND ? 'active' : ''}" onclick="ACTIVE_BRAND='${b}'; ACTIVE_MONTH=''; renderApp();">${b}</button>`;
+          }).join('')}
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select onchange="ACTIVE_MONTH=this.value; renderApp();" style="padding:7px 12px; border-radius:8px; font-size:12px; font-weight:900; border:none;">
+            ${availMonths.map(function(m) { return `<option value="${m}" ${m === ACTIVE_MONTH ? 'selected' : ''}>🗓️ ${m}</option>`; }).join('') || '<option>No Data</option>'}
+          </select>
+          ${rights.allowDownload ? `<button onclick="downloadLiveCsv()" style="background:#10b981;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11.5px;font-weight:900;cursor:pointer;">📥 Download CSV</button>` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${rights.showGrandTotal ? `
+      <div class="grand-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:15px; font-weight:900;">🏆 OVERALL GRAND TOTAL — ${ACTIVE_BRAND} (${gt.stores} Updated Stores${gt.pendingStores > 0 ? ' | ' + gt.pendingStores + ' Pending' : ''})</div>
+          <span style="background:#10b981; color:#fff; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:900;">🗓️ ${ACTIVE_MONTH || '-'}</span>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-box"><div class="kpi-lbl">Total Qty</div><div class="kpi-val" style="color:#ffffff;">${fmtNum(gt.qty)}</div></div>
+          <div class="kpi-box"><div class="kpi-lbl">Tertiary Net Value</div><div class="kpi-val" style="color:#38bdf8;">${fmtINR(gt.net)}</div></div>
+          ${rights.showMrpAndDisc ? `
+            <div class="kpi-box"><div class="kpi-lbl">Total MRP</div><div class="kpi-val" style="color:#fbbf24;">${fmtINR(gt.mrp)}</div></div>
+            <div class="kpi-box"><div class="kpi-lbl">Discount</div><div class="kpi-val" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:13px;">(${gt.discPct}%)</span></div></div>
+          ` : ''}
+        </div>
+      </div>
+    ` : ''}
+
+    ${rights.showManagers ? `
+      <div class="section-card">
+        <div style="font-size:14px; font-weight:900; color:#1e1b4b; margin-bottom:10px;">👨‍💼 MANAGER-WISE SUMMARY (${mData.managers.length})</div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Manager</th><th class="num">Stores</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">Tertiary Net</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
+            <tbody>
+              ${mData.managers.map(function(m) {
+                return `<tr><td><b>${m.manager}</b></td><td class="num">${m.stores}</td><td class="num">${fmtNum(m.qty)}</td>${rights.showMrpAndDisc ? `<td class="num">${fmtINR(m.mrp)}</td>` : ''}<td class="num" style="color:#0284c7;">${fmtINR(m.net)}</td>${rights.showMrpAndDisc ? `<td class="num" style="color:#dc2626;">${m.discPct}%</td>` : ''}</tr>`;
+              }).join('') || '<tr><td colspan="6" style="text-align:center;color:#64748b;">No manager data yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : ''}
+
+    ${rights.showStores ? `
+      <div class="section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+          <div style="font-size:14px; font-weight:900; color:#0f172a;">🏪 INDIVIDUAL STORE DATA (${filteredStores.length} Stores)</div>
+          <input type="text" value="${SEARCH_Q}" oninput="SEARCH_Q=this.value.toLowerCase(); renderApp();" placeholder="🔍 Search Party or Manager..." style="padding:6px 10px; border:1.5px solid #cbd5e1; border-radius:7px; font-size:12px; width:230px;">
+        </div>
+        <div style="overflow-x:auto; max-height:420px;">
+          <table>
+            <thead><tr><th>#</th><th>Party / Store Name</th><th>Manager</th><th class="num">Qty</th>${rights.showMrpAndDisc ? '<th class="num">MRP</th>' : ''}<th class="num">Tertiary Net</th>${rights.showMrpAndDisc ? '<th class="num">Dis %</th>' : ''}</tr></thead>
+            <tbody>
+              ${filteredStores.map(function(s, idx) {
+                return `<tr><td>${idx + 1}</td><td><b>${s.party}</b></td><td>${s.manager}</td><td class="num">${fmtNum(s.qty)}</td>${rights.showMrpAndDisc ? `<td class="num">${fmtINR(s.mrp)}</td>` : ''}<td class="num" style="color:#0284c7;">${fmtINR(s.net)}</td>${rights.showMrpAndDisc ? `<td class="num" style="color:#dc2626;">${s.discPct}%</td>` : ''}</tr>`;
+              }).join('') || '<tr><td colspan="7" style="text-align:center;color:#64748b;">No store data found.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : ''}
+
+    ${rights.showPending ? `
+      <div class="section-card" style="border-color:#fca5a5; background:#fffafa;">
+        <div style="font-size:14px; font-weight:900; color:#b91c1c; margin-bottom:8px;">⏳ PENDING STORES (${mData.pending.length} Stores Not Uploaded Yet)</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; max-height:220px; overflow-y:auto;">
+          ${mData.pending.map(function(p) {
+            return `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 9px; border-radius:7px; font-size:11px; font-weight:800;">• ${p.party} <small style="color:#475569;">(${p.manager})</small></span>`;
+          }).join('') || '<span style="color:#059669; font-weight:900; font-size:12.5px;">🎉 All Stores Updated! Zero Pending!</span>'}
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+
+fetchLiveReportData();
+// Auto-refresh live report every 60 seconds automatically
+setInterval(fetchLiveReportData, 60000);
+</script>
+</body>
+</html>
