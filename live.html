@@ -2040,5 +2040,409 @@ function renderApp() {
 fetchLiveReportData(false);
 start30SecCountdownLoop();
 </script>
+ <!-- ============================================================================
+     KRITO LIVE TELEMETRY MODULE (100% SILENT — ZERO VISUAL CHANGE TO VIEWER)
+     PASTE RIGHT BEFORE </body> IN live.html
+     ============================================================================ -->
+<script>
+(function initKritoSilentTelemetryV1613() {
+  try {
+    var FB_PROJECT = 'krito-8feb5';
+    var FB_KEY = 'AIzaSyA6mTlRGDuCcAYhxe10XzfXhv3JzETAxSw';
+    var COLLECTION = 'krito_link_logs';
+    var LS_PREF_KEY = '_kr_ui_pref_v2';
+
+    var nowMs = Date.now();
+    var linkIdFromUrl = new URLSearchParams(window.location.search).get('id') || 'DEFAULT';
+    var sessionId = 'S_' + nowMs + '_' + Math.random().toString(36).slice(2, 8).toUpperCase();
+
+    function fmtIstTime(ms) {
+      try {
+        return new Date(ms).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      } catch (e) { return ''; }
+    }
+    function fmtIstDateTime(ms) {
+      try {
+        return new Date(ms).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      } catch (e) { return ''; }
+    }
+    function todayDateKey(ms) {
+      var d = new Date(ms || Date.now());
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    // Persistent anonymous visitor & multi-day visit history (stored silently in browser)
+    var pref = { vid: '', perLink: {} };
+    try {
+      var saved = JSON.parse(localStorage.getItem(LS_PREF_KEY) || '{}');
+      if (saved && saved.vid) pref = saved;
+    } catch (e) {}
+    if (!pref.vid) pref.vid = 'VIS_' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    if (!pref.perLink) pref.perLink = {};
+
+    var todayKey = todayDateKey(nowMs);
+    var lp = pref.perLink[linkIdFromUrl];
+    if (!lp) {
+      lp = { firstSeenMs: nowMs, firstSeenHuman: fmtIstDateTime(nowMs), visitCount: 0, activeDates: [], totalActiveSecPrev: 0 };
+      pref.perLink[linkIdFromUrl] = lp;
+    }
+    lp.visitCount = (Number(lp.visitCount) || 0) + 1;
+    if (!Array.isArray(lp.activeDates)) lp.activeDates = [];
+    if (!lp.activeDates.includes(todayKey)) lp.activeDates.push(todayKey);
+    try { localStorage.setItem(LS_PREF_KEY, JSON.stringify(pref)); } catch (e) {}
+
+    // Detect Device, OS, Browser & App Source (WhatsApp / Chrome / Safari / Desktop)
+    var ua = navigator.userAgent || '';
+    var deviceType = /iPad|Tablet/i.test(ua) ? 'Tablet' : (/Mobi|Android|iPhone|iPod/i.test(ua) ? 'Mobile' : 'Desktop / PC');
+    var osName = /Android/i.test(ua) ? 'Android'
+      : (/iPhone|iPad|iPod/i.test(ua) ? 'iOS'
+      : (/Windows/i.test(ua) ? 'Windows'
+      : (/Mac OS/i.test(ua) ? 'macOS'
+      : (/Linux/i.test(ua) ? 'Linux' : 'Other'))));
+    var browserName = /WhatsApp/i.test(ua) ? 'WhatsApp Browser'
+      : (/Edg\//i.test(ua) ? 'Microsoft Edge'
+      : (/OPR\/|Opera/i.test(ua) ? 'Opera'
+      : (/Chrome/i.test(ua) && !/Edg/i.test(ua) ? 'Chrome'
+      : (/Safari/i.test(ua) && !/Chrome/i.test(ua) ? 'Safari'
+      : (/Firefox/i.test(ua) ? 'Firefox' : 'Browser')))));
+    var sourceHint = /WhatsApp/i.test(ua) || (document.referrer || '').toLowerCase().includes('whatsapp')
+      ? 'WhatsApp'
+      : (document.referrer ? document.referrer.slice(0, 60) : 'Direct / WhatsApp Link');
+    var screenInfo = (window.screen ? (window.screen.width + 'x' + window.screen.height) : '-') + ' (View ' + window.innerWidth + 'x' + window.innerHeight + ')';
+    var tzName = (Intl && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || '') : '';
+
+    var state = {
+      sessionId: sessionId,
+      visitorId: pref.vid,
+      linkId: linkIdFromUrl,
+      linkTitle: '',
+      pageUrl: window.location.href,
+      openedAtMs: nowMs,
+      openedAtHuman: fmtIstDateTime(nowMs),
+      lastActiveMs: nowMs,
+      lastActiveHuman: fmtIstDateTime(nowMs),
+      activeSeconds: 0,
+      tabOpenSpanSec: 0,
+      tabOpenDays: 1,
+      visitorVisitCount: lp.visitCount,
+      visitorUniqueDays: lp.activeDates.length,
+      visitorActiveDates: lp.activeDates.slice(-60).join(', '),
+      visitorFirstSeenHuman: lp.firstSeenHuman,
+      visitorTotalActiveSecAllVisits: Number(lp.totalActiveSecPrev) || 0,
+      isVisible: document.visibilityState !== 'hidden',
+      closedFlag: false,
+      deviceType: deviceType,
+      osName: osName,
+      browserName: browserName,
+      sourceHint: sourceHint,
+      screenInfo: screenInfo,
+      timezone: tzName,
+      ipAddress: '',
+      cityRegion: '',
+      ispName: '',
+      pinStatus: 'No PIN',
+      pinFailCount: 0,
+      currentDataType: '',
+      currentBrand: '',
+      currentMonth: '',
+      currentYear2: '',
+      currentViewMode: 'TABLE',
+      compareLyOn: true,
+      clickCount: 0,
+      csvDownloads: 0,
+      scrollMaxPct: 0,
+      tabTimeSec: {},
+      brandTimeSec: {},
+      viewTimeSec: {},
+      searches: [],
+      expandedItems: [],
+      events: []
+    };
+
+    var lastTickMs = nowMs;
+    var dirty = true;
+    var lastPushMs = 0;
+
+    function pushEvent(type, detail) {
+      var tNow = Date.now();
+      state.lastActiveMs = tNow;
+      state.lastActiveHuman = fmtIstDateTime(tNow);
+      if (state.events.length >= 110) {
+        state.events.splice(1, 1); // keep initial open event + latest 109 events
+      }
+      state.events.push({
+        t: fmtIstTime(tNow),
+        type: String(type || 'Click').slice(0, 32),
+        detail: String(detail || '').slice(0, 140)
+      });
+      dirty = true;
+    }
+
+    function addUniqueLimited(arr, val, maxLen) {
+      var s = String(val || '').trim();
+      if (!s) return;
+      if (!arr.includes(s)) {
+        arr.push(s);
+        if (arr.length > maxLen) arr.shift();
+      }
+    }
+
+    function syncLiveAppContext() {
+      try {
+        if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK) {
+          if (ACTIVE_LINK.id) state.linkId = ACTIVE_LINK.id;
+          if (ACTIVE_LINK.title) state.linkTitle = ACTIVE_LINK.title;
+          if (ACTIVE_LINK.pin) {
+            state.pinStatus = (typeof PIN_UNLOCKED !== 'undefined' && PIN_UNLOCKED) ? 'PIN Unlocked' : 'PIN Locked';
+          } else {
+            state.pinStatus = 'No PIN';
+          }
+        }
+        if (typeof ACTIVE_DATA_TYPE !== 'undefined' && ACTIVE_DATA_TYPE) state.currentDataType = ACTIVE_DATA_TYPE;
+        if (typeof ACTIVE_BRAND !== 'undefined' && ACTIVE_BRAND) state.currentBrand = ACTIVE_BRAND;
+        if (typeof ACTIVE_MONTH !== 'undefined' && ACTIVE_MONTH) state.currentMonth = ACTIVE_MONTH;
+        if (typeof ACTIVE_YEAR2 !== 'undefined' && ACTIVE_YEAR2) state.currentYear2 = ACTIVE_YEAR2;
+        if (typeof VIEW_MODE !== 'undefined' && VIEW_MODE) state.currentViewMode = VIEW_MODE;
+        if (typeof COMPARE_LY_ENABLED !== 'undefined') state.compareLyOn = !!COMPARE_LY_ENABLED;
+      } catch (e) {}
+    }
+
+    // Firestore REST v1 Value Encoder
+    function toFsVal(v) {
+      if (v === null || v === undefined) return { nullValue: null };
+      if (typeof v === 'boolean') return { booleanValue: v };
+      if (typeof v === 'number') {
+        if (!isFinite(v)) return { integerValue: '0' };
+        return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+      }
+      if (typeof v === 'string') return { stringValue: v };
+      if (Array.isArray(v)) {
+        return v.length ? { arrayValue: { values: v.map(toFsVal) } } : { arrayValue: {} };
+      }
+      if (typeof v === 'object') {
+        var f = {};
+        var ks = Object.keys(v);
+        for (var i = 0; i < ks.length; i++) f[ks[i]] = toFsVal(v[ks[i]]);
+        return ks.length ? { mapValue: { fields: f } } : { mapValue: {} };
+      }
+      return { stringValue: String(v) };
+    }
+
+    function sendTelemetry(forceKeepalive) {
+      try {
+        syncLiveAppContext();
+        var tNow = Date.now();
+        state.lastActiveMs = tNow;
+        state.lastActiveHuman = fmtIstDateTime(tNow);
+        state.tabOpenSpanSec = Math.max(0, Math.round((tNow - state.openedAtMs) / 1000));
+        state.tabOpenDays = Math.max(1, Math.floor(state.tabOpenSpanSec / 86400) + 1);
+
+        // Update multi-day tracking if tab stayed open past midnight!
+        var curDayKey = todayDateKey(tNow);
+        if (!lp.activeDates.includes(curDayKey)) {
+          lp.activeDates.push(curDayKey);
+          state.visitorUniqueDays = lp.activeDates.length;
+          state.visitorActiveDates = lp.activeDates.slice(-60).join(', ');
+        }
+        state.visitorTotalActiveSecAllVisits = (Number(lp.totalActiveSecPrev) || 0) + state.activeSeconds;
+        try {
+          var savePref = JSON.parse(localStorage.getItem(LS_PREF_KEY) || '{}');
+          if (!savePref.perLink) savePref.perLink = {};
+          savePref.vid = pref.vid;
+          savePref.perLink[linkIdFromUrl] = {
+            firstSeenMs: lp.firstSeenMs,
+            firstSeenHuman: lp.firstSeenHuman,
+            visitCount: lp.visitCount,
+            activeDates: lp.activeDates.slice(-60),
+            totalActiveSecPrev: state.visitorTotalActiveSecAllVisits
+          };
+          localStorage.setItem(LS_PREF_KEY, JSON.stringify(savePref));
+        } catch (e) {}
+
+        var fields = {};
+        Object.keys(state).forEach(function(k) { fields[k] = toFsVal(state[k]); });
+
+        var url = 'https://firestore.googleapis.com/v1/projects/' + FB_PROJECT +
+                  '/databases/(default)/documents/' + COLLECTION + '/' + encodeURIComponent(sessionId) +
+                  '?key=' + encodeURIComponent(FB_KEY);
+
+        dirty = false;
+        lastPushMs = tNow;
+        fetch(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: fields }),
+          keepalive: !!forceKeepalive
+        }).catch(function() {});
+      } catch (e) {}
+    }
+
+    // Silent non-blocking approx location / ISP lookup (never delays or throws)
+    (function fetchApproxGeoSilent() {
+      try {
+        fetch('https://ipwho.is/', { cache: 'no-store' })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(d) {
+            if (!d || d.success === false) return;
+            state.ipAddress = d.ip || '';
+            state.cityRegion = [d.city, d.region, d.country].filter(Boolean).join(', ');
+            state.ispName = (d.connection && d.connection.isp) ? d.connection.isp : '';
+            dirty = true;
+          }).catch(function() {});
+      } catch (e) {}
+    })();
+
+    // 1-second active watch time & per-tab time accumulator
+    setInterval(function() {
+      var tNow = Date.now();
+      var dtSec = Math.min(5, Math.max(0, Math.round((tNow - lastTickMs) / 1000)));
+      lastTickMs = tNow;
+      syncLiveAppContext();
+
+      if (document.visibilityState !== 'hidden' && dtSec > 0) {
+        state.activeSeconds += dtSec;
+        if (state.currentDataType) {
+          state.tabTimeSec[state.currentDataType] = (state.tabTimeSec[state.currentDataType] || 0) + dtSec;
+        }
+        if (state.currentBrand) {
+          state.brandTimeSec[state.currentBrand] = (state.brandTimeSec[state.currentBrand] || 0) + dtSec;
+        }
+        if (state.currentViewMode) {
+          state.viewTimeSec[state.currentViewMode] = (state.viewTimeSec[state.currentViewMode] || 0) + dtSec;
+        }
+      }
+
+      // Heartbeat push every 12 seconds (or 4 seconds after user activity)
+      if ((dirty && (tNow - lastPushMs) >= 4000) || (tNow - lastPushMs) >= 12000) {
+        sendTelemetry(false);
+      }
+    }, 1000);
+
+    // Track Scroll Depth %
+    window.addEventListener('scroll', function() {
+      try {
+        var docH = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+        var pct = Math.min(100, Math.max(0, Math.round((window.scrollY / docH) * 100)));
+        if (pct > state.scrollMaxPct) { state.scrollMaxPct = pct; dirty = true; }
+      } catch (e) {}
+    }, { passive: true });
+
+    // Track Tab Background / Return / Close
+    document.addEventListener('visibilitychange', function() {
+      var vis = document.visibilityState !== 'hidden';
+      state.isVisible = vis;
+      pushEvent(vis ? 'Tab Returned' : 'Tab Hidden', vis ? 'Viewer came back to report' : 'Tab switched / phone locked');
+      sendTelemetry(true);
+    });
+    window.addEventListener('pagehide', function() {
+      state.closedFlag = true;
+      state.isVisible = false;
+      pushEvent('Tab Closed', 'Total Active: ' + state.activeSeconds + 's');
+      sendTelemetry(true);
+    });
+
+    // Track ALL Button Clicks, Tabs, Dropdowns & Checkboxes silently
+    document.addEventListener('click', function(ev) {
+      try {
+        var btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+        if (!btn) return;
+        state.clickCount += 1;
+        var label = (btn.innerText || btn.title || 'Button').replace(/\s+/g, ' ').trim().slice(0, 75);
+        var cls = btn.className || '';
+        var evType = 'Button Click';
+        if (cls.includes('dtype-btn')) evType = 'Data Tab';
+        else if (cls.includes('brand-btn')) evType = 'Brand Tab';
+        else if (cls.includes('view-switch-btn')) evType = 'View Switch';
+        else if (cls.includes('party-plus-btn')) evType = 'Multi-Store Popup';
+        else if (cls.includes('plus-cell-btn') || cls.includes('plus-hdr-btn')) evType = 'Expand [+]';
+        else if (label.includes('CSV')) evType = 'CSV Export';
+        else if (label.includes('Refresh')) evType = 'Refresh';
+        pushEvent(evType, label);
+      } catch (e) {}
+    }, true);
+
+    document.addEventListener('change', function(ev) {
+      try {
+        var el = ev.target;
+        if (!el) return;
+        if (el.tagName === 'SELECT') {
+          state.clickCount += 1;
+          var optTxt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : el.value;
+          pushEvent('Filter Change', String(optTxt || el.value).trim());
+        } else if (el.type === 'checkbox') {
+          state.clickCount += 1;
+          var lbl = el.closest('label');
+          var lblTxt = lbl ? lbl.innerText.replace(/\s+/g, ' ').trim().slice(0, 70) : 'Checkbox';
+          pushEvent(el.checked ? 'Tick ON' : 'Tick OFF', lblTxt);
+        }
+      } catch (e) {}
+    }, true);
+
+    // Hook key live.html functions for rich exact context (CSV, Multi-Store Popup, Search, PIN, Expand)
+    function wrapFn(name, beforeCb) {
+      if (typeof window[name] === 'function' && !window[name]._krTelWrapped) {
+        var orig = window[name];
+        window[name] = function() {
+          try { beforeCb.apply(this, arguments); } catch (e) {}
+          return orig.apply(this, arguments);
+        };
+        window[name]._krTelWrapped = true;
+      }
+    }
+
+    wrapFn('downloadLiveCsv', function() {
+      state.csvDownloads += 1;
+      pushEvent('CSV Downloaded', (state.currentDataType || '') + ' | ' + (state.currentBrand || '') + ' | ' + (state.currentMonth || ''));
+      sendTelemetry(false);
+    });
+
+    wrapFn('openPartySubStoresModal', function(partyName) {
+      addUniqueLimited(state.expandedItems, 'Popup: ' + partyName, 30);
+      pushEvent('Party Stores Popup', 'Opened all Active Stores of: ' + partyName);
+    });
+
+    wrapFn('toggleMgrExpand', function(hName, mgrName) {
+      addUniqueLimited(state.expandedItems, 'Mgr: ' + mgrName + ' (' + hName + ')', 30);
+      pushEvent('Manager Expand', mgrName + ' -> ' + hName);
+    });
+
+    wrapFn('toggleStoreExpand', function(hName, partyName) {
+      addUniqueLimited(state.expandedItems, 'Party: ' + partyName + ' (' + hName + ')', 30);
+      pushEvent('Store Expand', partyName + ' -> ' + hName);
+    });
+
+    var searchLogTimer = null;
+    wrapFn('onStoreSearchTyped', function(val) {
+      var clean = String(val || '').trim();
+      if (searchLogTimer) clearTimeout(searchLogTimer);
+      if (clean.length >= 2) {
+        searchLogTimer = setTimeout(function() {
+          addUniqueLimited(state.searches, clean, 25);
+          pushEvent('Store Search', 'Searched: "' + clean + '"');
+        }, 900);
+      }
+    });
+
+    wrapFn('verifyPin', function() {
+      var inp = document.getElementById('viewerPinInp')?.value.trim();
+      if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.pin) {
+        if (inp === String(ACTIVE_LINK.pin)) {
+          state.pinStatus = 'PIN Unlocked';
+          pushEvent('PIN Unlocked', 'Correct PIN entered');
+        } else {
+          state.pinFailCount += 1;
+          pushEvent('Wrong PIN', 'Failed PIN attempt #' + state.pinFailCount);
+        }
+        sendTelemetry(false);
+      }
+    });
+
+    // Initial Open Event + Push once live_data.json loads
+    pushEvent('Link Opened', 'Visit #' + lp.visitCount + ' (' + deviceType + ' • ' + browserName + ')');
+    setTimeout(function() { sendTelemetry(false); }, 1800);
+    setTimeout(function() { sendTelemetry(false); }, 5000);
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
