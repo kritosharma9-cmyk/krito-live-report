@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after {
     box-sizing: border-box;
@@ -26,13 +27,13 @@
     overflow-x: hidden;
   }
   body { padding: 14px; }
-  .wrap { width: 100%; max-width: 1380px; margin: 0 auto; display: flex; flex-direction: column; gap: 13px; }
+  .wrap { width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 13px; }
 
   .top-card {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     color: #fff;
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 15px 20px;
     box-shadow: 0 12px 30px rgba(15,23,42,0.16);
   }
   .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: 0.01em; }
@@ -40,6 +41,36 @@
   .st-updating  { background: #f59e0b; color: #0f172a; }
   .st-partial   { background: #f97316; color: #ffffff; }
   .timer-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.16); border: 1px solid #34d399; color: #6ee7b7; padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+
+  /* Point 5: View Mode Toggle Switch inside Top-Right Red Box Area */
+  .view-switch-bar {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.09);
+    border: 1.5px solid rgba(129,140,248,0.55);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 4px;
+  }
+  .view-switch-btn {
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .view-switch-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(99,102,241,0.4);
+  }
 
   .tab-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .dtype-btn { padding: 7px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #e2e8f0; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: 0.15s; }
@@ -50,17 +81,74 @@
   .compare-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; border: 1.5px solid #34d399; background: rgba(16,185,129,0.16); color: #ecfdf5; }
   .compare-pill.off { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); color: #cbd5e1; }
 
-  .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 17px 20px; border: 1.5px solid #4f46e5; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-top: 12px; }
-  .kpi-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 14px; }
-  .kpi-lbl { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
-  .kpi-val { font-size: 21px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
-  .kpi-sub { font-size: 11.5px; font-weight: 600; margin-top: 4px; color: #cbd5e1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  /* Point 1: Grand Total 4 KPI Boxes with Left (Group 5 + PROMO) & Right White Inset Box (Full Total + LY) */
+  .grand-card { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border-radius: 16px; padding: 16px 18px; border: 1.5px solid #4f46e5; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(295px, 1fr)); gap: 12px; margin-top: 12px; }
+  .kpi-box {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kpi-split {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .kpi-left { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+  .kpi-white-box {
+    border: 1.5px solid rgba(255,255,255,0.65);
+    border-radius: 9px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .kpi-lbl { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
+  .kpi-val { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -0.02em; line-height: 1.2; }
+  .kpi-val-sm { font-size: 15.5px; font-weight: 800; margin-top: 2px; letter-spacing: -0.01em; line-height: 1.2; }
+  .kpi-promo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fde68a;
+    background: rgba(245,158,11,0.18);
+    border: 1px solid rgba(251,191,36,0.38);
+    padding: 2px 7px;
+    border-radius: 6px;
+    width: fit-content;
+  }
+  .kpi-sub { font-size: 10.5px; font-weight: 600; margin-top: 5px; color: #cbd5e1; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .kpi-manual-strip {
+    border-top: 1px dashed rgba(255,255,255,0.18);
+    padding-top: 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .kpi-manual-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    background: rgba(124,58,237,0.22);
+    border: 1px solid rgba(167,139,250,0.38);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
 
   .section-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px 18px; box-shadow: 0 4px 12px rgba(15,23,42,0.04); width: 100%; max-width: 100%; overflow: hidden; }
   .attr-bar { background: #f8f6ff; border: 1.5px solid #c4b5fd; border-radius: 14px; padding: 13px 16px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 100%; }
-
-  /* Strict Symmetrical CSS Grids (Prevents Horizontal Width Stretching!) */
   .multi-hdr-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
@@ -69,11 +157,20 @@
     padding-top: 6px;
     border-top: 1px dashed #ddd6fe;
   }
+  .hdr-subbox-card {
+    background: #ffffff;
+    border: 1.5px solid #c4b5fd;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .attr-chips-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
     gap: 7px;
-    max-height: 155px;
+    max-height: 145px;
     overflow-y: auto;
     padding: 2px;
     width: 100%;
@@ -98,13 +195,20 @@
   .attr-chip.checked { background: #ede9fe; border-color: #7c3aed; color: #4c1d95; }
   .attr-chip.missing { background: #fef2f2; border-color: #ef4444; color: #b91c1c; }
 
-  .table-scroll { width: 100%; max-width: 100%; overflow: auto; max-height: 500px; border: 1px solid #e2e8f0; border-radius: 10px; }
+  .table-scroll { width: 100%; max-width: 100%; overflow: auto; max-height: 520px; border: 1px solid #e2e8f0; border-radius: 10px; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th { background: #f8fafc; color: #334155; padding: 9px 11px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 700; position: sticky; top: 0; z-index: 5; white-space: nowrap; }
   th.attr-compact-th { background: #ede9fe; color: #4c1d95; border-left: 1px solid #ddd6fe; border-right: 1px solid #ddd6fe; text-align: center; }
   th.ly-th { background: #ecfdf5; color: #065f46; border-left: 1px solid #a7f3d0; text-align: right; }
   td { padding: 8px 11px; border-bottom: 1px solid #e2e8f0; font-weight: 500; white-space: nowrap; color: #0f172a; }
   td.ly-td { text-align: right; color: #475569; background: #f8fafc; border-left: 1px solid #e2e8f0; font-weight: 600; }
+  .total-row td {
+    background: #eef2ff !important;
+    border-top: 2px solid #4f46e5 !important;
+    border-bottom: 2px solid #4f46e5 !important;
+    font-weight: 800 !important;
+    color: #1e1b4b !important;
+  }
   .num { text-align: right; }
 
   .plus-hdr-btn {
@@ -129,6 +233,68 @@
   }
   .plus-cell-btn.open .plus-icon-badge { background: #ffffff; color: #5b21b6; }
 
+  /* Point 4: Party Multi-Store [+] Button */
+  .party-plus-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.28);
+    transition: 0.15s;
+    vertical-align: middle;
+  }
+  .party-plus-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%); }
+
+  /* Full-Screen Multi-Store Popup Modal */
+  .fs-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+  .fs-modal-card {
+    width: 98vw;
+    height: 95vh;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 2px solid #4f46e5;
+    box-shadow: 0 25px 60px rgba(15,23,42,0.45);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .fs-modal-head {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    color: #ffffff;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fs-modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
   .expand-drawer-row td {
     background: #faf5ff !important;
     padding: 10px 12px !important;
@@ -139,7 +305,7 @@
     position: sticky;
     left: 0;
     width: 100%;
-    max-width: calc(100vw - 68px);
+    max-width: calc(100vw - 75px);
     background: #ffffff;
     border: 1.5px solid #c4b5fd;
     border-radius: 10px;
@@ -150,7 +316,6 @@
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
     padding-bottom: 8px; margin-bottom: 9px; border-bottom: 1px solid #ede9fe;
   }
-  /* Symmetrical Responsive Grid inside Expanded [+] Drawer */
   .drawer-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
@@ -158,35 +323,36 @@
     width: 100%;
   }
   .drawer-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    min-width: 0;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #1e293b;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; min-width: 0; background: #f8fafc; border: 1px solid #cbd5e1;
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; color: #1e293b;
   }
-  .drawer-item.missing {
-    background: #fef2f2; border-color: #fca5a5; color: #b91c1c;
-  }
-  .drawer-item-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-    flex: 1;
-  }
-  .drawer-qty {
-    background: #4c1d95; color: #ffffff; padding: 2px 7px; border-radius: 5px;
-    font-size: 11.5px; font-weight: 700; flex-shrink: 0;
-  }
+  .drawer-item.missing { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+  .drawer-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+  .drawer-qty { background: #4c1d95; color: #ffffff; padding: 2px 7px; border-radius: 5px; font-size: 11.5px; font-weight: 700; flex-shrink: 0; }
   .drawer-item.missing .drawer-qty { background: #dc2626; }
+
+  /* Point 5: Visual Analytics Dashboard Grid */
+  .dash-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 14px; }
+  .chart-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 15px 18px;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chart-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chart-box { position: relative; width: 100%; height: 290px; }
+  .chart-box-tall { position: relative; width: 100%; height: 320px; }
 
   .pending-grid {
     display: grid;
@@ -197,10 +363,10 @@
     width: 100%;
   }
 
-  .gr-pos { background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
-  .gr-neg { background: #fee2e2; color: #b91c1c; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
-  .gr-new { background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
-  .gr-flat { background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .gr-pos { background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700; display: inline-block; }
+  .gr-neg { background: #fee2e2; color: #b91c1c; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700; display: inline-block; }
+  .gr-new { background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700; display: inline-block; }
+  .gr-flat { background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 600; display: inline-block; }
   .lock-screen { max-width: 420px; margin: 70px auto; background: #fff; border-radius: 16px; padding: 28px; text-align: center; border: 2px solid #cbd5e1; box-shadow: 0 18px 40px rgba(15,23,42,0.12); }
 </style>
 </head>
@@ -208,6 +374,7 @@
 <div id="app" class="wrap">
   <div class="lock-screen">⏳ Loading Live KRITO Report...</div>
 </div>
+<div id="subStoreModalRoot"></div>
 
 <script>
 var TYPE_META = {
@@ -221,6 +388,7 @@ var TYPE_META = {
 };
 
 var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+var FY_MON_ORDER = ['APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC','JAN','FEB','MAR'];
 
 var LIVE_PAYLOAD = null;
 var ACTIVE_LINK = null;
@@ -230,14 +398,25 @@ var ACTIVE_YEAR2 = 'ALL';
 var ACTIVE_MONTH = '';
 var COMPARE_LY_ENABLED = true;
 
-var ACTIVE_HEADERS_LIST = [];
-var FOCUSED_CHIP_HEADER = '';
-var HEADER_DEFAULT_INIT = false;
-var UNCHECKED_ATTR_VALS = {};
-var ATTR_VAL_SEARCH = '';
+// View Mode: 'TABLE' or 'GRAPHS' (Point 5)
+var VIEW_MODE = 'TABLE';
+var GRAPH_METRIC = 'NET'; // 'NET' or 'QTY'
+var ACTIVE_CHARTS = [];
 
+// Multi-Header State (Point 2: Show ALL selected headers simultaneously!)
+var ACTIVE_HEADERS_LIST = [];
+var HEADER_DEFAULT_INIT = false;
+var UNCHECKED_ATTR_VALS = {}; // headerName -> Set of unchecked sub-values
+var ATTR_VAL_SEARCH_MAP = {}; // headerName -> search string
+
+// Expand states
 var EXPANDED_MGR_KEYS = new Set();
 var EXPANDED_STORE_KEYS = new Set();
+
+// Point 4: Full-Screen Multi-Store Popup State
+var SUBSTORE_MODAL_PARTY = '';
+var SUBSTORE_MODAL_SEARCH = '';
+var EXPANDED_SUBSTORE_KEYS = new Set();
 
 var PIN_UNLOCKED = false;
 var SEARCH_Q = '';
@@ -249,6 +428,13 @@ var IS_FETCHING_NOW = false;
 
 function fmtINR(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
 function fmtNum(n) { return Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+function fmtShortINR(n) {
+  var v = Number(n) || 0, a = Math.abs(v), sign = v < 0 ? '-' : '';
+  if (a >= 10000000) return sign + '₹' + (a / 10000000).toFixed(2) + ' Cr';
+  if (a >= 100000) return sign + '₹' + (a / 100000).toFixed(2) + ' L';
+  if (a >= 1000) return sign + '₹' + (a / 1000).toFixed(1) + ' K';
+  return sign + '₹' + Math.round(a);
+}
 function escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escJs(s) { return String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
@@ -303,6 +489,16 @@ function sortMonthKeysDesc(keysArr) {
       return (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) - (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0));
     }
     return b.localeCompare(a);
+  });
+}
+
+function sortMonthKeysAsc(keysArr) {
+  return keysArr.slice().sort(function(a, b) {
+    var ma = a.match(/^([A-Z]{3})-(\d{4})$/), mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+    if (ma && mb) {
+      return (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0)) - (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0));
+    }
+    return a.localeCompare(b);
   });
 }
 
@@ -378,6 +574,12 @@ function getActiveDatasetBucket() {
   return {};
 }
 
+function findGroup5HeaderName(mData) {
+  var attrs = (mData && mData.attributes) ? Object.keys(mData.attributes) : [];
+  return attrs.find(function(k) { return k.toUpperCase() === 'MASTER_GROUP NAME5'; }) ||
+         attrs.find(function(k) { var u = k.toUpperCase(); return u.includes('GROUP NAME5') || u === 'GROUP5' || u === 'MASTER_GROUP5'; }) || '';
+}
+
 function getAdminPermittedSubValues(mData, headerName) {
   var aObj = (mData && mData.attributes && mData.attributes[headerName]) ? mData.attributes[headerName] : null;
   if (!aObj || !Array.isArray(aObj.values)) return [];
@@ -395,25 +597,52 @@ function getSelectedSubValuesForHeader(mData, headerName) {
   return permitted.filter(function(v) { return !unchk.has(v); });
 }
 
+// Compute exact { qty, net, mrp, disc, discPct, hasFullMetrics } for any Header's currently ticked sub-values
+function computeSelectedHeaderMetrics(periodData, headerName, selectedValsList) {
+  if (!periodData || !headerName || !periodData.attributes || !periodData.attributes[headerName]) {
+    return null;
+  }
+  var aObj = periodData.attributes[headerName];
+  var valsToUse = selectedValsList || getSelectedSubValuesForHeader(periodData, headerName);
+  var hasMetrics = !!(aObj.totalsMetrics && typeof aObj.totalsMetrics === 'object');
+  var q = 0, n = 0, m = 0, d = 0;
+
+  for (var i = 0; i < valsToUse.length; i++) {
+    var v = valsToUse[i];
+    if (hasMetrics && Array.isArray(aObj.totalsMetrics[v])) {
+      var arr = aObj.totalsMetrics[v];
+      q += Number(arr[0]) || 0;
+      n += Number(arr[1]) || 0;
+      m += Number(arr[2]) || 0;
+      d += Number(arr[3]) || 0;
+    } else if (aObj.totals && aObj.totals[v] !== undefined) {
+      q += Number(aObj.totals[v]) || 0;
+    }
+  }
+  return {
+    qty: Math.round(q),
+    net: Math.round(n),
+    mrp: Math.round(m),
+    disc: Math.round(d),
+    discPct: m > 0 ? Number(((d / m) * 100).toFixed(2)) : 0,
+    hasFullMetrics: hasMetrics
+  };
+}
+
 function onSelectPrimaryHeader(val) {
   if (!val) {
     ACTIVE_HEADERS_LIST = [];
-    FOCUSED_CHIP_HEADER = '';
-  } else {
-    if (!ACTIVE_HEADERS_LIST.includes(val)) ACTIVE_HEADERS_LIST = [val];
-    FOCUSED_CHIP_HEADER = val;
+  } else if (!ACTIVE_HEADERS_LIST.includes(val)) {
+    ACTIVE_HEADERS_LIST.push(val);
   }
-  ATTR_VAL_SEARCH = '';
   renderApp();
 }
 
 function toggleAdditionalHeaderColumn(hName, checked) {
   if (checked) {
     if (!ACTIVE_HEADERS_LIST.includes(hName)) ACTIVE_HEADERS_LIST.push(hName);
-    FOCUSED_CHIP_HEADER = hName;
   } else {
     ACTIVE_HEADERS_LIST = ACTIVE_HEADERS_LIST.filter(function(x) { return x !== hName; });
-    if (FOCUSED_CHIP_HEADER === hName) FOCUSED_CHIP_HEADER = ACTIVE_HEADERS_LIST[0] || '';
   }
   renderApp();
 }
@@ -439,6 +668,13 @@ function showOnlyMissingAttrVal(headerName) {
   var permitted = getAdminPermittedSubValues(mData, headerName);
   UNCHECKED_ATTR_VALS[headerName] = new Set(permitted.filter(function(v) { return v !== '(ENTER ATTRIBUTES)'; }));
   renderApp();
+}
+
+function onHeaderSubSearchTyped(headerName, val) {
+  ATTR_VAL_SEARCH_MAP[headerName] = val;
+  renderApp();
+  var inp = document.querySelector('input[data-subsearch-hdr="' + headerName.replace(/"/g, '\\"') + '"]');
+  if (inp) { inp.focus(); var len = inp.value.length; inp.setSelectionRange(len, len); }
 }
 
 function toggleMgrExpand(hName, mgrName) {
@@ -511,6 +747,220 @@ function buildCompactDrawerHtml(titleLeftHtml, hName, subValsList, rowAttrMap, t
   '</div>';
 }
 
+// =========================================================================
+// POINT 4: FULL-SCREEN MULTI-STORE (CustomerNameActive) POPUP MODAL
+// =========================================================================
+function openPartySubStoresModal(partyName) {
+  SUBSTORE_MODAL_PARTY = partyName;
+  SUBSTORE_MODAL_SEARCH = '';
+  EXPANDED_SUBSTORE_KEYS = new Set();
+  renderPartySubStoresModal();
+}
+
+function closePartySubStoresModal() {
+  SUBSTORE_MODAL_PARTY = '';
+  var root = document.getElementById('subStoreModalRoot');
+  if (root) root.innerHTML = '';
+}
+
+function toggleSubStoreAttrExpand(hName, activeStoreName) {
+  var k = hName + '||' + activeStoreName;
+  if (EXPANDED_SUBSTORE_KEYS.has(k)) EXPANDED_SUBSTORE_KEYS.delete(k);
+  else EXPANDED_SUBSTORE_KEYS.add(k);
+  renderPartySubStoresModal();
+}
+
+function toggleAllSubStoreAttrExpand(hName) {
+  var bucket = getActiveDatasetBucket();
+  var mData = (bucket[ACTIVE_BRAND] || {})[ACTIVE_MONTH] || { stores: [] };
+  var partyObj = (mData.stores || []).find(function(s) { return s.party === SUBSTORE_MODAL_PARTY; });
+  if (!partyObj || !Array.isArray(partyObj.subStores)) return;
+  var q = SUBSTORE_MODAL_SEARCH.trim().toLowerCase();
+  var list = partyObj.subStores.filter(function(ss) {
+    return !q || ss.store.toLowerCase().includes(q) || ss.manager.toLowerCase().includes(q);
+  });
+  var allOpen = list.length > 0 && list.every(function(ss) { return EXPANDED_SUBSTORE_KEYS.has(hName + '||' + ss.store); });
+  list.forEach(function(ss) {
+    var k = hName + '||' + ss.store;
+    if (allOpen) EXPANDED_SUBSTORE_KEYS.delete(k);
+    else EXPANDED_SUBSTORE_KEYS.add(k);
+  });
+  renderPartySubStoresModal();
+}
+
+function renderPartySubStoresModal() {
+  var root = document.getElementById('subStoreModalRoot');
+  if (!root || !SUBSTORE_MODAL_PARTY || !ACTIVE_LINK || !LIVE_PAYLOAD) return;
+
+  var bucket = getActiveDatasetBucket();
+  var brandPeriods = bucket[ACTIVE_BRAND] || {};
+  var mData = brandPeriods[ACTIVE_MONTH] || { stores: [], attributes: {} };
+  var partyObj = (mData.stores || []).find(function(s) { return s.party === SUBSTORE_MODAL_PARTY; });
+  if (!partyObj || !Array.isArray(partyObj.subStores)) {
+    closePartySubStoresModal();
+    return;
+  }
+
+  var rights = ACTIVE_LINK.rights || {};
+  var dtMeta = TYPE_META[ACTIVE_DATA_TYPE] || { label: ACTIVE_DATA_TYPE, valTitle: 'Net Value' };
+  var compareOn = !!(rights.allowCompareLY && COMPARE_LY_ENABLED);
+  var lyKey = compareOn ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
+  var lyData = (compareOn && lyKey && brandPeriods[lyKey]) ? brandPeriods[lyKey] : null;
+  var lySubMap = {};
+  if (lyData && Array.isArray(lyData.stores)) {
+    var lyPartyObj = lyData.stores.find(function(x) { return String(x.party || '').trim().toUpperCase() === String(partyObj.party || '').trim().toUpperCase(); });
+    if (lyPartyObj && Array.isArray(lyPartyObj.subStores)) {
+      lyPartyObj.subStores.forEach(function(ss) {
+        lySubMap[String(ss.store || '').trim().toUpperCase()] = ss;
+      });
+    }
+  }
+
+  var activeHeaders = rights.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
+  var q = SUBSTORE_MODAL_SEARCH.trim().toLowerCase();
+  var filteredSubs = partyObj.subStores.filter(function(ss) {
+    return !q || ss.store.toLowerCase().includes(q) || ss.manager.toLowerCase().includes(q);
+  });
+
+  var totalCols = 5 + activeHeaders.length + (compareOn ? 4 : 0) + (rights.showMrpAndDisc ? 2 : 0);
+
+  var subHeaderThs = activeHeaders.map(function(hName) {
+    var allOpen = filteredSubs.length > 0 && filteredSubs.every(function(ss) { return EXPANDED_SUBSTORE_KEYS.has(hName + '||' + ss.store); });
+    return '<th class="attr-compact-th">' +
+      '<span>📌 ' + escHtml(hName) + '</span>' +
+      '<button type="button" class="plus-hdr-btn" onclick="toggleAllSubStoreAttrExpand(\'' + escJs(hName) + '\')">' + (allOpen ? '−' : '+') + '</button>' +
+    '</th>';
+  }).join('');
+
+  var lyThs = compareOn
+    ? '<th class="ly-th">LY Qty (' + escHtml(lyKey.replace('FULL_FY::','FY ')) + ')</th><th class="ly-th">Qty Growth %</th><th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Val Growth %</th>'
+    : '';
+
+  var sumQty = 0, sumNet = 0, sumMrp = 0, sumDisc = 0, sumLyQty = 0, sumLyNet = 0;
+  var sumHdrQty = {};
+  activeHeaders.forEach(function(h) { sumHdrQty[h] = 0; });
+
+  var rowsHtml = filteredSubs.map(function(ss, idx) {
+    var lyS = lySubMap[String(ss.store || '').trim().toUpperCase()] || { qty: 0, net: 0 };
+    sumQty += ss.qty; sumNet += ss.net; sumMrp += ss.mrp; sumDisc += ss.disc;
+    sumLyQty += lyS.qty; sumLyNet += lyS.net;
+
+    var compactTds = '';
+    var drawersHtml = [];
+
+    activeHeaders.forEach(function(hName) {
+      var subVals = getSelectedSubValuesForHeader(mData, hName);
+      var sAttrMap = (ss.attrs && ss.attrs[hName]) ? ss.attrs[hName] : {};
+      var qSum = 0, nz = 0;
+      subVals.forEach(function(sv) {
+        var qv = Number(sAttrMap[sv] || 0);
+        if (qv > 0) { qSum += qv; nz++; }
+      });
+      sumHdrQty[hName] += qSum;
+
+      var expKey = hName + '||' + ss.store;
+      var isOpen = EXPANDED_SUBSTORE_KEYS.has(expKey);
+      var clickJs = "toggleSubStoreAttrExpand('" + escJs(hName) + "','" + escJs(ss.store) + "')";
+
+      compactTds += '<td style="text-align:center; border-left:1px solid #ede9fe; border-right:1px solid #ede9fe; background:#fcfaff;">' +
+        '<button type="button" class="plus-cell-btn ' + (isOpen ? 'open' : '') + '" onclick="' + clickJs + '">' +
+          '<span class="plus-icon-badge">' + (isOpen ? '−' : '+') + '</span>' +
+          '<span>' + fmtNum(qSum) + ' Qty</span>' +
+          '<span style="font-size:10.5px; opacity:0.8;">(' + nz + ')</span>' +
+        '</button>' +
+      '</td>';
+
+      if (isOpen) {
+        var tLeft = '<span>🏪 Store: <b>' + escHtml(ss.store) + '</b></span><span style="color:#475569;">|</span><span>👨‍💼 Manager: <b>' + escHtml(ss.manager) + '</b></span>';
+        drawersHtml.push(buildCompactDrawerHtml(tLeft, hName, subVals, sAttrMap, qSum, clickJs));
+      }
+    });
+
+    var mainTr = '<tr>' +
+      '<td>' + (idx + 1) + '</td>' +
+      '<td><b>' + escHtml(ss.store) + '</b></td>' +
+      '<td>' + escHtml(ss.manager) + '</td>' +
+      compactTds +
+      '<td class="num"><b>' + fmtNum(ss.qty) + '</b></td>' +
+      '<td class="num" style="color:#0284c7;"><b>' + fmtINR(ss.net) + '</b></td>' +
+      (compareOn ? '<td class="ly-td">' + fmtNum(lyS.qty) + '</td><td class="num">' + calcGrowthBadgeHtml(ss.qty, lyS.qty) + '</td><td class="ly-td">' + fmtINR(lyS.net) + '</td><td class="num">' + calcGrowthBadgeHtml(ss.net, lyS.net) + '</td>' : '') +
+      (rights.showMrpAndDisc ? '<td class="num">' + fmtINR(ss.mrp) + '</td><td class="num" style="color:#dc2626; font-weight:700;">' + ss.discPct + '%</td>' : '') +
+    '</tr>';
+
+    if (drawersHtml.length > 0) {
+      return mainTr + '<tr class="expand-drawer-row"><td colspan="' + totalCols + '"><div style="display:flex; flex-direction:column; gap:8px;">' + drawersHtml.join('') + '</div></td></tr>';
+    }
+    return mainTr;
+  }).join('') || '<tr><td colspan="' + totalCols + '" style="text-align:center; padding:24px; color:#64748b;">No matching stores found.</td></tr>';
+
+  var sumDiscPct = sumMrp > 0 ? ((sumDisc / sumMrp) * 100).toFixed(2) : '0.00';
+  var totalRowHtml = filteredSubs.length > 0 ? (
+    '<tr class="total-row">' +
+      '<td></td>' +
+      '<td>TOTAL (' + filteredSubs.length + ' Active Stores)</td>' +
+      '<td>-</td>' +
+      activeHeaders.map(function(h) { return '<td style="text-align:center;">' + fmtNum(sumHdrQty[h]) + ' Qty</td>'; }).join('') +
+      '<td class="num">' + fmtNum(sumQty) + '</td>' +
+      '<td class="num" style="color:#0369a1;">' + fmtINR(sumNet) + '</td>' +
+      (compareOn ? '<td class="num">' + fmtNum(sumLyQty) + '</td><td class="num">' + calcGrowthBadgeHtml(sumQty, sumLyQty) + '</td><td class="num">' + fmtINR(sumLyNet) + '</td><td class="num">' + calcGrowthBadgeHtml(sumNet, sumLyNet) + '</td>' : '') +
+      (rights.showMrpAndDisc ? '<td class="num">' + fmtINR(sumMrp) + '</td><td class="num" style="color:#dc2626;">' + sumDiscPct + '%</td>' : '') +
+    '</tr>'
+  ) : '';
+
+  root.innerHTML = `
+    <div class="fs-modal-backdrop" onclick="if(event.target===this) closePartySubStoresModal();">
+      <div class="fs-modal-card">
+        <div class="fs-modal-head">
+          <div>
+            <div style="font-size:18px; font-weight:800;">🏢 ${escHtml(partyObj.party)} — Active Stores Breakdown (${partyObj.subStores.length} Stores)</div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:3px;">${dtMeta.label} | Brand: <b style="color:#fff;">${escHtml(ACTIVE_BRAND)}</b> | Period: <b style="color:#6ee7b7;">${getPeriodDisplayLabel(ACTIVE_MONTH)}</b> | Manager: <b style="color:#fde68a;">${escHtml(partyObj.manager)}</b></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="subStoreSearchInp" value="${escHtml(SUBSTORE_MODAL_SEARCH)}" oninput="SUBSTORE_MODAL_SEARCH=this.value; renderPartySubStoresModal();" placeholder="🔍 Search Active Store..." style="padding:7px 12px; border-radius:8px; border:1px solid #6366f1; font-size:12.5px; width:240px; background:#fff; color:#0f172a;">
+            <button type="button" onclick="closePartySubStoresModal()" style="background:#ef4444; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer;">✖ Close</button>
+          </div>
+        </div>
+        <div class="fs-modal-body">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+            <div style="background:#0f172a; color:#fff; padding:11px 14px; border-radius:10px;"><div style="font-size:10px; color:#94a3b8; font-weight:700;">PARTY TOTAL QTY</div><div style="font-size:19px; font-weight:800; margin-top:2px;">${fmtNum(sumQty)}</div></div>
+            <div style="background:#0f172a; color:#fff; padding:11px 14px; border-radius:10px;"><div style="font-size:10px; color:#94a3b8; font-weight:700;">${escHtml(dtMeta.valTitle).toUpperCase()}</div><div style="font-size:19px; font-weight:800; color:#38bdf8; margin-top:2px;">${fmtINR(sumNet)}</div></div>
+            ${rights.showMrpAndDisc ? `
+              <div style="background:#0f172a; color:#fff; padding:11px 14px; border-radius:10px;"><div style="font-size:10px; color:#94a3b8; font-weight:700;">TOTAL MRP</div><div style="font-size:19px; font-weight:800; color:#fbbf24; margin-top:2px;">${fmtINR(sumMrp)}</div></div>
+              <div style="background:#0f172a; color:#fff; padding:11px 14px; border-radius:10px;"><div style="font-size:10px; color:#94a3b8; font-weight:700;">DISCOUNT</div><div style="font-size:19px; font-weight:800; color:#fb7185; margin-top:2px;">${fmtINR(sumDisc)} <span style="font-size:13px;">(${sumDiscPct}%)</span></div></div>
+            ` : ''}
+          </div>
+          <div class="table-scroll" style="flex:1; max-height:none; background:#fff;">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Customer Name (As Per Active)</th>
+                  <th>Manager</th>
+                  ${subHeaderThs}
+                  <th class="num">Qty</th>
+                  <th class="num">${escHtml(dtMeta.valTitle)}</th>
+                  ${lyThs}
+                  ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}${totalRowHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (SUBSTORE_MODAL_SEARCH) {
+    var inp = document.getElementById('subStoreSearchInp');
+    if (inp) { inp.focus(); var len = inp.value.length; inp.setSelectionRange(len, len); }
+  }
+}
+
+document.addEventListener('keydown', function(ev) {
+  if (ev.key === 'Escape' && SUBSTORE_MODAL_PARTY) closePartySubStoresModal();
+});
+
 function onStoreSearchTyped(val) {
   SEARCH_Q = String(val || '').toLowerCase();
   if (SEARCH_TIMER) clearTimeout(SEARCH_TIMER);
@@ -535,7 +985,7 @@ function updateStoreTableBodyOnly() {
   }
 
   var activeHeaders = rights.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
-  var totalColsCount = 5 + activeHeaders.length + (compareOn ? 3 : 0) + (rights.showMrpAndDisc ? 2 : 0);
+  var totalColsCount = 5 + activeHeaders.length + (compareOn ? 4 : 0) + (rights.showMrpAndDisc ? 2 : 0);
 
   var filtered = (mData.stores || []).filter(function(s) {
     return !SEARCH_Q || s.party.toLowerCase().includes(SEARCH_Q) || s.manager.toLowerCase().includes(SEARCH_Q);
@@ -588,8 +1038,14 @@ function updateStoreTableBodyOnly() {
       }
     }
 
+    // Point 4: [ + ] button right next to Party Name when multiple CustomerNameActive stores exist!
+    var hasMultiSub = Array.isArray(s.subStores) && s.subStores.length > 0;
+    var subStoreBtnHtml = hasMultiSub
+      ? '<button type="button" class="party-plus-btn" onclick="openPartySubStoresModal(\'' + escJs(s.party) + '\')" title="Click to view all ' + s.subStores.length + ' Active Stores in Full Screen">+ ' + s.subStores.length + '</button>'
+      : '';
+
     var lyTds = compareOn
-      ? '<td class="ly-td">' + fmtNum(lyS.qty) + '</td><td class="ly-td">' + fmtINR(lyS.net) + '</td><td class="num">' + calcGrowthBadgeHtml(s.net, lyS.net) + '</td>'
+      ? '<td class="ly-td">' + fmtNum(lyS.qty) + '</td><td class="num">' + calcGrowthBadgeHtml(s.qty, lyS.qty) + '</td><td class="ly-td">' + fmtINR(lyS.net) + '</td><td class="num">' + calcGrowthBadgeHtml(s.net, lyS.net) + '</td>'
       : '';
 
     var mrpDiscTds = rights.showMrpAndDisc
@@ -599,7 +1055,7 @@ function updateStoreTableBodyOnly() {
     htmlRows.push(
       '<tr>' +
         '<td>' + (i + 1) + '</td>' +
-        '<td><b>' + escHtml(s.party) + '</b></td>' +
+        '<td><b>' + escHtml(s.party) + '</b>' + subStoreBtnHtml + '</td>' +
         '<td>' + escHtml(s.manager) + '</td>' +
         compactHeaderTds +
         '<td class="num"><b>' + fmtNum(s.qty) + '</b></td>' +
@@ -645,7 +1101,7 @@ function downloadLiveCsv() {
 
   var vTitle = (TYPE_META[ACTIVE_DATA_TYPE] && TYPE_META[ACTIVE_DATA_TYPE].valTitle) || 'Net Value';
   var hdr = ['S.No', 'Party Name', 'Manager'].concat(flatAttrSpecs.map(function(x) { return x.colTitle; })).concat(['Qty', vTitle]);
-  if (compareOn) hdr = hdr.concat(['LY Qty', 'LY ' + vTitle, 'Growth %']);
+  if (compareOn) hdr = hdr.concat(['LY Qty', 'Qty Growth %', 'LY ' + vTitle, 'Val Growth %']);
   if (r.showMrpAndDisc) hdr = hdr.concat(['MRP Value', 'Discount', 'Disc %']);
 
   var lines = [hdr.map(function(h) { return '"' + String(h).replace(/"/g,'""') + '"'; }).join(',')];
@@ -659,7 +1115,7 @@ function downloadLiveCsv() {
       row.push(mp[sp.val] || 0);
     });
     row.push(s.qty, s.net);
-    if (compareOn) row.push(lyS.qty, lyS.net, '"' + calcGrowthPlainText(s.net, lyS.net) + '"');
+    if (compareOn) row.push(lyS.qty, '"' + calcGrowthPlainText(s.qty, lyS.qty) + '"', lyS.net, '"' + calcGrowthPlainText(s.net, lyS.net) + '"');
     if (r.showMrpAndDisc) row.push(s.mrp, s.disc, s.discPct + '%');
     lines.push(row.join(','));
   });
@@ -669,6 +1125,357 @@ function downloadLiveCsv() {
   a.href = URL.createObjectURL(blob);
   a.download = ACTIVE_DATA_TYPE + '_' + ACTIVE_BRAND + '_' + ACTIVE_MONTH.replace(/:/g,'_') + '_Live.csv';
   a.click();
+}
+
+// =========================================================================
+// POINT 5: VISUAL GRAPHS DASHBOARD (CONNECTED TO BRAND, DATA TYPE, FY & MONTH)
+// =========================================================================
+function destroyActiveCharts() {
+  ACTIVE_CHARTS.forEach(function(ch) { try { ch.destroy(); } catch (e) {} });
+  ACTIVE_CHARTS = [];
+}
+
+function buildGraphDashboardHtml(brandPeriods, mData, dtMeta, rights, compareOn) {
+  // Collect all month keys for the selected FY (or all months sorted chronologically)
+  var monthKeys = sortMonthKeysAsc(Object.keys(brandPeriods).filter(function(pk) {
+    if (pk.startsWith('FULL_FY::')) return false;
+    if (ACTIVE_YEAR2 !== 'ALL') {
+      return (brandPeriods[pk] && brandPeriods[pk].year2 === ACTIVE_YEAR2);
+    }
+    return true;
+  }));
+
+  var g5Hdr = findGroup5HeaderName(mData);
+  var chartAttrHdr = ACTIVE_HEADERS_LIST[0] || g5Hdr || (mData.attributes ? Object.keys(mData.attributes)[0] : '');
+
+  // Build Month-wise verification table rows
+  var tQty = 0, tLyQty = 0, tNet = 0, tLyNet = 0, tMrp = 0, tDisc = 0;
+  var monthTableRows = monthKeys.map(function(mk) {
+    var cur = brandPeriods[mk] ? brandPeriods[mk].grandTotal : { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0, discPct: 0 };
+    var lyk = getLastYearPeriodKey(mk);
+    var ly = (lyk && brandPeriods[lyk]) ? brandPeriods[lyk].grandTotal : { qty: 0, net: 0 };
+    tQty += cur.qty; tLyQty += ly.qty; tNet += cur.net; tLyNet += ly.net; tMrp += cur.mrp; tDisc += cur.disc;
+    var isCurrent = (mk === ACTIVE_MONTH);
+    return '<tr style="' + (isCurrent ? 'background:#eef2ff; font-weight:700;' : '') + '">' +
+      '<td><b>' + escHtml(mk) + '</b>' + (isCurrent ? ' <span style="background:#4f46e5;color:#fff;padding:1px 5px;border-radius:4px;font-size:9.5px;">ACTIVE</span>' : '') + '</td>' +
+      '<td class="num">' + cur.stores + '</td>' +
+      '<td class="num"><b>' + fmtNum(cur.qty) + '</b></td>' +
+      (compareOn ? '<td class="ly-td">' + fmtNum(ly.qty) + '</td><td class="num">' + calcGrowthBadgeHtml(cur.qty, ly.qty) + '</td>' : '') +
+      '<td class="num" style="color:#0284c7;"><b>' + fmtINR(cur.net) + '</b></td>' +
+      (compareOn ? '<td class="ly-td">' + fmtINR(ly.net) + '</td><td class="num">' + calcGrowthBadgeHtml(cur.net, ly.net) + '</td>' : '') +
+      (rights.showMrpAndDisc ? '<td class="num">' + fmtINR(cur.mrp) + '</td><td class="num" style="color:#dc2626; font-weight:700;">' + cur.discPct + '%</td>' : '') +
+    '</tr>';
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:#64748b;padding:20px;">No monthly data available.</td></tr>';
+
+  var tDiscPct = tMrp > 0 ? ((tDisc / tMrp) * 100).toFixed(2) : '0.00';
+  var monthTotalRow = monthKeys.length > 0 ? (
+    '<tr class="total-row">' +
+      '<td>TOTAL (' + monthKeys.length + ' Months)</td>' +
+      '<td class="num">-</td>' +
+      '<td class="num">' + fmtNum(tQty) + '</td>' +
+      (compareOn ? '<td class="num">' + fmtNum(tLyQty) + '</td><td class="num">' + calcGrowthBadgeHtml(tQty, tLyQty) + '</td>' : '') +
+      '<td class="num" style="color:#0369a1;">' + fmtINR(tNet) + '</td>' +
+      (compareOn ? '<td class="num">' + fmtINR(tLyNet) + '</td><td class="num">' + calcGrowthBadgeHtml(tNet, tLyNet) + '</td>' : '') +
+      (rights.showMrpAndDisc ? '<td class="num">' + fmtINR(tMrp) + '</td><td class="num" style="color:#dc2626;">' + tDiscPct + '%</td>' : '') +
+    '</tr>'
+  ) : '';
+
+  return `
+    <div class="section-card" style="background:linear-gradient(135deg,#eef2ff 0%,#f8fafc 100%); border-color:#a5b4fc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:11px 16px;">
+      <div style="font-size:14px; font-weight:800; color:#1e1b4b;">📊 Visual Analytics Dashboard — ${dtMeta.label} | ${escHtml(ACTIVE_BRAND)} (${getPeriodDisplayLabel(ACTIVE_MONTH)})</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span style="font-size:11.5px; font-weight:700; color:#475569;">Chart Metric:</span>
+        <button onclick="GRAPH_METRIC='NET'; renderApp();" style="padding:5px 12px; border-radius:7px; border:1.5px solid #4f46e5; font-size:11.5px; font-weight:700; cursor:pointer; background:${GRAPH_METRIC==='NET' ? '#4f46e5' : '#fff'}; color:${GRAPH_METRIC==='NET' ? '#fff' : '#4f46e5'};">💰 ${escHtml(dtMeta.valTitle)} (₹)</button>
+        <button onclick="GRAPH_METRIC='QTY'; renderApp();" style="padding:5px 12px; border-radius:7px; border:1.5px solid #059669; font-size:11.5px; font-weight:700; cursor:pointer; background:${GRAPH_METRIC==='QTY' ? '#059669' : '#fff'}; color:${GRAPH_METRIC==='QTY' ? '#fff' : '#059669'};">📦 Quantity (Pcs)</button>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-head">
+        <div style="font-size:14px; font-weight:800; color:#0f172a;">📈 Month-Wise Performance Comparison (${compareOn ? 'Current Year vs Last Year' : 'Current Year'} — ${GRAPH_METRIC === 'NET' ? escHtml(dtMeta.valTitle) : 'Qty'})</div>
+        <span style="font-size:11px; color:#64748b; font-weight:600;">${ACTIVE_YEAR2 === 'ALL' ? 'All FY Months' : ('FY ' + escHtml(ACTIVE_YEAR2))} • Hover any bar for exact numbers</span>
+      </div>
+      <div class="chart-box-tall"><canvas id="chartMonthComparison"></canvas></div>
+    </div>
+
+    <div class="dash-grid-2">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div style="font-size:13.5px; font-weight:800; color:#1e1b4b;">👨‍💼 Manager-Wise Performance (${getPeriodDisplayLabel(ACTIVE_MONTH)})</div>
+        </div>
+        <div class="chart-box"><canvas id="chartManagerBar"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div style="font-size:13.5px; font-weight:800; color:#4c1d95;">🧩 ${chartAttrHdr ? escHtml(chartAttrHdr) : 'Category'} Share Breakdown (${getPeriodDisplayLabel(ACTIVE_MONTH)})</div>
+        </div>
+        <div class="chart-box"><canvas id="chartCategoryDoughnut"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div style="font-size:13.5px; font-weight:800; color:#0369a1;">🏆 Top 10 Stores / Parties (${getPeriodDisplayLabel(ACTIVE_MONTH)})</div>
+        </div>
+        <div class="chart-box"><canvas id="chartTopStores"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div style="font-size:13.5px; font-weight:800; color:#b91c1c;">📉 Monthly Discount % & Value Trend</div>
+        </div>
+        <div class="chart-box"><canvas id="chartDiscountTrend"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:10px;">🗓️ Month-Wise Comparison Data Table (${escHtml(ACTIVE_BRAND)} — ${dtMeta.label})</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="num">Stores</th>
+              <th class="num">Qty</th>
+              ${compareOn ? '<th class="ly-th">LY Qty</th><th class="ly-th">Qty Growth %</th>' : ''}
+              <th class="num">${escHtml(dtMeta.valTitle)}</th>
+              ${compareOn ? '<th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Val Growth %</th>' : ''}
+              ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
+            </tr>
+          </thead>
+          <tbody>${monthTableRows}${monthTotalRow}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function mountLiveDashboardCharts(brandPeriods, mData, lyData, dtMeta, compareOn) {
+  destroyActiveCharts();
+  if (typeof Chart === 'undefined') return;
+
+  var isNet = (GRAPH_METRIC === 'NET');
+  var palette = ['#4f46e5','#10b981','#0ea5e9','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16','#e11d48','#6366f1'];
+
+  var monthKeys = sortMonthKeysAsc(Object.keys(brandPeriods).filter(function(pk) {
+    if (pk.startsWith('FULL_FY::')) return false;
+    if (ACTIVE_YEAR2 !== 'ALL') return (brandPeriods[pk] && brandPeriods[pk].year2 === ACTIVE_YEAR2);
+    return true;
+  }));
+
+  // 1. Month-Wise CY vs LY Comparison
+  var c1 = document.getElementById('chartMonthComparison');
+  if (c1) {
+    var cyVals = monthKeys.map(function(mk) { var g = brandPeriods[mk].grandTotal; return isNet ? g.net : g.qty; });
+    var lyVals = monthKeys.map(function(mk) {
+      var lk = getLastYearPeriodKey(mk);
+      var g = (lk && brandPeriods[lk]) ? brandPeriods[lk].grandTotal : { net: 0, qty: 0 };
+      return isNet ? g.net : g.qty;
+    });
+    var datasets1 = [{
+      label: 'Current Year ' + (isNet ? dtMeta.valTitle : 'Qty'),
+      data: cyVals,
+      backgroundColor: 'rgba(79,70,229,0.85)',
+      borderColor: '#4338ca',
+      borderWidth: 1.5,
+      borderRadius: 6
+    }];
+    if (compareOn) {
+      datasets1.push({
+        label: 'Last Year ' + (isNet ? dtMeta.valTitle : 'Qty'),
+        data: lyVals,
+        backgroundColor: 'rgba(16,185,129,0.75)',
+        borderColor: '#059669',
+        borderWidth: 1.5,
+        borderRadius: 6
+      });
+    }
+    ACTIVE_CHARTS.push(new Chart(c1.getContext('2d'), {
+      type: 'bar',
+      data: { labels: monthKeys, datasets: datasets1 },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { weight: '700' } } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ctx.dataset.label + ': ' + (isNet ? fmtINR(ctx.parsed.y) : fmtNum(ctx.parsed.y) + ' Qty');
+              }
+            }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: function(v) { return isNet ? fmtShortINR(v) : fmtNum(v); } } }
+        }
+      }
+    }));
+  }
+
+  // 2. Manager-Wise Bar Chart
+  var c2 = document.getElementById('chartManagerBar');
+  if (c2) {
+    var mgrs = mData.managers || [];
+    var lyMgrMap = {};
+    if (lyData && Array.isArray(lyData.managers)) {
+      lyData.managers.forEach(function(m) { lyMgrMap[String(m.manager || '').trim().toUpperCase()] = m; });
+    }
+    var mLabels = mgrs.map(function(m) { return m.manager; });
+    var mCy = mgrs.map(function(m) { return isNet ? m.net : m.qty; });
+    var mLy = mgrs.map(function(m) {
+      var lm = lyMgrMap[String(m.manager || '').trim().toUpperCase()] || { net: 0, qty: 0 };
+      return isNet ? lm.net : lm.qty;
+    });
+    var ds2 = [{ label: 'CY ' + (isNet ? 'Value' : 'Qty'), data: mCy, backgroundColor: '#6366f1', borderRadius: 6 }];
+    if (compareOn) ds2.push({ label: 'LY ' + (isNet ? 'Value' : 'Qty'), data: mLy, backgroundColor: '#10b981', borderRadius: 6 });
+
+    ACTIVE_CHARTS.push(new Chart(c2.getContext('2d'), {
+      type: 'bar',
+      data: { labels: mLabels, datasets: ds2 },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + (isNet ? fmtINR(ctx.parsed.y) : fmtNum(ctx.parsed.y) + ' Qty'); } } }
+        },
+        scales: { y: { beginAtZero: true, ticks: { callback: function(v) { return isNet ? fmtShortINR(v) : fmtNum(v); } } } }
+      }
+    }));
+  }
+
+  // 3. Category / Group 5 Doughnut Chart
+  var c3 = document.getElementById('chartCategoryDoughnut');
+  if (c3) {
+    var g5Hdr = findGroup5HeaderName(mData);
+    var chartHdr = ACTIVE_HEADERS_LIST[0] || g5Hdr || (mData.attributes ? Object.keys(mData.attributes)[0] : '');
+    var aObj = (chartHdr && mData.attributes && mData.attributes[chartHdr]) ? mData.attributes[chartHdr] : null;
+    if (aObj) {
+      var selVals = getSelectedSubValuesForHeader(mData, chartHdr);
+      var rowsCat = selVals.map(function(v) {
+        var mArr = (aObj.totalsMetrics && aObj.totalsMetrics[v]) ? aObj.totalsMetrics[v] : null;
+        var val = (isNet && mArr) ? mArr[1] : (aObj.totals[v] || 0);
+        return { label: v, val: val };
+      }).filter(function(x) { return x.val > 0; }).sort(function(a, b) { return b.val - a.val; });
+
+      var topCats = rowsCat.slice(0, 8);
+      if (rowsCat.length > 8) {
+        var restSum = rowsCat.slice(8).reduce(function(acc, x) { return acc + x.val; }, 0);
+        topCats.push({ label: 'OTHERS', val: restSum });
+      }
+      var totCat = topCats.reduce(function(acc, x) { return acc + x.val; }, 0) || 1;
+
+      ACTIVE_CHARTS.push(new Chart(c3.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: topCats.map(function(x) { return x.label + ' (' + ((x.val / totCat) * 100).toFixed(1) + '%)'; }),
+          datasets: [{ data: topCats.map(function(x) { return x.val; }), backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '55%',
+          plugins: {
+            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11, weight: '600' } } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  var useVal = (isNet && aObj.totalsMetrics) ? fmtINR(ctx.parsed) : (fmtNum(ctx.parsed) + ' Qty');
+                  return ctx.label + ': ' + useVal;
+                }
+              }
+            }
+          }
+        }
+      }));
+    }
+  }
+
+  // 4. Top 10 Stores Horizontal Bar Chart
+  var c4 = document.getElementById('chartTopStores');
+  if (c4) {
+    var top10 = (mData.stores || []).slice().sort(function(a, b) { return (isNet ? b.net - a.net : b.qty - a.qty); }).slice(0, 10);
+    ACTIVE_CHARTS.push(new Chart(c4.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: top10.map(function(s) { return s.party.length > 26 ? s.party.slice(0, 26) + '…' : s.party; }),
+        datasets: [{
+          label: isNet ? dtMeta.valTitle : 'Qty',
+          data: top10.map(function(s) { return isNet ? s.net : s.qty; }),
+          backgroundColor: 'rgba(14,165,233,0.85)',
+          borderColor: '#0284c7',
+          borderWidth: 1,
+          borderRadius: 5
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) { var idx = items[0].dataIndex; return top10[idx] ? top10[idx].party : ''; },
+              label: function(ctx) { return (isNet ? fmtINR(ctx.parsed.x) : fmtNum(ctx.parsed.x) + ' Qty'); }
+            }
+          }
+        },
+        scales: { x: { beginAtZero: true, ticks: { callback: function(v) { return isNet ? fmtShortINR(v) : fmtNum(v); } } } }
+      }
+    }));
+  }
+
+  // 5. Monthly Discount % & Value Trend Area Chart
+  var c5 = document.getElementById('chartDiscountTrend');
+  if (c5) {
+    var discPcts = monthKeys.map(function(mk) { return brandPeriods[mk].grandTotal.discPct || 0; });
+    var netVals = monthKeys.map(function(mk) { return brandPeriods[mk].grandTotal.net || 0; });
+    ACTIVE_CHARTS.push(new Chart(c5.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: monthKeys,
+        datasets: [
+          {
+            label: 'Discount %',
+            data: discPcts,
+            yAxisID: 'yPct',
+            borderColor: '#e11d48',
+            backgroundColor: 'rgba(225,29,72,0.12)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointRadius: 4
+          },
+          {
+            label: dtMeta.valTitle + ' (₹)',
+            data: netVals,
+            yAxisID: 'yVal',
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.08)',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            borderDash: [5, 4],
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ctx.datasetIndex === 0 ? ('Discount %: ' + ctx.parsed.y + '%') : (ctx.dataset.label + ': ' + fmtINR(ctx.parsed.y));
+              }
+            }
+          }
+        },
+        scales: {
+          yPct: { type: 'linear', position: 'left', beginAtZero: true, ticks: { callback: function(v) { return v + '%'; } } },
+          yVal: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { callback: function(v) { return fmtShortINR(v); } } }
+        }
+      }
+    }));
+  }
 }
 
 function renderApp() {
@@ -704,13 +1511,9 @@ function renderApp() {
     HEADER_DEFAULT_INIT = true;
     if (ACTIVE_LINK.defaultHeader && allowedHeaders.includes(ACTIVE_LINK.defaultHeader)) {
       ACTIVE_HEADERS_LIST = [ACTIVE_LINK.defaultHeader];
-      FOCUSED_CHIP_HEADER = ACTIVE_LINK.defaultHeader;
     }
   }
   ACTIVE_HEADERS_LIST = ACTIVE_HEADERS_LIST.filter(function(h) { return allowedHeaders.includes(h); });
-  if (FOCUSED_CHIP_HEADER && !ACTIVE_HEADERS_LIST.includes(FOCUSED_CHIP_HEADER)) {
-    FOCUSED_CHIP_HEADER = ACTIVE_HEADERS_LIST[0] || '';
-  }
 
   var allowedDataTypes = (Array.isArray(ACTIVE_LINK.dataTypes) && ACTIVE_LINK.dataTypes.length > 0) ? ACTIVE_LINK.dataTypes : ['TERTIARY'];
   if (!ACTIVE_DATA_TYPE || !allowedDataTypes.includes(ACTIVE_DATA_TYPE)) ACTIVE_DATA_TYPE = allowedDataTypes[0];
@@ -753,86 +1556,145 @@ function renderApp() {
   var compareOn = !!(rights.allowCompareLY && COMPARE_LY_ENABLED);
   var lyPeriodKey = compareOn ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
   var lyData = (compareOn && lyPeriodKey && brandPeriods[lyPeriodKey]) ? brandPeriods[lyPeriodKey] : null;
-  var lyGt = lyData ? lyData.grandTotal : { qty: 0, net: 0, mrp: 0, disc: 0 };
+  var lyGt = lyData ? lyData.grandTotal : { qty: 0, net: 0, mrp: 0, disc: 0, discPct: 0 };
   var lyMgrMap = {};
   if (lyData && Array.isArray(lyData.managers)) {
     lyData.managers.forEach(function(m) { lyMgrMap[String(m.manager || '').trim().toUpperCase()] = m; });
   }
 
-  // Symmetrical Grid Header Qty Breakdown Bar
+  // =========================================================================
+  // POINT 1 & POINT 2: COMPUTE GROUP 5 SELECTED + (PROMO) DIFF + MANUAL HEADERS
+  // =========================================================================
+  var g5Header = findGroup5HeaderName(mData);
+  var g5SelectedVals = g5Header ? getSelectedSubValuesForHeader(mData, g5Header) : [];
+  var g5Cy = g5Header ? computeSelectedHeaderMetrics(mData, g5Header, g5SelectedVals) : null;
+  var g5Ly = (g5Header && lyData) ? computeSelectedHeaderMetrics(lyData, g5Header, g5SelectedVals) : { qty: 0, net: 0, mrp: 0, disc: 0, discPct: 0 };
+  if (!g5Ly) g5Ly = { qty: 0, net: 0, mrp: 0, disc: 0, discPct: 0 };
+
+  var mainQty  = g5Cy ? g5Cy.qty : gt.qty;
+  var mainNet  = (g5Cy && g5Cy.hasFullMetrics) ? g5Cy.net : gt.net;
+  var mainMrp  = (g5Cy && g5Cy.hasFullMetrics) ? g5Cy.mrp : gt.mrp;
+  var mainDisc = (g5Cy && g5Cy.hasFullMetrics) ? g5Cy.disc : gt.disc;
+  var mainDiscPct = (g5Cy && g5Cy.hasFullMetrics) ? g5Cy.discPct : gt.discPct;
+
+  var promoQty  = gt.qty - mainQty;
+  var promoNet  = gt.net - mainNet;
+  var promoMrp  = gt.mrp - mainMrp;
+  var promoDisc = gt.disc - mainDisc;
+
+  var mainLyQty  = g5Header ? g5Ly.qty : lyGt.qty;
+  var mainLyNet  = (g5Header && g5Ly.hasFullMetrics) ? g5Ly.net : (g5Header ? 0 : lyGt.net);
+  var mainLyMrp  = (g5Header && g5Ly.hasFullMetrics) ? g5Ly.mrp : (g5Header ? 0 : lyGt.mrp);
+  var mainLyDisc = (g5Header && g5Ly.hasFullMetrics) ? g5Ly.disc : (g5Header ? 0 : lyGt.disc);
+
+  // Manual selected headers (other than Group 5) shown separately inside the 4 KPI boxes!
+  var manualHeaderMetricsList = [];
+  if (rights.showHeaderBreakdown && ACTIVE_HEADERS_LIST.length > 0) {
+    ACTIVE_HEADERS_LIST.forEach(function(hName) {
+      if (hName === g5Header) return;
+      var selV = getSelectedSubValuesForHeader(mData, hName);
+      var met = computeSelectedHeaderMetrics(mData, hName, selV);
+      if (met) manualHeaderMetricsList.push({ header: hName, count: selV.length, met: met });
+    });
+  }
+
+  function buildManualStripHtml(metricKey) {
+    if (manualHeaderMetricsList.length === 0) return '';
+    return '<div class="kpi-manual-strip">' + manualHeaderMetricsList.map(function(item) {
+      var valTxt = '';
+      if (metricKey === 'qty') valTxt = fmtNum(item.met.qty);
+      else if (metricKey === 'net') valTxt = item.met.hasFullMetrics ? fmtINR(item.met.net) : '-';
+      else if (metricKey === 'mrp') valTxt = item.met.hasFullMetrics ? fmtINR(item.met.mrp) : '-';
+      else if (metricKey === 'disc') valTxt = item.met.hasFullMetrics ? (fmtINR(item.met.disc) + ' (' + item.met.discPct + '%)') : '-';
+      return '<div class="kpi-manual-row"><span style="color:#ddd6fe; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escHtml(item.header) + '">📌 ' + escHtml(item.header) + '</span><b style="color:#ffffff; flex-shrink:0;">' + valTxt + '</b></div>';
+    }).join('') + '</div>';
+  }
+
+  // =========================================================================
+  // POINT 2: MULTI-HEADER GRID VIEW (RENDER ALL TICKED HEADERS SIMULTANEOUSLY!)
+  // =========================================================================
   var headerBreakdownBarHtml = '';
   if (rights.showHeaderBreakdown && allowedHeaders.length > 0) {
-    var focusH = FOCUSED_CHIP_HEADER || ACTIVE_HEADERS_LIST[0] || '';
-    var focusAttrObj = (focusH && mData.attributes && mData.attributes[focusH]) ? mData.attributes[focusH] : null;
-    var permittedVals = focusH ? getAdminPermittedSubValues(mData, focusH) : [];
-
-    var subChipsHtml = '';
-    if (focusH && focusAttrObj) {
-      var unchk = UNCHECKED_ATTR_VALS[focusH] || new Set();
-      var qAttr = ATTR_VAL_SEARCH.trim().toLowerCase();
-      var missQty = permittedVals.includes('(ENTER ATTRIBUTES)') ? (focusAttrObj.totals['(ENTER ATTRIBUTES)'] || 0) : 0;
-
-      subChipsHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <input type="text" value="${escHtml(ATTR_VAL_SEARCH)}" oninput="ATTR_VAL_SEARCH=this.value; renderApp();" placeholder="🔍 Search values inside ${escHtml(focusH)}..." style="padding:6px 10px; border:1px solid #a78bfa; border-radius:7px; font-size:12px; font-weight:600; width:270px; max-width:100%; background:#fff;">
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button onclick="setAllAttrSubVals('${escJs(focusH)}', true)" style="background:#7c3aed;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">☑️ Tick All (${permittedVals.length})</button>
-            <button onclick="setAllAttrSubVals('${escJs(focusH)}', false)" style="background:#64748b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⬜ Untick All</button>
-            ${missQty > 0 ? `<button onclick="showOnlyMissingAttrVal('${escJs(focusH)}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⚠️ Only (ENTER ATTRIBUTES): ${fmtNum(missQty)}</button>` : ''}
-          </div>
-        </div>
-        <div class="attr-chips-grid">
-          ${permittedVals.filter(function(v) { return !qAttr || v.toLowerCase().includes(qAttr); }).map(function(v) {
-            var isChk = !unchk.has(v);
-            var isMiss = (v === '(ENTER ATTRIBUTES)');
-            var tQty = focusAttrObj.totals[v] || 0;
-            return `<label class="attr-chip ${isMiss ? 'missing' : (isChk ? 'checked' : '')}">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
-                <input type="checkbox" ${isChk ? 'checked' : ''} onchange="toggleAttrSubVal('${escJs(focusH)}', '${escJs(v)}', this.checked)" style="margin:0; flex-shrink:0; accent-color:${isMiss ? '#dc2626' : '#7c3aed'};">
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(v)}">${isMiss ? '⚠️ ' + escHtml(v) : escHtml(v)}</span>
-              </div>
-              <span style="background:${isMiss ? '#dc2626' : '#6d28d9'}; color:#fff; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700; flex-shrink:0;">${fmtNum(tQty)}</span>
-            </label>`;
-          }).join('')}
-        </div>
-      `;
-    }
-
-    var multiHeaderPillsHtml = allowedHeaders.length > 1 ? `
+    var multiHeaderPillsHtml = `
       <div class="multi-hdr-grid">
         ${allowedHeaders.map(function(h) {
           var isAdded = ACTIVE_HEADERS_LIST.includes(h);
-          var isFocused = (h === focusH);
-          return `<label style="display:flex; align-items:center; gap:6px; width:100%; min-width:0; padding:5px 9px; border-radius:7px; font-size:11px; font-weight:700; cursor:pointer; border:1.5px solid ${isFocused ? '#6d28d9' : '#cbd5e1'}; background:${isAdded ? '#ede9fe' : '#ffffff'}; color:${isAdded ? '#4c1d95' : '#475569'};">
+          return `<label style="display:flex; align-items:center; gap:6px; width:100%; min-width:0; padding:5px 9px; border-radius:7px; font-size:11px; font-weight:700; cursor:pointer; border:1.5px solid ${isAdded ? '#6d28d9' : '#cbd5e1'}; background:${isAdded ? '#ede9fe' : '#ffffff'}; color:${isAdded ? '#4c1d95' : '#475569'};">
             <input type="checkbox" ${isAdded ? 'checked' : ''} onchange="toggleAdditionalHeaderColumn('${escJs(h)}', this.checked)" style="margin:0; flex-shrink:0; accent-color:#6d28d9;">
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(h)}" onclick="if(${isAdded}){event.preventDefault(); FOCUSED_CHIP_HEADER='${escJs(h)}'; renderApp();}">📌 ${escHtml(h)}</span>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(h)}">📌 ${escHtml(h)}</span>
           </label>`;
         }).join('')}
       </div>
-    ` : '';
+    `;
+
+    // Render sub-option grid for EVERY ticked header in ACTIVE_HEADERS_LIST!
+    var allSelectedHeadersBoxesHtml = ACTIVE_HEADERS_LIST.map(function(hName) {
+      var attrObj = (mData.attributes && mData.attributes[hName]) ? mData.attributes[hName] : null;
+      var permittedVals = getAdminPermittedSubValues(mData, hName);
+      if (!attrObj || permittedVals.length === 0) {
+        return `<div class="hdr-subbox-card"><div style="font-size:12px; font-weight:800; color:#4c1d95;">📌 ${escHtml(hName)} <span style="color:#b45309; font-weight:600; font-size:11px;">(Is period mein data available nahi hai)</span></div></div>`;
+      }
+      var unchk = UNCHECKED_ATTR_VALS[hName] || new Set();
+      var qAttr = (ATTR_VAL_SEARCH_MAP[hName] || '').trim().toLowerCase();
+      var missQty = permittedVals.includes('(ENTER ATTRIBUTES)') ? (attrObj.totals['(ENTER ATTRIBUTES)'] || 0) : 0;
+      var tickedCount = permittedVals.filter(function(v) { return !unchk.has(v); }).length;
+
+      return `
+        <div class="hdr-subbox-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:12px; font-weight:800; color:#4c1d95;">📌 ${escHtml(hName)} <span style="background:#ede9fe; color:#6d28d9; padding:2px 7px; border-radius:99px; font-size:10.5px;">${tickedCount}/${permittedVals.length} Ticked</span></span>
+              <input type="text" data-subsearch-hdr="${escHtml(hName)}" value="${escHtml(ATTR_VAL_SEARCH_MAP[hName] || '')}" oninput="onHeaderSubSearchTyped('${escJs(hName)}', this.value)" placeholder="🔍 Search inside ${escHtml(hName)}..." style="padding:5px 9px; border:1px solid #a78bfa; border-radius:6px; font-size:11.5px; font-weight:600; width:230px; max-width:100%; background:#faf5ff;">
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap;">
+              <button onclick="setAllAttrSubVals('${escJs(hName)}', true)" style="background:#7c3aed;color:#fff;border:none;padding:4px 9px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;">☑️ Tick All (${permittedVals.length})</button>
+              <button onclick="setAllAttrSubVals('${escJs(hName)}', false)" style="background:#64748b;color:#fff;border:none;padding:4px 9px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;">⬜ Untick All</button>
+              ${missQty > 0 ? `<button onclick="showOnlyMissingAttrVal('${escJs(hName)}')" style="background:#dc2626;color:#fff;border:none;padding:4px 9px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;">⚠️ Only (ENTER ATTRIBUTES): ${fmtNum(missQty)}</button>` : ''}
+            </div>
+          </div>
+          <div class="attr-chips-grid">
+            ${permittedVals.filter(function(v) { return !qAttr || v.toLowerCase().includes(qAttr); }).map(function(v) {
+              var isChk = !unchk.has(v);
+              var isMiss = (v === '(ENTER ATTRIBUTES)');
+              var tQty = attrObj.totals[v] || 0;
+              return `<label class="attr-chip ${isMiss ? 'missing' : (isChk ? 'checked' : '')}">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                  <input type="checkbox" ${isChk ? 'checked' : ''} onchange="toggleAttrSubVal('${escJs(hName)}', '${escJs(v)}', this.checked)" style="margin:0; flex-shrink:0; accent-color:${isMiss ? '#dc2626' : '#7c3aed'};">
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(v)}">${isMiss ? '⚠️ ' + escHtml(v) : escHtml(v)}</span>
+                </div>
+                <span style="background:${isMiss ? '#dc2626' : '#6d28d9'}; color:#fff; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700; flex-shrink:0;">${fmtNum(tQty)}</span>
+              </label>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
 
     headerBreakdownBarHtml = `
       <div class="attr-bar">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:13px; font-weight:800; color:#4c1d95;">🧩 Header Qty Breakdown (Grid View):</span>
+            <span style="font-size:13px; font-weight:800; color:#4c1d95;">🧩 Header Qty Breakdown (Multi-Header Grid View):</span>
             <select class="ctrl-select" style="border-color:#7c3aed; color:#4c1d95;" onchange="onSelectPrimaryHeader(this.value)">
-              <option value="">-- Off (Standard View) --</option>
+              <option value="">-- Clear / Add Header --</option>
               ${allowedHeaders.map(function(h) {
-                return `<option value="${escHtml(h)}" ${h === focusH ? 'selected' : ''}>📌 ${escHtml(h)}</option>`;
+                return `<option value="${escHtml(h)}">➕ ${escHtml(h)}</option>`;
               }).join('')}
             </select>
           </div>
           <span style="font-size:11.5px; font-weight:600; color:#6d28d9;">
-            ${ACTIVE_HEADERS_LIST.length > 0 ? '💡 Table mein <b>[ + ]</b> par click karke Manager / Party wise Grid Details dekhein' : 'Select any Header to add a compact [+] breakdown column'}
+            ${ACTIVE_HEADERS_LIST.length > 0 ? ('Showing <b>' + ACTIVE_HEADERS_LIST.length + '</b> Selected Header(s) simultaneously • Table mein <b>[ + ]</b> par click karke details dekhein') : 'Koi bhi 1 ya zyada Headers tick karein'}
           </span>
         </div>
         ${multiHeaderPillsHtml}
-        ${subChipsHtml}
+        ${allSelectedHeadersBoxesHtml}
       </div>
     `;
   }
 
+  // =========================================================================
+  // POINT 3: MANAGER-WISE SUMMARY (WITH TOTAL ROW + BOTH QTY & VALUE GROWTH %)
+  // =========================================================================
   var activeHeaders = rights.showHeaderBreakdown ? ACTIVE_HEADERS_LIST : [];
   var mgrCompactThs = activeHeaders.map(function(hName) {
     var mgrs = mData.managers || [];
@@ -855,12 +1717,19 @@ function renderApp() {
   }).join('');
 
   var lyHeaderThs = compareOn
-    ? '<th class="ly-th">LY Qty (' + escHtml(lyPeriodKey.replace('FULL_FY::','FY ')) + ')</th><th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Growth %</th>'
+    ? '<th class="ly-th">LY Qty (' + escHtml(lyPeriodKey.replace('FULL_FY::','FY ')) + ')</th><th class="ly-th">Qty Growth %</th><th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Val Growth %</th>'
     : '';
 
-  var mgrTotalCols = 4 + activeHeaders.length + (compareOn ? 3 : 0) + (rights.showMrpAndDisc ? 2 : 0);
+  var mgrTotalCols = 4 + activeHeaders.length + (compareOn ? 4 : 0) + (rights.showMrpAndDisc ? 2 : 0);
+  var mgrSumStores = 0, mgrSumQty = 0, mgrSumNet = 0, mgrSumMrp = 0, mgrSumDisc = 0, mgrSumLyQty = 0, mgrSumLyNet = 0;
+  var mgrSumHdrs = {};
+  activeHeaders.forEach(function(h) { mgrSumHdrs[h] = 0; });
+
   var managerRowsHtml = (mData.managers || []).map(function(m) {
     var lyM = lyMgrMap[String(m.manager || '').trim().toUpperCase()] || { qty: 0, net: 0 };
+    mgrSumStores += m.stores; mgrSumQty += m.qty; mgrSumNet += m.net;
+    mgrSumMrp += m.mrp; mgrSumDisc += m.disc; mgrSumLyQty += lyM.qty; mgrSumLyNet += lyM.net;
+
     var compactTds = '';
     var drawersHtml = [];
 
@@ -874,13 +1743,14 @@ function renderApp() {
         var qv = Number(mAttrMap[sv] || 0);
         if (qv > 0) { sumQty += qv; nonZeroCnt++; }
       });
+      mgrSumHdrs[hName] += sumQty;
 
       var expKey = hName + '||' + m.manager;
       var isOpen = EXPANDED_MGR_KEYS.has(expKey);
       var clickJs = "toggleMgrExpand('" + escJs(hName) + "','" + escJs(m.manager) + "')";
 
       compactTds += '<td style="text-align:center; border-left:1px solid #ede9fe; border-right:1px solid #ede9fe; background:#fcfaff;">' +
-        '<button type="button" class="plus-cell-btn ' + (isOpen ? 'open' : '') + '" onclick="' + clickJs + '" title="Click + to open ' + escHtml(hName) + ' details for ' + escHtml(m.manager) + '">' +
+        '<button type="button" class="plus-cell-btn ' + (isOpen ? 'open' : '') + '" onclick="' + clickJs + '">' +
           '<span class="plus-icon-badge">' + (isOpen ? '−' : '+') + '</span>' +
           '<span>' + fmtNum(sumQty) + ' Qty</span>' +
           '<span style="font-size:10.5px; opacity:0.8;">(' + nonZeroCnt + ')</span>' +
@@ -888,9 +1758,7 @@ function renderApp() {
       '</td>';
 
       if (isOpen) {
-        var titleLeft = '<span>👨‍💼 Manager: <b>' + escHtml(m.manager) + '</b></span>' +
-                        '<span style="color:#475569;">|</span>' +
-                        '<span style="font-size:11.5px; color:#475569;">Stores: <b>' + m.stores + '</b></span>';
+        var titleLeft = '<span>👨‍💼 Manager: <b>' + escHtml(m.manager) + '</b></span><span style="color:#475569;">|</span><span style="font-size:11.5px; color:#475569;">Stores: <b>' + m.stores + '</b></span>';
         drawersHtml.push(buildCompactDrawerHtml(titleLeft, hName, subVals, mAttrMap, sumQty, clickJs));
       }
     });
@@ -901,7 +1769,7 @@ function renderApp() {
       ${compactTds}
       <td class="num"><b>${fmtNum(m.qty)}</b></td>
       <td class="num" style="color:#0284c7;"><b>${fmtINR(m.net)}</b></td>
-      ${compareOn ? `<td class="ly-td">${fmtNum(lyM.qty)}</td><td class="ly-td">${fmtINR(lyM.net)}</td><td class="num">${calcGrowthBadgeHtml(m.net, lyM.net)}</td>` : ''}
+      ${compareOn ? `<td class="ly-td">${fmtNum(lyM.qty)}</td><td class="num">${calcGrowthBadgeHtml(m.qty, lyM.qty)}</td><td class="ly-td">${fmtINR(lyM.net)}</td><td class="num">${calcGrowthBadgeHtml(m.net, lyM.net)}</td>` : ''}
       ${rights.showMrpAndDisc ? `<td class="num">${fmtINR(m.mrp)}</td><td class="num" style="color:#dc2626; font-weight:700;">${m.discPct}%</td>` : ''}
     </tr>`;
 
@@ -911,6 +1779,22 @@ function renderApp() {
     return mainRow;
   }).join('') || '<tr><td colspan="' + mgrTotalCols + '" style="text-align:center;color:#64748b;padding:18px;">No manager data available for this selection.</td></tr>';
 
+  var mgrTotalDiscPct = mgrSumMrp > 0 ? ((mgrSumDisc / mgrSumMrp) * 100).toFixed(2) : '0.00';
+  var managerTotalRowHtml = (mData.managers && mData.managers.length > 0) ? `
+    <tr class="total-row">
+      <td>TOTAL</td>
+      <td class="num">${mgrSumStores}</td>
+      ${activeHeaders.map(function(h) { return '<td style="text-align:center;">' + fmtNum(mgrSumHdrs[h]) + ' Qty</td>'; }).join('')}
+      <td class="num">${fmtNum(mgrSumQty)}</td>
+      <td class="num" style="color:#0369a1;">${fmtINR(mgrSumNet)}</td>
+      ${compareOn ? `<td class="num">${fmtNum(mgrSumLyQty)}</td><td class="num">${calcGrowthBadgeHtml(mgrSumQty, mgrSumLyQty)}</td><td class="num">${fmtINR(mgrSumLyNet)}</td><td class="num">${calcGrowthBadgeHtml(mgrSumNet, mgrSumLyNet)}</td>` : ''}
+      ${rights.showMrpAndDisc ? `<td class="num">${fmtINR(mgrSumMrp)}</td><td class="num" style="color:#dc2626;">${mgrTotalDiscPct}%</td>` : ''}
+    </tr>
+  ` : '';
+
+  // =========================================================================
+  // RENDER FULL PAGE
+  // =========================================================================
   app.innerHTML = `
     <div class="top-card">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
@@ -918,15 +1802,22 @@ function renderApp() {
           <div style="font-size:19px; font-weight:800; letter-spacing:-0.02em;">📊 ${escHtml(ACTIVE_LINK.title)}</div>
           <div style="font-size:12px; color:#cbd5e1; margin-top:4px; font-weight:500;">🕒 Last Live Update: <b style="color:#ffffff;">${escHtml(LIVE_PAYLOAD.generatedAtHuman)}</b> ${ACTIVE_LINK.validityLabel ? (' | ⏳ Valid Till: <b style="color:#ffffff;">' + escHtml(ACTIVE_LINK.validityLabel) + '</b>') : ''}</div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <span class="status-pill ${stClass}">${stText}</span>
-          <button onclick="manualRefreshClick()" style="background:rgba(255,255,255,0.16);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh Live</button>
-          <span class="timer-pill" title="Auto-refreshes every 30 seconds">⏱️ <span id="liveTimerText">${TIMER_SECONDS}s</span></span>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span class="status-pill ${stClass}">${stText}</span>
+            <button onclick="manualRefreshClick()" style="background:rgba(255,255,255,0.16);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh Live</button>
+            <span class="timer-pill" title="Auto-refreshes every 30 seconds">⏱️ <span id="liveTimerText">${TIMER_SECONDS}s</span></span>
+          </div>
+          <!-- POINT 5: GRAPH / TABLE VIEW SWITCHER (IN RED BOX SPOT) -->
+          <div class="view-switch-bar">
+            <button type="button" class="view-switch-btn ${VIEW_MODE === 'TABLE' ? 'active' : ''}" onclick="VIEW_MODE='TABLE'; destroyActiveCharts(); renderApp();">📋 Data Table View</button>
+            <button type="button" class="view-switch-btn ${VIEW_MODE === 'GRAPHS' ? 'active' : ''}" onclick="VIEW_MODE='GRAPHS'; renderApp();">📊 Visual Graph Dashboard</button>
+          </div>
         </div>
       </div>
-      ${gStatus.statusNote ? `<div style="margin-top:8px; font-size:12.5px; color:#fde68a; font-weight:600;">💬 Note: ${escHtml(gStatus.statusNote)}</div>` : ''}
+      ${gStatus.statusNote ? `<div style="margin-top:6px; font-size:12.5px; color:#fde68a; font-weight:600;">💬 Note: ${escHtml(gStatus.statusNote)}</div>` : ''}
 
-      <div class="tab-row" style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.14);">
+      <div class="tab-row" style="margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.14);">
         ${allowedDataTypes.map(function(dk) {
           var lbl = (TYPE_META[dk] && TYPE_META[dk].label) || dk;
           return `<button class="dtype-btn ${dk === ACTIVE_DATA_TYPE ? 'active' : ''}" onclick="ACTIVE_DATA_TYPE='${dk}'; ACTIVE_MONTH=''; renderApp();">${lbl}</button>`;
@@ -975,96 +1866,174 @@ function renderApp() {
             ${compareOn ? `<span style="background:rgba(255,255,255,0.14); color:#fde68a; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">vs LY: ${escHtml(lyPeriodKey.replace('FULL_FY::','FY ') || '-')}</span>` : ''}
           </div>
         </div>
+
+        <!-- POINT 1: 4 SPLIT KPI BOXES (LEFT = GROUP 5 + PROMO, RIGHT WHITE BOX = FULL TOTAL + LY) -->
         <div class="kpi-grid">
+          <!-- BOX 1: TOTAL QTY -->
           <div class="kpi-box">
-            <div class="kpi-lbl">Total Qty</div>
-            <div class="kpi-val" style="color:#ffffff;">${fmtNum(gt.qty)}</div>
-            ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtNum(lyGt.qty)}</span> ${calcGrowthBadgeHtml(gt.qty, lyGt.qty)}</div>` : ''}
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-lbl">${dtMeta.valTitle}</div>
-            <div class="kpi-val" style="color:#38bdf8;">${fmtINR(gt.net)}</div>
-            ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(lyGt.net)}</span> ${calcGrowthBadgeHtml(gt.net, lyGt.net)}</div>` : ''}
-          </div>
-          ${rights.showMrpAndDisc ? `
-            <div class="kpi-box">
-              <div class="kpi-lbl">Total MRP</div>
-              <div class="kpi-val" style="color:#fbbf24;">${fmtINR(gt.mrp)}</div>
-              ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(lyGt.mrp)}</span> ${calcGrowthBadgeHtml(gt.mrp, lyGt.mrp)}</div>` : ''}
+            <div class="kpi-split">
+              <div class="kpi-left">
+                <div>
+                  <div class="kpi-lbl">TOTAL QTY ${g5Header ? '(GRP 5)' : ''}</div>
+                  <div class="kpi-val" style="color:#ffffff;">${fmtNum(mainQty)}</div>
+                  <div class="kpi-promo">(PROMO): ${fmtNum(promoQty)}</div>
+                </div>
+                ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtNum(mainLyQty)}</span> ${calcGrowthBadgeHtml(mainQty, mainLyQty)}</div>` : ''}
+              </div>
+              <div class="kpi-white-box">
+                <div>
+                  <div class="kpi-lbl" style="color:#e2e8f0;">FULL TOTAL QTY</div>
+                  <div class="kpi-val-sm" style="color:#ffffff;">${fmtNum(gt.qty)}</div>
+                </div>
+                ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtNum(lyGt.qty)}</span> ${calcGrowthBadgeHtml(gt.qty, lyGt.qty)}</div>` : ''}
+              </div>
             </div>
+            ${buildManualStripHtml('qty')}
+          </div>
+
+          <!-- BOX 2: TERTIARY NET VALUE -->
+          <div class="kpi-box">
+            <div class="kpi-split">
+              <div class="kpi-left">
+                <div>
+                  <div class="kpi-lbl">${escHtml(dtMeta.valTitle)} ${g5Header ? '(GRP 5)' : ''}</div>
+                  <div class="kpi-val" style="color:#38bdf8;">${fmtINR(mainNet)}</div>
+                  <div class="kpi-promo">(PROMO): ${fmtINR(promoNet)}</div>
+                </div>
+                ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(mainLyNet)}</span> ${calcGrowthBadgeHtml(mainNet, mainLyNet)}</div>` : ''}
+              </div>
+              <div class="kpi-white-box">
+                <div>
+                  <div class="kpi-lbl" style="color:#e2e8f0;">FULL NET VALUE</div>
+                  <div class="kpi-val-sm" style="color:#38bdf8;">${fmtINR(gt.net)}</div>
+                </div>
+                ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(lyGt.net)}</span> ${calcGrowthBadgeHtml(gt.net, lyGt.net)}</div>` : ''}
+              </div>
+            </div>
+            ${buildManualStripHtml('net')}
+          </div>
+
+          ${rights.showMrpAndDisc ? `
+            <!-- BOX 3: TOTAL MRP -->
             <div class="kpi-box">
-              <div class="kpi-lbl">Discount</div>
-              <div class="kpi-val" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:13.5px; font-weight:700;">(${gt.discPct}%)</span></div>
+              <div class="kpi-split">
+                <div class="kpi-left">
+                  <div>
+                    <div class="kpi-lbl">TOTAL MRP ${g5Header ? '(GRP 5)' : ''}</div>
+                    <div class="kpi-val" style="color:#fbbf24;">${fmtINR(mainMrp)}</div>
+                    <div class="kpi-promo">(PROMO): ${fmtINR(promoMrp)}</div>
+                  </div>
+                  ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(mainLyMrp)}</span> ${calcGrowthBadgeHtml(mainMrp, mainLyMrp)}</div>` : ''}
+                </div>
+                <div class="kpi-white-box">
+                  <div>
+                    <div class="kpi-lbl" style="color:#e2e8f0;">FULL TOTAL MRP</div>
+                    <div class="kpi-val-sm" style="color:#fbbf24;">${fmtINR(gt.mrp)}</div>
+                  </div>
+                  ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(lyGt.mrp)}</span> ${calcGrowthBadgeHtml(gt.mrp, lyGt.mrp)}</div>` : ''}
+                </div>
+              </div>
+              ${buildManualStripHtml('mrp')}
+            </div>
+
+            <!-- BOX 4: DISCOUNT -->
+            <div class="kpi-box">
+              <div class="kpi-split">
+                <div class="kpi-left">
+                  <div>
+                    <div class="kpi-lbl">DISCOUNT ${g5Header ? '(GRP 5)' : ''}</div>
+                    <div class="kpi-val" style="color:#fb7185;">${fmtINR(mainDisc)} <span style="font-size:12.5px; font-weight:700;">(${mainDiscPct}%)</span></div>
+                    <div class="kpi-promo">(PROMO): ${fmtINR(promoDisc)}</div>
+                  </div>
+                  ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(mainLyDisc)}</span> ${calcGrowthBadgeHtml(mainDisc, mainLyDisc)}</div>` : ''}
+                </div>
+                <div class="kpi-white-box">
+                  <div>
+                    <div class="kpi-lbl" style="color:#e2e8f0;">FULL DISCOUNT</div>
+                    <div class="kpi-val-sm" style="color:#fb7185;">${fmtINR(gt.disc)} <span style="font-size:11.5px; font-weight:700;">(${gt.discPct}%)</span></div>
+                  </div>
+                  ${compareOn ? `<div class="kpi-sub"><span>LY: ${fmtINR(lyGt.disc)}</span> ${calcGrowthBadgeHtml(gt.disc, lyGt.disc)}</div>` : ''}
+                </div>
+              </div>
+              ${buildManualStripHtml('disc')}
             </div>
           ` : ''}
         </div>
       </div>
     ` : ''}
 
-    ${headerBreakdownBarHtml}
+    ${VIEW_MODE === 'GRAPHS' ? buildGraphDashboardHtml(brandPeriods, mData, dtMeta, rights, compareOn) : `
+      ${headerBreakdownBarHtml}
 
-    ${rights.showManagers ? `
-      <div class="section-card">
-        <div style="font-size:14.5px; font-weight:800; color:#1e1b4b; margin-bottom:10px; letter-spacing:-0.01em;">👨‍💼 MANAGER-WISE SUMMARY (${(mData.managers || []).length})</div>
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Manager</th>
-                <th class="num">Stores</th>
-                ${mgrCompactThs}
-                <th class="num">Qty</th>
-                <th class="num">${dtMeta.valTitle}</th>
-                ${lyHeaderThs}
-                ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
-              </tr>
-            </thead>
-            <tbody>${managerRowsHtml}</tbody>
-          </table>
+      ${rights.showManagers ? `
+        <div class="section-card">
+          <div style="font-size:14.5px; font-weight:800; color:#1e1b4b; margin-bottom:10px; letter-spacing:-0.01em;">👨‍💼 MANAGER-WISE SUMMARY (${(mData.managers || []).length})</div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">Stores</th>
+                  ${mgrCompactThs}
+                  <th class="num">Qty</th>
+                  <th class="num">${escHtml(dtMeta.valTitle)}</th>
+                  ${lyHeaderThs}
+                  ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>${managerRowsHtml}${managerTotalRowHtml}</tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    ` : ''}
+      ` : ''}
 
-    ${rights.showStores ? `
-      <div class="section-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-          <div style="font-size:14.5px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">🏪 INDIVIDUAL STORE DATA <span id="liveStoreCountBadge">(${(mData.stores || []).length} Stores)</span></div>
-          <input type="text" value="${escHtml(SEARCH_Q)}" oninput="onStoreSearchTyped(this.value)" placeholder="🔍 Search Party or Manager..." style="padding:7px 11px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:500; width:250px; max-width:100%;">
+      ${rights.showStores ? `
+        <div class="section-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div style="font-size:14.5px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">🏪 INDIVIDUAL STORE DATA <span id="liveStoreCountBadge">(${(mData.stores || []).length} Stores)</span></div>
+            <input type="text" value="${escHtml(SEARCH_Q)}" oninput="onStoreSearchTyped(this.value)" placeholder="🔍 Search Party or Manager..." style="padding:7px 11px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:500; width:250px; max-width:100%;">
+          </div>
+          <div id="liveStoreScrollWrap" class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Party / Store Name</th>
+                  <th>Manager</th>
+                  ${storeCompactThs}
+                  <th class="num">Qty</th>
+                  <th class="num">${escHtml(dtMeta.valTitle)}</th>
+                  ${lyHeaderThs}
+                  ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
+                </tr>
+              </thead>
+              <tbody id="liveStoreTbody"></tbody>
+            </table>
+          </div>
         </div>
-        <div id="liveStoreScrollWrap" class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Party / Store Name</th>
-                <th>Manager</th>
-                ${storeCompactThs}
-                <th class="num">Qty</th>
-                <th class="num">${dtMeta.valTitle}</th>
-                ${lyHeaderThs}
-                ${rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : ''}
-              </tr>
-            </thead>
-            <tbody id="liveStoreTbody"></tbody>
-          </table>
-        </div>
-      </div>
-    ` : ''}
+      ` : ''}
 
-    ${rights.showPending ? `
-      <div class="section-card" style="border-color:#fca5a5; background:#fffafa;">
-        <div style="font-size:14px; font-weight:800; color:#b91c1c; margin-bottom:8px;">⏳ PENDING STORES (${(mData.pending || []).length} Stores Not Uploaded Yet)</div>
-        <div class="pending-grid">
-          ${(mData.pending || []).map(function(p) {
-            return `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(p.party)} (${escHtml(p.manager)})">• ${escHtml(p.party)} <small style="color:#475569; font-weight:600;">(${escHtml(p.manager)})</small></span>`;
-          }).join('') || '<span style="color:#059669; font-weight:700; font-size:12.5px;">🎉 All Stores Updated! Zero Pending!</span>'}
+      ${rights.showPending ? `
+        <div class="section-card" style="border-color:#fca5a5; background:#fffafa;">
+          <div style="font-size:14px; font-weight:800; color:#b91c1c; margin-bottom:8px;">⏳ PENDING STORES (${(mData.pending || []).length} Stores Not Uploaded Yet)</div>
+          <div class="pending-grid">
+            ${(mData.pending || []).map(function(p) {
+              return `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(p.party)} (${escHtml(p.manager)})">• ${escHtml(p.party)} <small style="color:#475569; font-weight:600;">(${escHtml(p.manager)})</small></span>`;
+            }).join('') || '<span style="color:#059669; font-weight:700; font-size:12.5px;">🎉 All Stores Updated! Zero Pending!</span>'}
+          </div>
         </div>
-      </div>
-    ` : ''}
+      ` : ''}
+    `}
   `;
 
-  if (rights.showStores) {
+  if (VIEW_MODE === 'GRAPHS') {
+    mountLiveDashboardCharts(brandPeriods, mData, lyData, dtMeta, compareOn);
+  } else if (rights.showStores) {
     updateStoreTableBodyOnly();
+  }
+
+  if (SUBSTORE_MODAL_PARTY) {
+    renderPartySubStoresModal();
   }
 }
 
