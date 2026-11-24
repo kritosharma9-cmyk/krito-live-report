@@ -4371,5 +4371,123 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK FIXES ONLY (v16.25)
+     1. Horizontal Header Breakdown: Full 100% width expand (like original Horizontal)
+     2. Individual Store Data: Excel-like AutoFit column spacing (zero cut-off,
+        tight distance) + Default Auto-Freeze up to "Party / Store Name"
+     (PASTE RIGHT AT THE VERY END OF live.html, AFTER v16.24 & BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installLiveLinkHorizExpandAndAutoFitV1625() {
+
+  if (window._kritoLiveHorizAutoFitV1625Installed) return;
+  window._kritoLiveHorizAutoFitV1625Installed = true;
+
+  // =========================================================================
+  // MINIMAL CSS STRICTLY FOR THE 2 REQUESTED CHANGES ONLY
+  // =========================================================================
+  var css = [
+    /* 1. Horizontal Header Breakdown: Full 100% Width Expand (like original Horizontal view) */
+    '.krito-attr-vgrid-v1623.krito-hdr-horiz-v1624{display:flex !important; flex-direction:column !important; align-items:stretch !important; width:100% !important; max-width:100% !important; gap:10px !important; box-sizing:border-box !important;}',
+    '.krito-attr-vgrid-v1623.krito-hdr-horiz-v1624 > *{width:100% !important; max-width:100% !important; min-width:0 !important; box-sizing:border-box !important;}',
+
+    /* 2. Individual Store Data: Excel AutoFit Column Width (Tight Distance, Zero Data Cut-Off) */
+    'table.krito-autofit-table-v1625, table:has(#liveStoreTbody){width:max-content !important; min-width:0 !important; table-layout:auto !important;}',
+    'table.krito-autofit-table-v1625 thead th, table:has(#liveStoreTbody) thead th{padding:6px 7px !important; white-space:nowrap !important; width:auto !important; min-width:0 !important;}',
+    'table.krito-autofit-table-v1625 tbody td, table:has(#liveStoreTbody) tbody td{padding:5px 7px !important; white-space:nowrap !important; width:auto !important; min-width:0 !important;}',
+    'table.krito-autofit-table-v1625 tbody tr.expand-drawer-row td, table:has(#liveStoreTbody) tbody tr.expand-drawer-row td{white-space:normal !important; padding:8px 10px !important;}',
+    'table.krito-autofit-table-v1625 thead th .krito-freeze-th-btn-v1624, table:has(#liveStoreTbody) thead th .krito-freeze-th-btn-v1624{margin-left:3px !important; padding:1px 4px !important; font-size:9px !important;}',
+    'table.krito-autofit-table-v1625 thead th .krito-freeze-th-btn-v1624.is-primary, table:has(#liveStoreTbody) thead th .krito-freeze-th-btn-v1624.is-primary{padding:1px 6px !important; font-size:9.5px !important;}',
+    'table.krito-autofit-table-v1625 tbody td .krito-freeze-row-btn-v1624, table:has(#liveStoreTbody) tbody td .krito-freeze-row-btn-v1624{width:15px !important; height:15px !important; margin-left:2px !important; font-size:9px !important;}',
+    'table.krito-autofit-table-v1625 .krito-rank-pill-v1624, table:has(#liveStoreTbody) .krito-rank-pill-v1624{min-width:24px !important; padding:1px 6px !important; font-size:10.5px !important;}'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.id = 'kritoLiveHorizAutoFitCssV1625';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+  var defaultPartyFreezeDone = false;
+  var userChangedFreezeManually = false;
+
+  // Respect manual user Freeze / Unfreeze actions (never override user's choice once clicked)
+  document.addEventListener('click', function(ev) {
+    if (!ev.isTrusted) return;
+    if (ev.target && ev.target.closest) {
+      if (ev.target.closest('.krito-freeze-th-btn-v1624') || ev.target.closest('#kritoUnfreezeAllBtnV1624')) {
+        userChangedFreezeManually = true;
+      }
+    }
+  }, true);
+
+  function applyAutoFitAndDefaultPartyFreezeV1625() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+
+    var addedAutoFitNow = !table.classList.contains('krito-autofit-table-v1625');
+    if (addedAutoFitNow) {
+      table.classList.add('krito-autofit-table-v1625');
+    }
+
+    // By default, auto-freeze up to "Party / Store Name" on first load
+    if (!defaultPartyFreezeDone && !userChangedFreezeManually) {
+      var anyFrozen = table.querySelector('thead .krito-freeze-th-btn-v1624.is-frozen');
+      if (anyFrozen) {
+        defaultPartyFreezeDone = true;
+      } else {
+        var partyFreezeBtn = table.querySelector('thead .krito-freeze-th-btn-v1624.is-primary');
+        if (partyFreezeBtn) {
+          defaultPartyFreezeDone = true;
+          requestAnimationFrame(function() {
+            if (userChangedFreezeManually) return;
+            var curTb = document.getElementById('liveStoreTbody');
+            var curTbl = curTb ? curTb.closest('table') : null;
+            var freshBtn = curTbl ? curTbl.querySelector('thead .krito-freeze-th-btn-v1624.is-primary') : null;
+            if (freshBtn && !freshBtn.classList.contains('is-frozen') && !curTbl.querySelector('thead .krito-freeze-th-btn-v1624.is-frozen')) {
+              freshBtn.click();
+            }
+          });
+          return;
+        }
+      }
+    }
+
+    // Recalculate frozen sticky column offsets cleanly whenever AutoFit class is applied
+    if (addedAutoFitNow && table.querySelector('thead .krito-freeze-th-btn-v1624.is-frozen')) {
+      requestAnimationFrame(function() {
+        try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+      });
+    }
+  }
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1625) {
+    var _origUpdateStoreV1625 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateStoreV1625.apply(this, arguments);
+      applyAutoFitAndDefaultPartyFreezeV1625();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1625 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1625) {
+    var _origRenderAppV1625 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderAppV1625.apply(this, arguments);
+      applyAutoFitAndDefaultPartyFreezeV1625();
+      return res;
+    };
+    window.renderApp._v1625 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    applyAutoFitAndDefaultPartyFreezeV1625();
+  }
+
+})();
+</script>
 </body>
 </html>
