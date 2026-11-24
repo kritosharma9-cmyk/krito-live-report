@@ -3113,5 +3113,477 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK UI CHANGES ONLY (v16.23)
+     1. Individual Store Data: Separate "Unit / Location" (+N) & "Last Report Date" columns
+     2. Pending Stores: Clean Cluster-Wise grouped display
+     3. Header Qty Breakdown: Vertical side-by-side columns (min 7 per block,
+        auto-adjusts within screen on >7 headers, dynamic font scaling, zero cut-off)
+     (PASTE RIGHT AT THE VERY END OF live.html, BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installLiveLinkLayoutChangesV1623() {
+
+  if (window._kritoLiveLayoutV1623Installed) return;
+  window._kritoLiveLayoutV1623Installed = true;
+
+  // =========================================================================
+  // MINIMAL CSS STRICTLY FOR THE 3 REQUESTED CHANGES ONLY
+  // =========================================================================
+  var css = [
+    /* 1. Individual Store Data: Unit / Location & Last Report Date columns */
+    '.krito-th-unit-v1623{text-align:center !important; white-space:nowrap !important;}',
+    '.krito-th-date-v1623{white-space:nowrap !important;}',
+    '.krito-td-unit-v1623{text-align:center !important; white-space:nowrap !important; vertical-align:middle !important;}',
+    '.krito-td-date-v1623{white-space:nowrap !important; vertical-align:middle !important;}',
+    '.krito-td-date-v1623 .party-upd-badge-v1617{margin-left:0 !important;}',
+
+    /* 2. Pending Stores: Cluster-Wise grouped cards */
+    '.krito-pending-cluster-wrap-v1623{display:flex; flex-direction:column; gap:10px; margin-top:8px;}',
+    '.krito-pending-cluster-card-v1623{background:#ffffff; border:1px solid #fecdd3; border-radius:10px; padding:9px 11px;}',
+    '.krito-pending-cluster-head-v1623{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; padding-bottom:5px; border-bottom:1px dashed #fda4af;}',
+    '.krito-pending-cluster-title-v1623{font-size:12px; font-weight:800; color:#9f1239; letter-spacing:0.2px;}',
+    '.krito-pending-cluster-count-v1623{background:#ffe4e6; color:#be123c; border:1px solid #fda4af; border-radius:99px; padding:1px 9px; font-size:11px; font-weight:800;}',
+    '.krito-pending-cluster-grid-v1623{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:6px;}',
+    '.krito-pending-store-pill-v1623{background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; border-radius:7px; padding:5px 8px; font-size:11.5px; font-weight:700; line-height:1.25; white-space:normal; word-break:break-word;}',
+
+    /* 3. Header Qty Breakdown: Vertical Columns (Min 7 per block, Auto-Adjust Fonts, Zero Cut-Off) */
+    '.krito-attr-vgrid-v1623{display:grid !important; gap:var(--vcol-gap, 6px) !important; align-items:start !important; width:100% !important; margin-top:8px !important; box-sizing:border-box !important;}',
+    '.krito-attr-vcol-v1623{display:flex !important; flex-direction:column !important; gap:5px !important; padding:7px 6px !important; margin:0 !important; min-width:0 !important; width:100% !important; box-sizing:border-box !important; background:#ffffff !important; border:1.5px solid #ddd6fe !important; border-radius:10px !important; overflow:visible !important;}',
+    '.krito-attr-vcol-head-v1623{display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:4px !important; margin:0 !important; padding-bottom:5px !important; border-bottom:1px solid #ede9fe !important; width:100% !important; box-sizing:border-box !important;}',
+    '.krito-attr-vcol-head-v1623 > div{display:flex !important; flex-wrap:wrap !important; align-items:center !important; gap:4px !important; width:100% !important; min-width:0 !important;}',
+    '.krito-attr-vcol-head-v1623 span, .krito-attr-vcol-head-v1623 b, .krito-attr-vcol-head-v1623 strong{font-size:var(--vcol-hdr-font, 11px) !important; white-space:normal !important; word-break:break-word !important; overflow:visible !important; text-overflow:clip !important; max-width:none !important; line-height:1.2 !important;}',
+    '.krito-attr-vcol-head-v1623 input[type="text"], .krito-attr-vcol-head-v1623 input[type="search"], .krito-attr-vcol-head-v1623 input:not([type="checkbox"]){width:100% !important; min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; font-size:var(--vcol-chip-font, 10px) !important; padding:3px 6px !important; margin:0 !important;}',
+    '.krito-attr-vcol-head-v1623 button{font-size:var(--vcol-btn-font, 9.5px) !important; padding:2px 5px !important; white-space:normal !important; line-height:1.15 !important; margin:0 !important;}',
+    '.krito-attr-vcol-list-v1623{display:flex !important; flex-direction:column !important; gap:4px !important; max-height:270px !important; overflow-y:auto !important; overflow-x:hidden !important; padding-right:2px !important; width:100% !important; box-sizing:border-box !important;}',
+    '.krito-attr-vcol-list-v1623::-webkit-scrollbar{width:5px;}',
+    '.krito-attr-vcol-list-v1623::-webkit-scrollbar-thumb{background:#c4b5fd; border-radius:99px;}',
+    '.krito-attr-vcol-list-v1623 .attr-chip{display:flex; width:100% !important; min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; align-items:center !important; justify-content:space-between !important; gap:3px !important; padding:var(--vcol-pad, 4px 5px) !important; margin:0 !important; height:auto !important; flex-wrap:nowrap !important; font-size:var(--vcol-chip-font, 10.5px) !important; white-space:normal !important; word-break:break-word !important;}',
+    '.krito-attr-vcol-list-v1623 .attr-chip input[type="checkbox"]{width:var(--vcol-chk, 13px) !important; height:var(--vcol-chk, 13px) !important; min-width:var(--vcol-chk, 13px) !important; flex-shrink:0 !important; margin:0 !important;}',
+    '.krito-attr-vcol-list-v1623 .attr-chip > span:not(:last-child), .krito-attr-vcol-list-v1623 .attr-chip label{flex:1 1 auto !important; min-width:0 !important; max-width:none !important; font-size:var(--vcol-chip-font, 10.5px) !important; line-height:1.15 !important; white-space:normal !important; overflow:visible !important; text-overflow:clip !important; word-break:break-word !important; overflow-wrap:anywhere !important; text-align:left !important;}',
+    '.krito-attr-vcol-list-v1623 .attr-chip .attr-val-plus-btn-v1617{width:var(--vcol-plus, 17px) !important; height:var(--vcol-plus, 17px) !important; min-width:var(--vcol-plus, 17px) !important; font-size:var(--vcol-badge-font, 10px) !important; margin:0 2px !important; flex-shrink:0 !important;}',
+    '.krito-attr-vcol-list-v1623 .attr-chip > *:last-child{font-size:var(--vcol-badge-font, 10px) !important; padding:1px 5px !important; white-space:nowrap !important; flex-shrink:0 !important; max-width:none !important; overflow:visible !important;}',
+    '@media (max-width: 768px){.krito-attr-vgrid-v1623{grid-template-columns:repeat(2, minmax(0, 1fr)) !important;}}'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.id = 'kritoLiveLayoutCssV1623';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+  function getActiveMonthDataV1623() {
+    try {
+      if (typeof getActiveDatasetBucket === 'function' && typeof ACTIVE_BRAND !== 'undefined' && typeof ACTIVE_MONTH !== 'undefined') {
+        var bucket = getActiveDatasetBucket();
+        return (bucket && bucket[ACTIVE_BRAND] && bucket[ACTIVE_BRAND][ACTIVE_MONTH]) ? bucket[ACTIVE_BRAND][ACTIVE_MONTH] : null;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  // =========================================================================
+  // CHANGE 1: INDIVIDUAL STORE DATA -> 2 DEDICATED COLUMNS:
+  //           "Unit / Location" (+7 pill) & "Last Report Date" (🕒 date badge)
+  // =========================================================================
+  var storeTbodyObserver = null;
+
+  function patchExpandDrawerRowsV1623(tbody) {
+    if (!tbody) return;
+    var drawers = tbody.querySelectorAll('tr.expand-drawer-row');
+    for (var i = 0; i < drawers.length; i++) {
+      var td = drawers[i].querySelector('td');
+      if (td && td.getAttribute('data-v1623-cs') !== '1') {
+        var cs = parseInt(td.getAttribute('colspan') || '1', 10);
+        td.setAttribute('colspan', String(cs + 2));
+        td.setAttribute('data-v1623-cs', '1');
+      }
+    }
+  }
+
+  function applyStoreTableTwoColumnsV1623() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+
+    // 1. Add the 2 column headers right after "Party / Store Name" (once)
+    var theadRow = table.querySelector('thead tr');
+    if (theadRow && !theadRow.querySelector('.krito-th-unit-v1623') && theadRow.children.length >= 2) {
+      var partyTh = theadRow.children[1];
+      var thUnit = document.createElement('th');
+      thUnit.className = 'krito-th-unit-v1623';
+      thUnit.textContent = 'Unit / Location';
+
+      var thDate = document.createElement('th');
+      thDate.className = 'krito-th-date-v1623';
+      thDate.textContent = 'Last Report Date';
+
+      partyTh.insertAdjacentElement('afterend', thDate);
+      partyTh.insertAdjacentElement('afterend', thUnit);
+    }
+
+    var mData = getActiveMonthDataV1623();
+    var updByParty = {};
+    if (mData && Array.isArray(mData.stores)) {
+      for (var s = 0; s < mData.stores.length; s++) {
+        var st = mData.stores[s];
+        if (st && st.party && st.lastUpd) {
+          updByParty[String(st.party).trim().toUpperCase()] = st.lastUpd;
+        }
+      }
+    }
+
+    // 2. Patch every row in tbody
+    var rows = tbody.children;
+    for (var i = 0; i < rows.length; i++) {
+      var tr = rows[i];
+      if (!tr || tr.tagName !== 'TR') continue;
+
+      if (tr.classList.contains('expand-drawer-row')) {
+        var dTd = tr.querySelector('td');
+        if (dTd && dTd.getAttribute('data-v1623-cs') !== '1') {
+          var cs = parseInt(dTd.getAttribute('colspan') || '1', 10);
+          dTd.setAttribute('colspan', String(cs + 2));
+          dTd.setAttribute('data-v1623-cs', '1');
+        }
+        continue;
+      }
+
+      if (tr.classList.contains('total-row')) {
+        if (!tr.querySelector('.krito-td-unit-v1623') && tr.children.length >= 2) {
+          var tUnit = document.createElement('td');
+          tUnit.className = 'krito-td-unit-v1623';
+          tUnit.textContent = '-';
+          var tDate = document.createElement('td');
+          tDate.className = 'krito-td-date-v1623';
+          tDate.textContent = '-';
+          tr.children[1].insertAdjacentElement('afterend', tDate);
+          tr.children[1].insertAdjacentElement('afterend', tUnit);
+        }
+        continue;
+      }
+
+      var nameTd = tr.children[1];
+      if (!nameTd) continue;
+
+      // If already patched, clean up any duplicate date badge v16.17 might re-append to nameTd
+      var existingDateTd = tr.querySelector('.krito-td-date-v1623');
+      if (tr.querySelector('.krito-td-unit-v1623') && existingDateTd) {
+        var strayBadge = nameTd.querySelector('.party-upd-badge-v1617');
+        if (strayBadge) {
+          if (!existingDateTd.querySelector('.party-upd-badge-v1617')) {
+            existingDateTd.innerHTML = '';
+            strayBadge.style.marginLeft = '0';
+            existingDateTd.appendChild(strayBadge);
+          } else {
+            strayBadge.remove();
+          }
+        }
+        continue;
+      }
+
+      // Extract the "+ 7" / "+ 16" / "+ 1" button from nameTd (preserving its exact click handler!)
+      var unitEl = null;
+      var kids = Array.from(nameTd.children);
+      for (var k = 0; k < kids.length; k++) {
+        var el = kids[k];
+        if (el.classList && el.classList.contains('party-upd-badge-v1617')) continue;
+        if (el.tagName === 'B' || el.tagName === 'STRONG') continue;
+        var txt = (el.textContent || '').trim();
+        if (/^\+\s*\d+/.test(txt) || el.tagName === 'BUTTON' || el.hasAttribute('onclick')) {
+          unitEl = el;
+          break;
+        }
+      }
+
+      // Extract the Last Report Date badge from nameTd (or build from dataset fallback)
+      var dateEl = nameTd.querySelector('.party-upd-badge-v1617');
+      if (!dateEl) {
+        var bEl = nameTd.querySelector('b');
+        var pKey = bEl ? String(bEl.textContent || '').trim().toUpperCase() : '';
+        var updStr = updByParty[pKey] || '';
+        if (updStr) {
+          dateEl = document.createElement('span');
+          dateEl.className = 'party-upd-badge-v1617';
+          dateEl.title = 'Party Last File Updated Date & Time';
+          dateEl.textContent = '🕒 ' + updStr;
+        }
+      }
+
+      var unitTd = document.createElement('td');
+      unitTd.className = 'krito-td-unit-v1623';
+      if (unitEl) {
+        unitEl.style.marginLeft = '0';
+        unitTd.appendChild(unitEl);
+      } else {
+        unitTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+      }
+
+      var dateTd = document.createElement('td');
+      dateTd.className = 'krito-td-date-v1623';
+      if (dateEl) {
+        dateEl.style.marginLeft = '0';
+        dateTd.appendChild(dateEl);
+      } else {
+        dateTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+      }
+
+      nameTd.insertAdjacentElement('afterend', dateTd);
+      nameTd.insertAdjacentElement('afterend', unitTd);
+    }
+
+    // Observe dynamic "+7" drawer insertions so their colspan always matches the 2 new columns
+    if (storeTbodyObserver) {
+      try { storeTbodyObserver.disconnect(); } catch (e) {}
+    }
+    if (typeof MutationObserver === 'function') {
+      storeTbodyObserver = new MutationObserver(function() {
+        patchExpandDrawerRowsV1623(document.getElementById('liveStoreTbody'));
+      });
+      storeTbodyObserver.observe(tbody, { childList: true });
+    }
+  }
+
+  // =========================================================================
+  // CHANGE 2: PENDING STORES -> GROUPED CLUSTER WISE
+  // =========================================================================
+  function findPendingCardElementsV1623() {
+    var divs = document.querySelectorAll('div, section');
+    for (var i = 0; i < divs.length; i++) {
+      var box = divs[i];
+      if (box.classList.contains('krito-pending-cluster-wrap-v1623')) continue;
+      if (box.children.length < 2 || box.children.length > 4) continue;
+      if (box.querySelector('table')) continue;
+      var head = box.firstElementChild;
+      if (!head) continue;
+      var hTxt = (head.textContent || '').toUpperCase();
+      if (hTxt.includes('PENDING STORES')) {
+        return { card: box, head: head, listBox: box.children[1] };
+      }
+    }
+    return null;
+  }
+
+  function applyPendingStoresClusterWiseV1623() {
+    var found = findPendingCardElementsV1623();
+    if (!found || !found.listBox) return;
+    if (found.listBox.classList.contains('krito-pending-cluster-wrap-v1623')) return;
+
+    var mData = getActiveMonthDataV1623();
+    var pendingArr = (mData && Array.isArray(mData.pending)) ? mData.pending : [];
+
+    // Fallback: parse from existing DOM chips if payload pending array isn't accessible
+    if (pendingArr.length === 0) {
+      var pills = found.listBox.children;
+      for (var p = 0; p < pills.length; p++) {
+        var raw = (pills[p].getAttribute('title') || pills[p].textContent || '').replace(/^[•\s]+/, '').trim();
+        if (!raw) continue;
+        var m = raw.match(/\(([^()]+)\)\s*$/);
+        var mgr = m ? m[1].trim() : 'Unassigned';
+        var pName = m ? raw.slice(0, m.index).trim() : raw;
+        pendingArr.push({ party: pName, manager: mgr });
+      }
+    }
+
+    if (pendingArr.length === 0) return;
+
+    // Group by Cluster (uses cluster / subCluster if present, otherwise manager)
+    var clustersMap = {};
+    for (var i = 0; i < pendingArr.length; i++) {
+      var item = pendingArr[i];
+      if (!item) continue;
+      var cName = String(item.cluster || item.subCluster || item.manager || 'Unassigned').trim() || 'Unassigned';
+      var cKey = cName.toUpperCase();
+      if (!clustersMap[cKey]) clustersMap[cKey] = { label: cName.toUpperCase(), stores: [] };
+      clustersMap[cKey].stores.push(String(item.party || '').trim());
+    }
+
+    var clusterKeys = Object.keys(clustersMap).sort(function(a, b) {
+      if (a === 'UNASSIGNED') return 1;
+      if (b === 'UNASSIGNED') return -1;
+      return a.localeCompare(b);
+    });
+
+    var wrap = document.createElement('div');
+    wrap.className = 'krito-pending-cluster-wrap-v1623';
+
+    for (var ci = 0; ci < clusterKeys.length; ci++) {
+      var grp = clustersMap[clusterKeys[ci]];
+      grp.stores.sort(function(a, b) { return a.localeCompare(b); });
+
+      var cCard = document.createElement('div');
+      cCard.className = 'krito-pending-cluster-card-v1623';
+
+      var cHead = document.createElement('div');
+      cHead.className = 'krito-pending-cluster-head-v1623';
+
+      var cTitle = document.createElement('span');
+      cTitle.className = 'krito-pending-cluster-title-v1623';
+      cTitle.textContent = '📍 CLUSTER: ' + grp.label;
+
+      var cCnt = document.createElement('span');
+      cCnt.className = 'krito-pending-cluster-count-v1623';
+      cCnt.textContent = grp.stores.length + ' Pending';
+
+      cHead.appendChild(cTitle);
+      cHead.appendChild(cCnt);
+
+      var cGrid = document.createElement('div');
+      cGrid.className = 'krito-pending-cluster-grid-v1623';
+
+      for (var si = 0; si < grp.stores.length; si++) {
+        var pill = document.createElement('div');
+        pill.className = 'krito-pending-store-pill-v1623';
+        pill.title = grp.stores[si] + ' (' + grp.label + ')';
+        pill.textContent = '• ' + grp.stores[si];
+        cGrid.appendChild(pill);
+      }
+
+      cCard.appendChild(cHead);
+      cCard.appendChild(cGrid);
+      wrap.appendChild(cCard);
+    }
+
+    found.listBox.replaceWith(wrap);
+  }
+
+  // =========================================================================
+  // CHANGE 3: HEADER QTY BREAKDOWN -> VERTICAL COLUMNS (MIN 7 PER BLOCK,
+  //           AUTO-ADJUSTS COLUMNS & FONTS ON SCREEN, ZERO FONT CUT-OFF)
+  // =========================================================================
+  function scaleVerticalHeaderGridFontsV1623(gridEl, colCount) {
+    if (!gridEl) return;
+    var w = gridEl.clientWidth || window.innerWidth || 1280;
+    var gap = (colCount >= 9) ? 4 : 6;
+    var colPx = Math.floor((w - (colCount - 1) * gap) / colCount);
+
+    var hdrFont = '11px', chipFont = '10.5px', badgeFont = '9.5px', btnFont = '9.5px', pad = '4px 5px', plus = '17px', chk = '13px';
+    if (colPx < 130) {
+      hdrFont = '9px'; chipFont = '8.5px'; badgeFont = '8px'; btnFont = '8px'; pad = '2.5px 3px'; plus = '14px'; chk = '11px';
+    } else if (colPx < 165) {
+      hdrFont = '10px'; chipFont = '9.5px'; badgeFont = '8.5px'; btnFont = '8.5px'; pad = '3px 4px'; plus = '15px'; chk = '12px';
+    } else if (colPx < 195) {
+      hdrFont = '10.5px'; chipFont = '10px'; badgeFont = '9px'; btnFont = '9px'; pad = '3.5px 5px'; plus = '16px'; chk = '12.5px';
+    }
+
+    gridEl.style.setProperty('--vcol-gap', gap + 'px');
+    gridEl.style.setProperty('--vcol-hdr-font', hdrFont);
+    gridEl.style.setProperty('--vcol-chip-font', chipFont);
+    gridEl.style.setProperty('--vcol-badge-font', badgeFont);
+    gridEl.style.setProperty('--vcol-btn-font', btnFont);
+    gridEl.style.setProperty('--vcol-pad', pad);
+    gridEl.style.setProperty('--vcol-plus', plus);
+    gridEl.style.setProperty('--vcol-chk', chk);
+  }
+
+  function applyVerticalHeaderBreakdownV1623() {
+    var attrBar = document.querySelector('.attr-bar');
+    if (!attrBar) return;
+
+    // Locate each selected header's panel box via its "Tick All" button
+    var panels = [];
+    var seen = new Set();
+    var btns = attrBar.querySelectorAll('button');
+
+    for (var i = 0; i < btns.length; i++) {
+      if (!(btns[i].textContent || '').includes('Tick All')) continue;
+      var node = btns[i];
+      while (node && node.parentElement && node.parentElement !== attrBar) {
+        var p = node.parentElement;
+        if (p.classList && p.classList.contains('krito-attr-vgrid-v1623')) break;
+        var pBtns = p.querySelectorAll('button');
+        var tickCnt = 0;
+        for (var t = 0; t < pBtns.length; t++) {
+          if ((pBtns[t].textContent || '').includes('Tick All')) tickCnt++;
+        }
+        if (tickCnt > 1) break;
+        node = p;
+      }
+      if (node && node !== attrBar && !seen.has(node)) {
+        if (node.children.length === 1 && node.firstElementChild && node.firstElementChild.querySelector('.attr-chip')) {
+          node = node.firstElementChild;
+        }
+        if (!seen.has(node)) {
+          seen.add(node);
+          panels.push(node);
+        }
+      }
+    }
+
+    if (panels.length === 0) return;
+
+    var gridEl = attrBar.querySelector('.krito-attr-vgrid-v1623');
+    if (!gridEl) {
+      gridEl = document.createElement('div');
+      gridEl.className = 'krito-attr-vgrid-v1623';
+      panels[0].parentElement.insertBefore(gridEl, panels[0]);
+    }
+
+    // Minimum 7 columns side-by-side in one block; auto-adjusts cleanly if > 7 headers are selected!
+    var colCount = Math.max(7, panels.length);
+    gridEl.style.setProperty('grid-template-columns', 'repeat(' + colCount + ', minmax(0, 1fr))', 'important');
+
+    for (var pi = 0; pi < panels.length; pi++) {
+      var panel = panels[pi];
+      panel.classList.add('krito-attr-vcol-v1623');
+
+      var kids = Array.from(panel.children);
+      for (var ki = 0; ki < kids.length; ki++) {
+        var kid = kids[ki];
+        if (kid.querySelector('.attr-chip') && !kid.querySelector('input[type="text"]') && !kid.querySelector('button[onclick*="setAllAttrSubVals"]')) {
+          kid.classList.add('krito-attr-vcol-list-v1623');
+        } else if (kid.querySelector('button') || kid.querySelector('input')) {
+          kid.classList.add('krito-attr-vcol-head-v1623');
+        }
+      }
+
+      if (panel.parentElement !== gridEl) {
+        gridEl.appendChild(panel);
+      }
+    }
+
+    scaleVerticalHeaderGridFontsV1623(gridEl, colCount);
+  }
+
+  function applyAllThreeChangesV1623() {
+    applyStoreTableTwoColumnsV1623();
+    applyPendingStoresClusterWiseV1623();
+    applyVerticalHeaderBreakdownV1623();
+  }
+
+  window.addEventListener('resize', function() {
+    var gridEl = document.querySelector('.krito-attr-vgrid-v1623');
+    if (gridEl) {
+      var cnt = Math.max(7, gridEl.children.length);
+      scaleVerticalHeaderGridFontsV1623(gridEl, cnt);
+    }
+  });
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1623) {
+    var _origUpdateStoreV1623 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateStoreV1623.apply(this, arguments);
+      applyStoreTableTwoColumnsV1623();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1623 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1623) {
+    var _origRenderAppV1623 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderAppV1623.apply(this, arguments);
+      applyAllThreeChangesV1623();
+      return res;
+    };
+    window.renderApp._v1623 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    applyAllThreeChangesV1623();
+  }
+
+})();
+</script>
 </body>
 </html>
