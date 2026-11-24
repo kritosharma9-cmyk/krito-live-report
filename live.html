@@ -2444,5 +2444,516 @@ start30SecCountdownLoop();
   } catch (e) {}
 })();
 </script>
+ <!-- ============================================================================
+     🎯 LIVE LINK ADDONS & FIXES ONLY (v16.17)
+     1. Party Last Updated Date & Time right next to Party Name (Individual Store Data)
+     2. [ + ] Button inside Header Chips (SHIRTS, TROUSERS, etc.) -> Full-Screen Party Popup
+     3. Excel-like Cross-Filter across Multiple Headers (Group 5 <-> Group 7, etc.)
+     (PASTE RIGHT AT THE VERY END OF live.html, BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installLiveLinkRequestedAddonsV1617() {
+
+  // Minimal CSS ONLY for Party Last Updated badge & Header Chip [+] button
+  var st = document.createElement('style');
+  st.textContent =
+    '.party-upd-badge-v1617{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:2px 8px;border-radius:6px;background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-size:10.5px;font-weight:700;vertical-align:middle;}' +
+    '.attr-val-plus-btn-v1617{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;margin:0 4px 0 6px;border-radius:5px;border:1px solid #7c3aed;background:#6d28d9;color:#ffffff;font-size:13px;font-weight:800;line-height:1;cursor:pointer;flex-shrink:0;transition:0.15s;}' +
+    '.attr-val-plus-btn-v1617:hover{background:#4c1d95;transform:scale(1.08);}' +
+    '.attr-chip.missing .attr-val-plus-btn-v1617{background:#dc2626;border-color:#b91c1c;}';
+  document.head.appendChild(st);
+
+  var itemModalRoot = document.getElementById('attrItemPartyModalRootV1617');
+  if (!itemModalRoot) {
+    itemModalRoot = document.createElement('div');
+    itemModalRoot.id = 'attrItemPartyModalRootV1617';
+    document.body.appendChild(itemModalRoot);
+  }
+
+  var ITEM_MODAL_STATE = { header: '', value: '', search: '' };
+
+  function getActivePeriodDataV1617() {
+    var bucket = getActiveDatasetBucket();
+    var brandPeriods = bucket[ACTIVE_BRAND] || {};
+    var mData = brandPeriods[ACTIVE_MONTH] || null;
+    var compareOn = !!(ACTIVE_LINK && ACTIVE_LINK.rights && ACTIVE_LINK.rights.allowCompareLY && COMPARE_LY_ENABLED);
+    var lyKey = compareOn ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
+    var lyData = (compareOn && lyKey && brandPeriods[lyKey]) ? brandPeriods[lyKey] : null;
+    return { mData: mData, lyData: lyData, lyKey: lyKey, compareOn: compareOn };
+  }
+
+  // ---------------------------------------------------------------------------
+  // EXCEL-LIKE CROSS-FILTER ENGINE ACROSS MULTIPLE HEADERS
+  // ---------------------------------------------------------------------------
+  function getRawPermittedValsV1617(rawAttrs, headerName) {
+    var aObj = (rawAttrs && rawAttrs[headerName]) ? rawAttrs[headerName] : null;
+    if (!aObj || !Array.isArray(aObj.values)) return [];
+    var adminAllowedMap = ACTIVE_LINK && ACTIVE_LINK.allowedHeaderValues;
+    if (adminAllowedMap && Array.isArray(adminAllowedMap[headerName])) {
+      var allowSet = new Set(adminAllowedMap[headerName]);
+      return aObj.values.filter(function(v) { return allowSet.has(v); });
+    }
+    return aObj.values;
+  }
+
+  function getActiveFilterSetsV1617(periodObj) {
+    var rawAttrs = periodObj._rawAttrsV1617 || periodObj.attributes || {};
+    var filters = {};
+    var activeHdrs = (ACTIVE_LINK && ACTIVE_LINK.rights && ACTIVE_LINK.rights.showHeaderBreakdown) ? (ACTIVE_HEADERS_LIST || []) : [];
+
+    activeHdrs.forEach(function(hName) {
+      var permitted = getRawPermittedValsV1617(rawAttrs, hName);
+      var unchk = UNCHECKED_ATTR_VALS[hName] || new Set();
+      var sel = permitted.filter(function(v) { return !unchk.has(v); });
+      var allOrigCount = (rawAttrs[hName] && Array.isArray(rawAttrs[hName].values)) ? rawAttrs[hName].values.length : permitted.length;
+      filters[hName] = {
+        selSet: new Set(sel),
+        isFiltered: sel.length < allOrigCount
+      };
+    });
+    return filters;
+  }
+
+  function applyExcelCrossFilterToPeriodV1617(periodObj, filtersMap) {
+    if (!periodObj || !periodObj.attributes) return;
+    if (!periodObj._rawAttrsV1617) periodObj._rawAttrsV1617 = periodObj.attributes;
+
+    var rawAttrs = periodObj._rawAttrsV1617;
+    var cube = periodObj.cube;
+    var activeHdrs = Object.keys(filtersMap);
+
+    if (!cube || !Array.isArray(cube.h) || !Array.isArray(cube.r) || activeHdrs.length < 2) {
+      periodObj.attributes = rawAttrs;
+      return;
+    }
+
+    var anyFiltered = activeHdrs.some(function(h) { return filtersMap[h] && filtersMap[h].isFiltered; });
+    if (!anyFiltered) {
+      periodObj.attributes = rawAttrs;
+      return;
+    }
+
+    var storeMgrMap = {};
+    (periodObj.stores || []).forEach(function(s) {
+      storeMgrMap[String(s.party || '').trim().toUpperCase()] = s.manager || 'Unassigned';
+    });
+
+    var hdrCubeIdx = {};
+    cube.h.forEach(function(hName, idx) { hdrCubeIdx[hName] = idx; });
+
+    var activeCubeSpecs = [];
+    activeHdrs.forEach(function(hName) {
+      var ci = hdrCubeIdx[hName];
+      if (ci === undefined) return;
+      var vDict = cube.v[ci] || [];
+      var selSet = filtersMap[hName].selSet;
+      var allowedIdxSet = new Set();
+      for (var vi = 0; vi < vDict.length; vi++) {
+        if (selSet.has(vDict[vi])) allowedIdxSet.add(vi);
+      }
+      activeCubeSpecs.push({ hName: hName, ci: ci, allowedIdxSet: allowedIdxSet, isFiltered: filtersMap[hName].isFiltered });
+    });
+
+    if (activeCubeSpecs.length < 2) {
+      periodObj.attributes = rawAttrs;
+      return;
+    }
+
+    var newAttrs = Object.assign({}, rawAttrs);
+    var metricsOffset = 1 + cube.h.length;
+
+    activeCubeSpecs.forEach(function(targetSpec) {
+      var hName = targetSpec.hName;
+      var ci = targetSpec.ci;
+      var vDict = cube.v[ci] || [];
+      var otherSpecs = activeCubeSpecs.filter(function(sp) { return sp.hName !== hName; });
+      var otherHasFilter = otherSpecs.some(function(sp) { return sp.isFiltered; });
+
+      var chipTotals = {};
+      var allMetrics = {};
+      var byMgr = {};
+      var byStore = {};
+
+      for (var ri = 0; ri < cube.r.length; ri++) {
+        var tup = cube.r[ri];
+
+        var passOthers = true;
+        for (var oi = 0; oi < otherSpecs.length; oi++) {
+          var osp = otherSpecs[oi];
+          if (!osp.allowedIdxSet.has(tup[1 + osp.ci])) { passOthers = false; break; }
+        }
+        if (!passOthers) continue;
+
+        var vIdx = tup[1 + ci];
+        var vName = vDict[vIdx];
+        if (vName === undefined) continue;
+
+        var q = Number(tup[metricsOffset]) || 0;
+        var n = Number(tup[metricsOffset + 1]) || 0;
+        var m = Number(tup[metricsOffset + 2]) || 0;
+        var d = Number(tup[metricsOffset + 3]) || 0;
+
+        chipTotals[vName] = (chipTotals[vName] || 0) + q;
+
+        if (targetSpec.allowedIdxSet.has(vIdx)) {
+          if (!allMetrics[vName]) allMetrics[vName] = [0, 0, 0, 0];
+          allMetrics[vName][0] += q;
+          allMetrics[vName][1] += n;
+          allMetrics[vName][2] += m;
+          allMetrics[vName][3] += d;
+
+          var pName = cube.p[tup[0]] || 'UNKNOWN';
+          var mgrName = storeMgrMap[pName] || 'Unassigned';
+
+          if (!byStore[pName]) byStore[pName] = {};
+          byStore[pName][vName] = (byStore[pName][vName] || 0) + q;
+
+          if (!byMgr[mgrName]) byMgr[mgrName] = {};
+          byMgr[mgrName][vName] = (byMgr[mgrName][vName] || 0) + q;
+        }
+      }
+
+      var origVals = (rawAttrs[hName] && Array.isArray(rawAttrs[hName].values)) ? rawAttrs[hName].values : Object.keys(chipTotals);
+      var filteredVals = otherHasFilter
+        ? origVals.filter(function(v) { return (chipTotals[v] || 0) > 0; })
+        : origVals;
+
+      newAttrs[hName] = {
+        values: filteredVals,
+        totals: chipTotals,
+        totalsMetrics: allMetrics,
+        byManager: byMgr,
+        byStore: byStore
+      };
+    });
+
+    periodObj.attributes = newAttrs;
+  }
+
+  // Ensure Tick All / Untick All uses full raw values even when cross-filtered
+  if (typeof window.setAllAttrSubVals === 'function' && !window.setAllAttrSubVals._v1617) {
+    window.setAllAttrSubVals = function(headerName, shouldSelectAll) {
+      var ctx = getActivePeriodDataV1617();
+      var rawAttrs = ctx.mData ? (ctx.mData._rawAttrsV1617 || ctx.mData.attributes || {}) : {};
+      var permitted = getRawPermittedValsV1617(rawAttrs, headerName);
+      UNCHECKED_ATTR_VALS[headerName] = shouldSelectAll ? new Set() : new Set(permitted);
+      renderApp();
+    };
+    window.setAllAttrSubVals._v1617 = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // POINT 2: PARTY LAST UPDATED DATE & TIME NEXT TO PARTY NAME
+  // ---------------------------------------------------------------------------
+  function injectPartyLastUpdatedBadgesV1617() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var ctx = getActivePeriodDataV1617();
+    if (!ctx.mData || !Array.isArray(ctx.mData.stores)) return;
+
+    var updByParty = {};
+    ctx.mData.stores.forEach(function(s) {
+      if (s && s.party && s.lastUpd) {
+        updByParty[String(s.party).trim().toUpperCase()] = s.lastUpd;
+      }
+    });
+
+    var trs = tbody.querySelectorAll('tr');
+    for (var i = 0; i < trs.length; i++) {
+      var tr = trs[i];
+      if (tr.classList.contains('expand-drawer-row')) continue;
+      var nameTd = tr.children[1];
+      if (!nameTd || nameTd.querySelector('.party-upd-badge-v1617')) continue;
+      var bEl = nameTd.querySelector('b');
+      if (!bEl) continue;
+      var pKey = String(bEl.textContent || '').trim().toUpperCase();
+      var updStr = updByParty[pKey];
+      if (updStr) {
+        var sp = document.createElement('span');
+        sp.className = 'party-upd-badge-v1617';
+        sp.title = 'Party Last File Updated Date & Time';
+        sp.textContent = '🕒 ' + updStr;
+        nameTd.appendChild(sp);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // POINT 3: [ + ] BUTTON INSIDE HEADER CHIPS (SHIRTS, TROUSERS, ETC.)
+  //          -> FULL-SCREEN PARTY-WISE DETAIL POPUP
+  // ---------------------------------------------------------------------------
+  var chipOnchangeRx = new RegExp("toggleAttrSubVal\\('((?:\\\\.|[^'])*)',\\s*'((?:\\\\.|[^'])*)'");
+
+  function injectHeaderChipPlusButtonsV1617() {
+    var chips = document.querySelectorAll('.attr-bar .attr-chip');
+    for (var i = 0; i < chips.length; i++) {
+      var chip = chips[i];
+      if (chip.querySelector('.attr-val-plus-btn-v1617')) continue;
+      var inp = chip.querySelector('input[type="checkbox"]');
+      if (!inp) continue;
+      var oc = inp.getAttribute('onchange') || '';
+      var m = oc.match(chipOnchangeRx);
+      if (!m) continue;
+      var hName = m[1].split("\\'").join("'").split('\\\\').join('\\');
+      var valName = m[2].split("\\'").join("'").split('\\\\').join('\\');
+
+      var qtyBadge = chip.lastElementChild;
+      var plusBtn = document.createElement('button');
+      plusBtn.type = 'button';
+      plusBtn.className = 'attr-val-plus-btn-v1617';
+      plusBtn.textContent = '+';
+      plusBtn.title = 'View Party-Wise Detail for ' + valName + ' (Full Screen)';
+      (function(hn, vn) {
+        plusBtn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          window.openAttrValuePartyModalV1617(hn, vn);
+        });
+      })(hName, valName);
+
+      if (qtyBadge && qtyBadge.parentElement === chip) {
+        chip.insertBefore(plusBtn, qtyBadge);
+      } else {
+        chip.appendChild(plusBtn);
+      }
+    }
+  }
+
+  function computePartyRowsForHeaderItemV1617(periodObj, headerName, itemValue, filtersMap) {
+    if (!periodObj) return [];
+    var storeMetaMap = {};
+    (periodObj.stores || []).forEach(function(s) {
+      storeMetaMap[String(s.party || '').trim().toUpperCase()] = s;
+    });
+
+    var cube = periodObj.cube;
+    if (cube && Array.isArray(cube.h) && Array.isArray(cube.r)) {
+      var targetCi = cube.h.indexOf(headerName);
+      if (targetCi !== -1) {
+        var vDict = cube.v[targetCi] || [];
+        var targetVIdx = vDict.indexOf(itemValue);
+        if (targetVIdx === -1) return [];
+
+        var otherSpecs = [];
+        Object.keys(filtersMap || {}).forEach(function(h) {
+          if (h === headerName) return;
+          var ci = cube.h.indexOf(h);
+          if (ci === -1) return;
+          var vd = cube.v[ci] || [];
+          var allowed = new Set();
+          for (var vi = 0; vi < vd.length; vi++) {
+            if (filtersMap[h].selSet.has(vd[vi])) allowed.add(vi);
+          }
+          otherSpecs.push({ ci: ci, allowed: allowed });
+        });
+
+        var off = 1 + cube.h.length;
+        var pAgg = {};
+        for (var ri = 0; ri < cube.r.length; ri++) {
+          var tup = cube.r[ri];
+          if (tup[1 + targetCi] !== targetVIdx) continue;
+          var ok = true;
+          for (var oi = 0; oi < otherSpecs.length; oi++) {
+            if (!otherSpecs[oi].allowed.has(tup[1 + otherSpecs[oi].ci])) { ok = false; break; }
+          }
+          if (!ok) continue;
+
+          var pName = cube.p[tup[0]] || 'UNKNOWN';
+          if (!pAgg[pName]) {
+            var sm = storeMetaMap[pName] || {};
+            pAgg[pName] = {
+              party: pName,
+              manager: sm.manager || 'Unassigned',
+              lastUpd: sm.lastUpd || '',
+              qty: 0, net: 0, mrp: 0, disc: 0, hasMetrics: true
+            };
+          }
+          pAgg[pName].qty  += Number(tup[off]) || 0;
+          pAgg[pName].net  += Number(tup[off + 1]) || 0;
+          pAgg[pName].mrp  += Number(tup[off + 2]) || 0;
+          pAgg[pName].disc += Number(tup[off + 3]) || 0;
+        }
+        return Object.values(pAgg).filter(function(x) { return x.qty !== 0; }).map(function(x) {
+          x.discPct = x.mrp > 0 ? Number(((x.disc / x.mrp) * 100).toFixed(2)) : 0;
+          return x;
+        }).sort(function(a, b) { return (b.qty - a.qty) || (b.net - a.net); });
+      }
+    }
+
+    var rawAttrs = periodObj._rawAttrsV1617 || periodObj.attributes || {};
+    var attrObj = rawAttrs[headerName];
+    var byStore = (attrObj && attrObj.byStore) ? attrObj.byStore : {};
+    var out = [];
+    Object.keys(byStore).forEach(function(pKey) {
+      var q = Number((byStore[pKey] && byStore[pKey][itemValue]) || 0);
+      if (q > 0) {
+        var sm = storeMetaMap[pKey.toUpperCase()] || {};
+        out.push({ party: pKey, manager: sm.manager || 'Unassigned', lastUpd: sm.lastUpd || '', qty: q, net: 0, mrp: 0, disc: 0, discPct: 0, hasMetrics: false });
+      }
+    });
+    return out.sort(function(a, b) { return b.qty - a.qty; });
+  }
+
+  window.openAttrValuePartyModalV1617 = function(headerName, valName) {
+    ITEM_MODAL_STATE = { header: headerName, value: valName, search: '' };
+    renderAttrValuePartyModalV1617();
+  };
+
+  window.closeAttrValuePartyModalV1617 = function() {
+    ITEM_MODAL_STATE = { header: '', value: '', search: '' };
+    itemModalRoot.innerHTML = '';
+  };
+
+  function renderAttrValuePartyModalV1617() {
+    if (!ITEM_MODAL_STATE.header || !ITEM_MODAL_STATE.value) {
+      itemModalRoot.innerHTML = '';
+      return;
+    }
+    var ctx = getActivePeriodDataV1617();
+    if (!ctx.mData) return;
+
+    var rights = (ACTIVE_LINK && ACTIVE_LINK.rights) || {};
+    var dtMeta = TYPE_META[ACTIVE_DATA_TYPE] || { label: ACTIVE_DATA_TYPE, valTitle: 'Net Value' };
+    var filtersMap = getActiveFilterSetsV1617(ctx.mData);
+
+    var cyRows = computePartyRowsForHeaderItemV1617(ctx.mData, ITEM_MODAL_STATE.header, ITEM_MODAL_STATE.value, filtersMap);
+    var lyRows = ctx.lyData ? computePartyRowsForHeaderItemV1617(ctx.lyData, ITEM_MODAL_STATE.header, ITEM_MODAL_STATE.value, filtersMap) : [];
+    var lyMap = {};
+    lyRows.forEach(function(r) { lyMap[r.party] = r; });
+
+    var qSearch = ITEM_MODAL_STATE.search.trim().toLowerCase();
+    var filtered = cyRows.filter(function(r) {
+      return !qSearch || r.party.toLowerCase().includes(qSearch) || r.manager.toLowerCase().includes(qSearch);
+    });
+
+    var hasMetrics = filtered.some(function(r) { return r.hasMetrics; });
+    var sumQty = 0, sumNet = 0, sumMrp = 0, sumDisc = 0, sumLyQty = 0, sumLyNet = 0;
+    filtered.forEach(function(r) {
+      var lr = lyMap[r.party] || { qty: 0, net: 0 };
+      sumQty += r.qty; sumNet += r.net; sumMrp += r.mrp; sumDisc += r.disc;
+      sumLyQty += lr.qty; sumLyNet += lr.net;
+    });
+    var sumDiscPct = sumMrp > 0 ? ((sumDisc / sumMrp) * 100).toFixed(2) : '0.00';
+
+    var otherFilterTags = Object.keys(filtersMap).filter(function(h) { return h !== ITEM_MODAL_STATE.header && filtersMap[h].isFiltered; }).map(function(h) {
+      return '<span style="background:rgba(124,58,237,0.3);border:1px solid #a78bfa;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Filtered by ' + escHtml(h) + ' (' + filtersMap[h].selSet.size + ')</span>';
+    }).join(' ');
+
+    var rowsHtml = filtered.map(function(r, idx) {
+      var lr = lyMap[r.party] || { qty: 0, net: 0 };
+      var sharePct = sumQty > 0 ? ((r.qty / sumQty) * 100).toFixed(1) : '0.0';
+      var updBadge = r.lastUpd ? '<span class="party-upd-badge-v1617">🕒 ' + escHtml(r.lastUpd) + '</span>' : '';
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escHtml(r.party) + '</b>' + updBadge + '</td>' +
+        '<td>' + escHtml(r.manager) + '</td>' +
+        '<td class="num"><b>' + fmtNum(r.qty) + '</b></td>' +
+        '<td class="num" style="color:#6d28d9;font-weight:700;">' + sharePct + '%</td>' +
+        (hasMetrics ? '<td class="num" style="color:#0284c7;"><b>' + fmtINR(r.net) + '</b></td>' : '') +
+        (ctx.compareOn ? '<td class="ly-td">' + fmtNum(lr.qty) + '</td><td class="num">' + calcGrowthBadgeHtml(r.qty, lr.qty) + '</td>' + (hasMetrics ? '<td class="ly-td">' + fmtINR(lr.net) + '</td><td class="num">' + calcGrowthBadgeHtml(r.net, lr.net) + '</td>' : '') : '') +
+        (hasMetrics && rights.showMrpAndDisc ? '<td class="num">' + fmtINR(r.mrp) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + r.discPct + '%</td>' : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="12" style="text-align:center;padding:26px;color:#64748b;font-weight:600;">Is selection mein koi Party data nahi mila.</td></tr>';
+
+    var totalRowHtml = filtered.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td>' +
+        '<td>TOTAL (' + filtered.length + ' Parties)</td>' +
+        '<td>-</td>' +
+        '<td class="num">' + fmtNum(sumQty) + '</td>' +
+        '<td class="num">100.0%</td>' +
+        (hasMetrics ? '<td class="num" style="color:#0369a1;">' + fmtINR(sumNet) + '</td>' : '') +
+        (ctx.compareOn ? '<td class="num">' + fmtNum(sumLyQty) + '</td><td class="num">' + calcGrowthBadgeHtml(sumQty, sumLyQty) + '</td>' + (hasMetrics ? '<td class="num">' + fmtINR(sumLyNet) + '</td><td class="num">' + calcGrowthBadgeHtml(sumNet, sumLyNet) + '</td>' : '') : '') +
+        (hasMetrics && rights.showMrpAndDisc ? '<td class="num">' + fmtINR(sumMrp) + '</td><td class="num" style="color:#dc2626;">' + sumDiscPct + '%</td>' : '') +
+      '</tr>'
+    ) : '';
+
+    itemModalRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeAttrValuePartyModalV1617();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<span>📌 ' + escHtml(ITEM_MODAL_STATE.header) + ' ➔ ' + escHtml(ITEM_MODAL_STATE.value) + '</span>' +
+                '<span style="background:#10b981;color:#fff;padding:2px 9px;border-radius:99px;font-size:11.5px;">' + filtered.length + ' Parties</span>' +
+                otherFilterTags +
+              '</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">' + dtMeta.label + ' | Brand: <b style="color:#fff;">' + escHtml(ACTIVE_BRAND) + '</b> | Period: <b style="color:#6ee7b7;">' + getPeriodDisplayLabel(ACTIVE_MONTH) + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:center;">' +
+              '<input type="text" id="attrItemPartySearchV1617" value="' + escHtml(ITEM_MODAL_STATE.search) + '" oninput="window._onAttrItemSearchV1617(this.value)" placeholder="🔍 Search Party or Manager..." style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:240px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeAttrValuePartyModalV1617()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">' +
+              '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">' + escHtml(ITEM_MODAL_STATE.value) + ' TOTAL QTY</div><div style="font-size:19px;font-weight:800;margin-top:2px;">' + fmtNum(sumQty) + '</div></div>' +
+              (hasMetrics ? '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">' + escHtml(dtMeta.valTitle).toUpperCase() + '</div><div style="font-size:19px;font-weight:800;color:#38bdf8;margin-top:2px;">' + fmtINR(sumNet) + '</div></div>' : '') +
+              (hasMetrics && rights.showMrpAndDisc ? '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">TOTAL MRP</div><div style="font-size:19px;font-weight:800;color:#fbbf24;margin-top:2px;">' + fmtINR(sumMrp) + '</div></div><div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">DISCOUNT</div><div style="font-size:19px;font-weight:800;color:#fb7185;margin-top:2px;">' + fmtINR(sumDisc) + ' <span style="font-size:13px;">(' + sumDiscPct + '%)</span></div></div>' : '') +
+            '</div>' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table><thead><tr>' +
+                '<th>#</th><th>Party / Store Name</th><th>Manager</th><th class="num">Qty (' + escHtml(ITEM_MODAL_STATE.value) + ')</th><th class="num">Share %</th>' +
+                (hasMetrics ? '<th class="num">' + escHtml(dtMeta.valTitle) + '</th>' : '') +
+                (ctx.compareOn ? '<th class="ly-th">LY Qty</th><th class="ly-th">Qty Growth %</th>' + (hasMetrics ? '<th class="ly-th">LY ' + escHtml(dtMeta.valTitle) + '</th><th class="ly-th">Val Growth %</th>' : '') : '') +
+                (hasMetrics && rights.showMrpAndDisc ? '<th class="num">MRP</th><th class="num">Dis %</th>' : '') +
+              '</tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (ITEM_MODAL_STATE.search) {
+      var sInp = document.getElementById('attrItemPartySearchV1617');
+      if (sInp) { sInp.focus(); var len = sInp.value.length; sInp.setSelectionRange(len, len); }
+    }
+  }
+
+  window._onAttrItemSearchV1617 = function(val) {
+    ITEM_MODAL_STATE.search = val || '';
+    renderAttrValuePartyModalV1617();
+  };
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Escape' && ITEM_MODAL_STATE.header) window.closeAttrValuePartyModalV1617();
+  });
+
+  // Hook renderApp & updateStoreTableBodyOnly cleanly
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1617) {
+    var _origUpdateStoreBody = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateStoreBody.apply(this, arguments);
+      injectPartyLastUpdatedBadgesV1617();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1617 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1617) {
+    var _origRenderApp = window.renderApp;
+    window.renderApp = function() {
+      if (LIVE_PAYLOAD && ACTIVE_LINK) {
+        var ctx = getActivePeriodDataV1617();
+        if (ctx.mData) {
+          var filtersMap = getActiveFilterSetsV1617(ctx.mData);
+          applyExcelCrossFilterToPeriodV1617(ctx.mData, filtersMap);
+          if (ctx.lyData) applyExcelCrossFilterToPeriodV1617(ctx.lyData, filtersMap);
+        }
+      }
+      var res = _origRenderApp.apply(this, arguments);
+      injectHeaderChipPlusButtonsV1617();
+      injectPartyLastUpdatedBadgesV1617();
+      if (ITEM_MODAL_STATE.header) renderAttrValuePartyModalV1617();
+      return res;
+    };
+    window.renderApp._v1617 = true;
+  }
+
+  if (LIVE_PAYLOAD && typeof window.renderApp === 'function') {
+    window.renderApp();
+  }
+
+})();
+</script>
 </body>
 </html>
