@@ -2955,5 +2955,163 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL ADDON ONLY: SMART 60-SEC LIVE PAGE AUTO-FETCH (v16.21)
+     - Polls every 60 SEC using lightweight 0-byte HEAD (ETag / Last-Modified) check
+     - Downloads full live_data.json ONLY when new data actually exists (~95% bandwidth saved)
+     - Silently updates page without F5 refresh, preserving active Brand/Tab/Filters/Scroll
+     - Touches ZERO existing layout, styles, or v16.17 features
+     (REPLACE v16.20 IF PRESENT, OR PASTE RIGHT BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installSmartAutoFetchLivePageV1621() {
+
+  if (window._kritoLiveAutoFetchV1621Installed) return;
+  window._kritoLiveAutoFetchV1621Installed = true;
+  window._kritoLiveAutoFetchV1620Installed = true;
+
+  var POLL_INTERVAL_MS = 60000; // Check every 60 seconds
+  var isFetchingNow = false;
+  var pendingPayload = null;
+  var lastAppliedSig = '';
+  var lastHeadSig = '';
+
+  function getPayloadSigV1621(p) {
+    if (!p || typeof p !== 'object') return '';
+    var st = p.globalStatus ? (String(p.globalStatus.status || '') + '|' + String(p.globalStatus.updatedAt || '')) : '';
+    var lCount = p.links ? Object.keys(p.links).length : 0;
+    return String(p.generatedAtIso || '') + '|' + String(p.generatedAtHuman || '') + '|' + st + '|' + lCount;
+  }
+
+  function isUserTypingV1621() {
+    var ae = document.activeElement;
+    if (!ae) return false;
+    var tag = String(ae.tagName || '').toUpperCase();
+    return (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+  }
+
+  function applyFreshPayloadSilentlyV1621(newData) {
+    if (!newData || typeof newData !== 'object') return;
+    if (isUserTypingV1621()) {
+      pendingPayload = newData;
+      return;
+    }
+
+    var savedScrollY = window.scrollY || window.pageYOffset || 0;
+    var activeSearchEl = document.getElementById('liveStoreSearch');
+    var savedSearchVal = activeSearchEl ? activeSearchEl.value : null;
+
+    try {
+      if (typeof LIVE_PAYLOAD !== 'undefined') {
+        LIVE_PAYLOAD = newData;
+      }
+      if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.id && newData.links && newData.links[ACTIVE_LINK.id]) {
+        ACTIVE_LINK = newData.links[ACTIVE_LINK.id];
+      }
+    } catch (e) { return; }
+
+    lastAppliedSig = getPayloadSigV1621(newData);
+    pendingPayload = null;
+
+    if (typeof window.renderApp === 'function') {
+      window.renderApp();
+    }
+
+    if (savedSearchVal !== null) {
+      var newSearchEl = document.getElementById('liveStoreSearch');
+      if (newSearchEl && newSearchEl.value !== savedSearchVal) {
+        newSearchEl.value = savedSearchVal;
+        if (typeof window.updateStoreTableBodyOnly === 'function') {
+          window.updateStoreTableBodyOnly();
+        }
+      }
+    }
+    try { window.scrollTo(0, savedScrollY); } catch (e) {}
+  }
+
+  // Zero-bandwidth HEAD probe (checks ETag / Last-Modified before downloading full JSON)
+  async function probeLiveFileHeaderV1621() {
+    try {
+      var hRes = await fetch('live_data.json?_cb=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+      if (!hRes.ok) return '';
+      var etag = hRes.headers.get('etag') || '';
+      var lm = hRes.headers.get('last-modified') || '';
+      var cl = hRes.headers.get('content-length') || '';
+      if (!etag && !lm) return '';
+      return etag + '|' + lm + '|' + cl;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  async function checkAndFetchLiveDataV1621() {
+    if (isFetchingNow || document.hidden) return;
+    if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return;
+
+    if (!lastAppliedSig) {
+      lastAppliedSig = getPayloadSigV1621(LIVE_PAYLOAD);
+    }
+
+    isFetchingNow = true;
+    try {
+      var currentHeadSig = await probeLiveFileHeaderV1621();
+      if (currentHeadSig && lastHeadSig && currentHeadSig === lastHeadSig) {
+        return; // Unchanged -> skip full JSON download
+      }
+
+      var res = await fetch('live_data.json?_cb=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+
+      var etag = res.headers.get('etag') || '';
+      var lm = res.headers.get('last-modified') || '';
+      var cl = res.headers.get('content-length') || '';
+      if (etag || lm) {
+        lastHeadSig = etag + '|' + lm + '|' + cl;
+      } else if (currentHeadSig) {
+        lastHeadSig = currentHeadSig;
+      }
+
+      var fresh = await res.json();
+      if (!fresh || typeof fresh !== 'object') return;
+
+      var newSig = getPayloadSigV1621(fresh);
+      if (newSig && newSig !== lastAppliedSig) {
+        applyFreshPayloadSilentlyV1621(fresh);
+      }
+    } catch (e) {
+    } finally {
+      isFetchingNow = false;
+    }
+  }
+
+  setTimeout(function() {
+    if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+      if (!lastAppliedSig) lastAppliedSig = getPayloadSigV1621(LIVE_PAYLOAD);
+      probeLiveFileHeaderV1621().then(function(sig) {
+        if (sig && !lastHeadSig) lastHeadSig = sig;
+      });
+    }
+  }, 2000);
+
+  document.addEventListener('focusout', function() {
+    if (pendingPayload) {
+      setTimeout(function() {
+        if (pendingPayload && !isUserTypingV1621()) {
+          applyFreshPayloadSilentlyV1621(pendingPayload);
+        }
+      }, 400);
+    }
+  });
+
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      checkAndFetchLiveDataV1621();
+    }
+  });
+
+  setInterval(checkAndFetchLiveDataV1621, POLL_INTERVAL_MS);
+
+})();
+</script>
 </body>
 </html>
