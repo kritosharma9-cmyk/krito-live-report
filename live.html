@@ -3585,5 +3585,791 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK UPGRADES ONLY (v16.24)
+     1. Header Qty Breakdown: Horizontal / Vertical Toggle next to Clear/Add Header
+        (Default = Horizontal, Auto-converts to Vertical when >= 5 Headers selected)
+     2. Individual Store Data: "Val Rank" & "Qty Rank" columns + Highest Value on top
+     3. Individual Store Data: Excel-Like Freeze Panes (Any Header/Col + Any Row/Line)
+     4. Individual Store Data: "⛶ Full Screen" Expand button beside title
+     (PASTE RIGHT AT THE VERY END OF live.html, AFTER v16.23 & BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installLiveLinkFourUpgradesV1624() {
+
+  if (window._kritoLiveFourUpgradesV1624Installed) return;
+  window._kritoLiveFourUpgradesV1624Installed = true;
+
+  // =========================================================================
+  // MINIMAL CSS STRICTLY FOR THE 4 REQUESTED FEATURES ONLY
+  // =========================================================================
+  var css = [
+    /* 1. Header Breakdown Horizontal / Vertical Toggle */
+    '.krito-hdr-view-btn-v1624{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:6px 12px;border-radius:8px;border:1.5px solid #6366f1;background:#eef2ff;color:#312e81;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;vertical-align:middle;}',
+    '.krito-hdr-view-btn-v1624:hover{background:#e0e7ff;}',
+    '.krito-hdr-view-btn-v1624.is-vertical{background:#4f46e5;color:#ffffff;border-color:#4338ca;}',
+    '.krito-hdr-view-btn-v1624 .krito-mode-tag-v1624{font-size:10px;padding:1px 6px;border-radius:99px;background:rgba(255,255,255,0.85);color:#312e81;font-weight:800;}',
+    '.krito-hdr-view-btn-v1624.is-vertical .krito-mode-tag-v1624{background:rgba(255,255,255,0.22);color:#ffffff;}',
+    '.krito-attr-vgrid-v1623.krito-hdr-horiz-v1624{display:flex !important;flex-direction:column !important;gap:10px !important;grid-template-columns:none !important;}',
+
+    /* 2. Val Rank & Qty Rank Columns */
+    '.krito-th-rank-v1624{text-align:center !important;white-space:nowrap !important;}',
+    '.krito-td-rank-v1624{text-align:center !important;white-space:nowrap !important;vertical-align:middle !important;}',
+    '.krito-rank-pill-v1624{display:inline-flex;align-items:center;justify-content:center;min-width:30px;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:800;line-height:1.2;}',
+    '.krito-rank-val-v1624{background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;}',
+    '.krito-rank-qty-v1624{background:#f3e8ff;color:#6d28d9;border:1px solid #d8b4fe;}',
+    '.krito-rank-top1-v1624{background:#fef3c7 !important;color:#92400e !important;border-color:#f59e0b !important;}',
+    '.krito-rank-top2-v1624{background:#f1f5f9 !important;color:#334155 !important;border-color:#94a3b8 !important;}',
+    '.krito-rank-top3-v1624{background:#ffedd5 !important;color:#9a3412 !important;border-color:#fb923c !important;}',
+
+    /* 3. Excel-Like Freeze Panes (Columns + Rows) */
+    '.krito-freeze-th-btn-v1624{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 6px;border-radius:5px;border:1px solid #cbd5e1;background:#ffffff;color:#475569;font-size:10px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1.15;transition:0.15s;}',
+    '.krito-freeze-th-btn-v1624:hover{background:#e0f2fe;border-color:#0284c7;color:#0369a1;}',
+    '.krito-freeze-th-btn-v1624.is-primary{border-color:#10b981;background:#ecfdf5;color:#047857;}',
+    '.krito-freeze-th-btn-v1624.is-frozen{background:#0284c7 !important;color:#ffffff !important;border-color:#0369a1 !important;}',
+    '.krito-freeze-row-btn-v1624{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:4px;border-radius:4px;border:1px solid transparent;background:transparent;color:#94a3b8;font-size:10px;cursor:pointer;vertical-align:middle;padding:0;transition:0.15s;}',
+    'tr:hover .krito-freeze-row-btn-v1624{border-color:#cbd5e1;background:#f8fafc;color:#475569;}',
+    '.krito-freeze-row-btn-v1624.is-frozen{border-color:#0284c7 !important;background:#0284c7 !important;color:#ffffff !important;}',
+    '.krito-freeze-status-v1624{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:4px 9px;border-radius:8px;background:#e0f2fe;border:1px solid #38bdf8;color:#0369a1;font-size:11px;font-weight:800;white-space:nowrap;}',
+    '.krito-freeze-status-v1624 button{background:#0284c7;color:#ffffff;border:none;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer;}',
+    'table.krito-has-freeze-v1624{border-collapse:separate !important;border-spacing:0 !important;}',
+    '.krito-frozen-col-cell-v1624{position:sticky !important;background:#ffffff !important;}',
+    'thead th.krito-frozen-col-cell-v1624{background:#f8fafc !important;}',
+    'tr.total-row td.krito-frozen-col-cell-v1624{background:#f1f5f9 !important;}',
+    '.krito-frozen-col-edge-v1624{box-shadow:3px 0 6px -2px rgba(2,132,199,0.32) !important;border-right:2px solid #0284c7 !important;}',
+    'tr.krito-frozen-row-v1624 > td{position:sticky !important;background:#f0f9ff !important;}',
+    'tr.krito-frozen-row-edge-v1624 > td{border-bottom:2px solid #0284c7 !important;box-shadow:0 3px 6px -2px rgba(2,132,199,0.28) !important;}',
+    'tr.krito-frozen-row-edge-v1624 > td.krito-frozen-col-edge-v1624{box-shadow:3px 3px 6px -2px rgba(2,132,199,0.38) !important;}',
+
+    /* 4. Individual Store Data Full-Screen Expand */
+    '.krito-expand-fs-btn-v1624{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:5px 11px;border-radius:8px;border:1.5px solid #0284c7;background:#f0f9ff;color:#0369a1;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;vertical-align:middle;}',
+    '.krito-expand-fs-btn-v1624:hover{background:#e0f2fe;}',
+    '.krito-expand-fs-btn-v1624.is-expanded{background:#dc2626;border-color:#b91c1c;color:#ffffff;}',
+    '.krito-store-fullscreen-v1624{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;max-width:none !important;max-height:none !important;margin:0 !important;border-radius:0 !important;z-index:99990 !important;background:#ffffff !important;display:flex !important;flex-direction:column !important;padding:12px 16px !important;box-sizing:border-box !important;overflow:hidden !important;box-shadow:none !important;}',
+    '.krito-store-fullscreen-v1624 .table-scroll{flex:1 1 auto !important;max-height:none !important;height:auto !important;overflow:auto !important;}',
+    '.fs-modal-backdrop{z-index:100005 !important;}'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.id = 'kritoLiveFourUpgradesCssV1624';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+  // =========================================================================
+  // STATE
+  // =========================================================================
+  var HEADER_LAYOUT_MODE = 'HORIZONTAL'; // Default = HORIZONTAL; auto-switches to VERTICAL when >= 5 headers selected
+  var LAST_HEADER_COUNT  = 0;
+
+  var FROZEN_COL_IDX = -1; // 0-based column index frozen from left (-1 = none)
+  var FROZEN_ROW_IDX = -1; // 0-based data row index frozen from top (-1 = none)
+
+  var IS_STORE_FULLSCREEN = false;
+  var FULL_RANKS_CACHE = {};
+  var storeDrawerObsV1624 = null;
+
+  function getActiveContextKeyV1624() {
+    var dt = (typeof ACTIVE_DATA_TYPE !== 'undefined') ? ACTIVE_DATA_TYPE : '';
+    var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var mo = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    return dt + '|' + br + '|' + mo;
+  }
+
+  function parseTableNumV1624(str) {
+    var clean = String(str || '').replace(/[₹,%\s]/g, '').trim();
+    var n = parseFloat(clean);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // =========================================================================
+  // FEATURE 1: HEADER BREAKDOWN HORIZONTAL / VERTICAL TOGGLE + AUTO >= 5
+  // =========================================================================
+  function scaleVerticalGridFontsV1624(gridEl, colCount) {
+    if (!gridEl) return;
+    var w = gridEl.clientWidth || window.innerWidth || 1280;
+    var gap = (colCount >= 9) ? 4 : 6;
+    var colPx = Math.floor((w - (colCount - 1) * gap) / colCount);
+
+    var hdrFont = '11px', chipFont = '10.5px', badgeFont = '9.5px', btnFont = '9.5px', pad = '4px 5px', plus = '17px', chk = '13px';
+    if (colPx < 130) {
+      hdrFont = '9px'; chipFont = '8.5px'; badgeFont = '8px'; btnFont = '8px'; pad = '2.5px 3px'; plus = '14px'; chk = '11px';
+    } else if (colPx < 165) {
+      hdrFont = '10px'; chipFont = '9.5px'; badgeFont = '8.5px'; btnFont = '8.5px'; pad = '3px 4px'; plus = '15px'; chk = '12px';
+    } else if (colPx < 195) {
+      hdrFont = '10.5px'; chipFont = '10px'; badgeFont = '9px'; btnFont = '9px'; pad = '3.5px 5px'; plus = '16px'; chk = '12.5px';
+    }
+
+    gridEl.style.setProperty('--vcol-gap', gap + 'px');
+    gridEl.style.setProperty('--vcol-hdr-font', hdrFont);
+    gridEl.style.setProperty('--vcol-chip-font', chipFont);
+    gridEl.style.setProperty('--vcol-badge-font', badgeFont);
+    gridEl.style.setProperty('--vcol-btn-font', btnFont);
+    gridEl.style.setProperty('--vcol-pad', pad);
+    gridEl.style.setProperty('--vcol-plus', plus);
+    gridEl.style.setProperty('--vcol-chk', chk);
+  }
+
+  function findHeaderPanelsV1624(attrBar) {
+    var gridEl = attrBar.querySelector('.krito-attr-vgrid-v1623');
+    if (gridEl && gridEl.children.length > 0) {
+      return { gridEl: gridEl, panels: Array.from(gridEl.children) };
+    }
+    var panels = [];
+    var seen = new Set();
+    var btns = attrBar.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (!(btns[i].textContent || '').includes('Tick All')) continue;
+      var node = btns[i];
+      while (node && node.parentElement && node.parentElement !== attrBar) {
+        var p = node.parentElement;
+        var pBtns = p.querySelectorAll('button');
+        var tc = 0;
+        for (var t = 0; t < pBtns.length; t++) {
+          if ((pBtns[t].textContent || '').includes('Tick All')) tc++;
+        }
+        if (tc > 1) break;
+        node = p;
+      }
+      if (node && node !== attrBar && !seen.has(node)) {
+        if (node.children.length === 1 && node.firstElementChild && node.firstElementChild.querySelector('.attr-chip')) {
+          node = node.firstElementChild;
+        }
+        if (!seen.has(node)) {
+          seen.add(node);
+          panels.push(node);
+        }
+      }
+    }
+    return { gridEl: gridEl, panels: panels };
+  }
+
+  function applyHeaderLayoutModeV1624(skipAutoCheck) {
+    var attrBar = document.querySelector('.attr-bar');
+    if (!attrBar) return;
+
+    var found = findHeaderPanelsV1624(attrBar);
+    var panels = found.panels;
+    var gridEl = found.gridEl;
+
+    // Auto-convert to VERTICAL when 5 or more headers are selected; default HORIZONTAL when < 5
+    if (!skipAutoCheck && panels.length !== LAST_HEADER_COUNT) {
+      if (panels.length >= 5 && LAST_HEADER_COUNT < 5) {
+        HEADER_LAYOUT_MODE = 'VERTICAL';
+      } else if (panels.length < 5 && LAST_HEADER_COUNT >= 5) {
+        HEADER_LAYOUT_MODE = 'HORIZONTAL';
+      }
+      LAST_HEADER_COUNT = panels.length;
+    }
+
+    // Mount Toggle Button right next to "-- Clear / Add Header --" select box
+    var sel = attrBar.querySelector('select');
+    if (sel) {
+      var btn = document.getElementById('kritoHeaderLayoutToggleBtnV1624');
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'kritoHeaderLayoutToggleBtnV1624';
+        btn.type = 'button';
+        btn.className = 'krito-hdr-view-btn-v1624';
+        btn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          HEADER_LAYOUT_MODE = (HEADER_LAYOUT_MODE === 'VERTICAL') ? 'HORIZONTAL' : 'VERTICAL';
+          applyHeaderLayoutModeV1624(true);
+        });
+      }
+      if (btn.previousElementSibling !== sel) {
+        sel.insertAdjacentElement('afterend', btn);
+      }
+      var isVert = (HEADER_LAYOUT_MODE === 'VERTICAL');
+      btn.classList.toggle('is-vertical', isVert);
+      btn.title = isVert
+        ? 'Currently Vertical View (Click to switch to Horizontal)'
+        : 'Currently Horizontal View (Click to switch to Vertical | Auto-Vertical on 5+ Headers)';
+      btn.innerHTML = isVert
+        ? '<span>↕️ Vertical</span><span class="krito-mode-tag-v1624">⇄ Horizontal</span>'
+        : '<span>↔️ Horizontal</span><span class="krito-mode-tag-v1624">⇄ Vertical</span>';
+    }
+
+    if (panels.length === 0) return;
+
+    if (!gridEl) {
+      gridEl = document.createElement('div');
+      gridEl.className = 'krito-attr-vgrid-v1623';
+      panels[0].parentElement.insertBefore(gridEl, panels[0]);
+      for (var m = 0; m < panels.length; m++) gridEl.appendChild(panels[m]);
+    }
+
+    if (HEADER_LAYOUT_MODE === 'HORIZONTAL') {
+      gridEl.classList.add('krito-hdr-horiz-v1624');
+      gridEl.style.removeProperty('grid-template-columns');
+      for (var i = 0; i < panels.length; i++) {
+        var panel = panels[i];
+        panel.classList.remove('krito-attr-vcol-v1623');
+        var kids = Array.from(panel.children);
+        for (var k = 0; k < kids.length; k++) {
+          kids[k].classList.remove('krito-attr-vcol-head-v1623', 'krito-attr-vcol-list-v1623');
+        }
+      }
+    } else {
+      gridEl.classList.remove('krito-hdr-horiz-v1624');
+      var colCount = Math.max(7, panels.length);
+      gridEl.style.setProperty('grid-template-columns', 'repeat(' + colCount + ', minmax(0, 1fr))', 'important');
+      for (var pi = 0; pi < panels.length; pi++) {
+        var pEl = panels[pi];
+        pEl.classList.add('krito-attr-vcol-v1623');
+        var pKids = Array.from(pEl.children);
+        for (var ki = 0; ki < pKids.length; ki++) {
+          var kid = pKids[ki];
+          if (kid.querySelector('.attr-chip') && !kid.querySelector('input[type="text"]') && !kid.querySelector('button[onclick*="setAllAttrSubVals"]')) {
+            kid.classList.add('krito-attr-vcol-list-v1623');
+          } else if (kid.querySelector('button') || kid.querySelector('input')) {
+            kid.classList.add('krito-attr-vcol-head-v1623');
+          }
+        }
+      }
+      scaleVerticalGridFontsV1624(gridEl, colCount);
+    }
+  }
+
+  // =========================================================================
+  // FEATURE 2: TWO RANK COLUMNS (Val Rank & Qty Rank) + SORT BY HIGHEST VALUE
+  // =========================================================================
+  function getQtyAndValColIndicesV1624(theadRow) {
+    var qtyIdx = -1, valIdx = -1;
+    if (!theadRow) return { qtyIdx: -1, valIdx: -1 };
+    var ths = theadRow.children;
+    for (var i = 0; i < ths.length; i++) {
+      var raw = (ths[i].getAttribute('data-orig-title-v1624') || ths[i].textContent || '').replace(/❄️|Freeze|Frozen/g, '').trim().toUpperCase();
+      if (qtyIdx === -1 && raw === 'QTY') {
+        qtyIdx = i;
+        if (i + 1 < ths.length) {
+          var nxt = (ths[i + 1].getAttribute('data-orig-title-v1624') || ths[i + 1].textContent || '').toUpperCase();
+          if (!nxt.startsWith('LY ')) valIdx = i + 1;
+        }
+        break;
+      }
+    }
+    if (valIdx === -1) {
+      for (var j = 0; j < ths.length; j++) {
+        var t = (ths[j].getAttribute('data-orig-title-v1624') || ths[j].textContent || '').toUpperCase();
+        if (!t.startsWith('LY ') && (t.includes('NET VALUE') || t.includes('VALUE') || t.includes('COLLECTION') || t.includes('TARGET'))) {
+          valIdx = j;
+          break;
+        }
+      }
+    }
+    return { qtyIdx: qtyIdx, valIdx: valIdx };
+  }
+
+  function makeRankBadgeHtmlV1624(rankNum, kind) {
+    if (!rankNum || rankNum <= 0) return '<span style="color:#94a3b8;">-</span>';
+    var topCls = rankNum === 1 ? ' krito-rank-top1-v1624' : (rankNum === 2 ? ' krito-rank-top2-v1624' : (rankNum === 3 ? ' krito-rank-top3-v1624' : ''));
+    var baseCls = (kind === 'VAL') ? 'krito-rank-val-v1624' : 'krito-rank-qty-v1624';
+    return '<span class="krito-rank-pill-v1624 ' + baseCls + topCls + '">#' + rankNum + '</span>';
+  }
+
+  function patchExpandDrawerColspanV1624(tbody) {
+    if (!tbody) return;
+    var drawers = tbody.querySelectorAll('tr.expand-drawer-row');
+    for (var i = 0; i < drawers.length; i++) {
+      var td = drawers[i].querySelector('td');
+      if (td && td.getAttribute('data-v1624-cs') !== '1') {
+        var cs = parseInt(td.getAttribute('colspan') || '1', 10);
+        td.setAttribute('colspan', String(cs + 2));
+        td.setAttribute('data-v1624-cs', '1');
+      }
+    }
+  }
+
+  function applyRankColumnsAndValueSortV1624() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    if (!theadRow || theadRow.children.length < 2) return;
+
+    // 1. Add "Val Rank" and "Qty Rank" headers right after "#" (once)
+    var hadRankHeaders = !!theadRow.querySelector('.krito-th-valrank-v1624');
+    if (!hadRankHeaders) {
+      var hashTh = theadRow.children[0];
+      var thValRank = document.createElement('th');
+      thValRank.className = 'krito-th-rank-v1624 krito-th-valrank-v1624';
+      thValRank.textContent = 'Val Rank';
+      thValRank.setAttribute('data-orig-title-v1624', 'Val Rank');
+
+      var thQtyRank = document.createElement('th');
+      thQtyRank.className = 'krito-th-rank-v1624 krito-th-qtyrank-v1624';
+      thQtyRank.textContent = 'Qty Rank';
+      thQtyRank.setAttribute('data-orig-title-v1624', 'Qty Rank');
+
+      hashTh.insertAdjacentElement('afterend', thQtyRank);
+      hashTh.insertAdjacentElement('afterend', thValRank);
+    }
+
+    var cols = getQtyAndValColIndicesV1624(theadRow);
+
+    // 2. Collect rows (grouping any expand-drawer-row with its parent row)
+    var rawRows = Array.from(tbody.children);
+    var dataItems = [];
+    var totalRows = [];
+
+    for (var i = 0; i < rawRows.length; i++) {
+      var tr = rawRows[i];
+      if (!tr || tr.tagName !== 'TR') continue;
+
+      if (tr.classList.contains('expand-drawer-row')) {
+        if (dataItems.length > 0) dataItems[dataItems.length - 1].drawers.push(tr);
+        continue;
+      }
+      if (tr.classList.contains('total-row')) {
+        totalRows.push(tr);
+        continue;
+      }
+
+      var alreadyHasRankCells = !!tr.querySelector('.krito-td-valrank-v1624');
+      var idxShift = alreadyHasRankCells ? 0 : 2;
+      var qCellIdx = (cols.qtyIdx >= 0) ? (cols.qtyIdx - idxShift) : -1;
+      var vCellIdx = (cols.valIdx >= 0) ? (cols.valIdx - idxShift) : -1;
+
+      var qtyNum = (qCellIdx >= 0 && tr.children[qCellIdx]) ? parseTableNumV1624(tr.children[qCellIdx].textContent) : 0;
+      var valNum = (vCellIdx >= 0 && tr.children[vCellIdx]) ? parseTableNumV1624(tr.children[vCellIdx].textContent) : 0;
+
+      var bEl = tr.querySelector('td b');
+      var partyUp = bEl ? String(bEl.textContent || '').trim().toUpperCase() : ('ROW_' + i);
+
+      dataItems.push({ tr: tr, drawers: [], partyUp: partyUp, qtyNum: qtyNum, valNum: valNum, hasRankCells: alreadyHasRankCells });
+    }
+
+    // 3. Sort rows by Highest Value first (tie-breaker: Highest Qty)
+    dataItems.sort(function(a, b) {
+      return (b.valNum - a.valNum) || (b.qtyNum - a.qtyNum);
+    });
+
+    // 4. Compute Excel RANK.EQ for Value and Qty
+    var searchEl = document.getElementById('liveStoreSearch');
+    var isSearching = !!(searchEl && searchEl.value && searchEl.value.trim().length > 0);
+    var ctxKey = getActiveContextKeyV1624();
+
+    var rankLookup = {};
+    if (!isSearching || !FULL_RANKS_CACHE[ctxKey]) {
+      var byVal = dataItems.slice().sort(function(a, b) { return b.valNum - a.valNum; });
+      var valRankMap = {};
+      for (var vi = 0; vi < byVal.length; vi++) {
+        var vRank = (vi > 0 && byVal[vi].valNum === byVal[vi - 1].valNum) ? valRankMap[byVal[vi - 1].partyUp] : (vi + 1);
+        valRankMap[byVal[vi].partyUp] = vRank;
+      }
+
+      var byQty = dataItems.slice().sort(function(a, b) { return b.qtyNum - a.qtyNum; });
+      var qtyRankMap = {};
+      for (var qi = 0; qi < byQty.length; qi++) {
+        var qRank = (qi > 0 && byQty[qi].qtyNum === byQty[qi - 1].qtyNum) ? qtyRankMap[byQty[qi - 1].partyUp] : (qi + 1);
+        qtyRankMap[byQty[qi].partyUp] = qRank;
+      }
+
+      for (var ri = 0; ri < dataItems.length; ri++) {
+        var it = dataItems[ri];
+        rankLookup[it.partyUp] = {
+          valRank: (cols.valIdx >= 0) ? (valRankMap[it.partyUp] || 0) : 0,
+          qtyRank: (cols.qtyIdx >= 0) ? (qtyRankMap[it.partyUp] || 0) : 0
+        };
+      }
+      if (!isSearching && dataItems.length > 0) {
+        FULL_RANKS_CACHE[ctxKey] = rankLookup;
+      }
+    } else {
+      rankLookup = FULL_RANKS_CACHE[ctxKey];
+    }
+
+    // 5. Re-append sorted rows & populate Val Rank / Qty Rank cells + serial #
+    var frag = document.createDocumentFragment();
+    for (var d = 0; d < dataItems.length; d++) {
+      var item = dataItems[d];
+      var tr = item.tr;
+      var rInfo = rankLookup[item.partyUp] || { valRank: d + 1, qtyRank: d + 1 };
+
+      var numTd = tr.children[0];
+      if (numTd) {
+        numTd.setAttribute('data-row-idx-v1624', String(d));
+        numTd.innerHTML = '<span>' + (d + 1) + '</span>' +
+          '<button type="button" class="krito-freeze-row-btn-v1624' + (FROZEN_ROW_IDX === d ? ' is-frozen' : '') + '" data-freeze-row-v1624="' + d + '" title="Freeze top rows up to Row ' + (d + 1) + ' (Excel Freeze Panes)">❄️</button>';
+      }
+
+      if (!item.hasRankCells) {
+        var tdValR = document.createElement('td');
+        tdValR.className = 'krito-td-rank-v1624 krito-td-valrank-v1624';
+        tdValR.innerHTML = makeRankBadgeHtmlV1624(rInfo.valRank, 'VAL');
+
+        var tdQtyR = document.createElement('td');
+        tdQtyR.className = 'krito-td-rank-v1624 krito-td-qtyrank-v1624';
+        tdQtyR.innerHTML = makeRankBadgeHtmlV1624(rInfo.qtyRank, 'QTY');
+
+        tr.children[0].insertAdjacentElement('afterend', tdQtyR);
+        tr.children[0].insertAdjacentElement('afterend', tdValR);
+      } else {
+        var vrTd = tr.querySelector('.krito-td-valrank-v1624');
+        var qrTd = tr.querySelector('.krito-td-qtyrank-v1624');
+        if (vrTd) vrTd.innerHTML = makeRankBadgeHtmlV1624(rInfo.valRank, 'VAL');
+        if (qrTd) qrTd.innerHTML = makeRankBadgeHtmlV1624(rInfo.qtyRank, 'QTY');
+      }
+
+      frag.appendChild(tr);
+      for (var dr = 0; dr < item.drawers.length; dr++) {
+        frag.appendChild(item.drawers[dr]);
+      }
+    }
+
+    for (var ti = 0; ti < totalRows.length; ti++) {
+      var tRow = totalRows[ti];
+      if (!tRow.querySelector('.krito-td-valrank-v1624') && tRow.children.length >= 1) {
+        var tVR = document.createElement('td');
+        tVR.className = 'krito-td-rank-v1624 krito-td-valrank-v1624';
+        tVR.textContent = '-';
+        var tQR = document.createElement('td');
+        tQR.className = 'krito-td-rank-v1624 krito-td-qtyrank-v1624';
+        tQR.textContent = '-';
+        tRow.children[0].insertAdjacentElement('afterend', tQR);
+        tRow.children[0].insertAdjacentElement('afterend', tVR);
+      }
+      frag.appendChild(tRow);
+    }
+
+    tbody.appendChild(frag);
+    patchExpandDrawerColspanV1624(tbody);
+
+    if (storeDrawerObsV1624) {
+      try { storeDrawerObsV1624.disconnect(); } catch (e) {}
+    }
+    if (typeof MutationObserver === 'function') {
+      storeDrawerObsV1624 = new MutationObserver(function() {
+        patchExpandDrawerColspanV1624(document.getElementById('liveStoreTbody'));
+      });
+      storeDrawerObsV1624.observe(tbody, { childList: true });
+    }
+  }
+
+  // =========================================================================
+  // FEATURE 3: EXCEL-LIKE FREEZE PANES (ANY COLUMN HEADER + ANY ROW / LINE)
+  // =========================================================================
+  function mountFreezeButtonsOnHeadersV1624(table) {
+    var theadRow = table.querySelector('thead tr');
+    if (!theadRow) return;
+    var ths = theadRow.children;
+
+    for (var i = 0; i < ths.length; i++) {
+      var th = ths[i];
+      if (!th.getAttribute('data-orig-title-v1624')) {
+        th.setAttribute('data-orig-title-v1624', (th.textContent || '').trim());
+      }
+      var origLabel = (th.getAttribute('data-orig-title-v1624') || '').trim();
+      var isPartyCol = origLabel.toUpperCase().includes('PARTY / STORE NAME');
+
+      var fBtn = th.querySelector('.krito-freeze-th-btn-v1624');
+      if (!fBtn) {
+        fBtn = document.createElement('button');
+        fBtn.type = 'button';
+        fBtn.className = 'krito-freeze-th-btn-v1624' + (isPartyCol ? ' is-primary' : '');
+        fBtn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var colIdx = parseInt(this.getAttribute('data-freeze-col-v1624') || '-1', 10);
+          FROZEN_COL_IDX = (FROZEN_COL_IDX === colIdx) ? -1 : colIdx;
+          applyExcelFreezePanesV1624();
+        });
+        th.appendChild(fBtn);
+      }
+      fBtn.setAttribute('data-freeze-col-v1624', String(i));
+      var isActive = (FROZEN_COL_IDX === i);
+      fBtn.classList.toggle('is-frozen', isActive);
+      if (isPartyCol) {
+        fBtn.textContent = isActive ? '❄️ Frozen' : '❄️ Freeze';
+        fBtn.title = isActive ? 'Click to Unfreeze columns' : 'Freeze Panes up to Party / Store Name (Excel Freeze)';
+      } else {
+        fBtn.textContent = '❄️';
+        fBtn.title = isActive ? ('Unfreeze ' + origLabel) : ('Freeze Panes up to ' + origLabel);
+      }
+    }
+  }
+
+  function applyExcelFreezePanesV1624() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+
+    mountFreezeButtonsOnHeadersV1624(table);
+
+    var thead = table.querySelector('thead');
+    var theadRow = thead ? thead.querySelector('tr') : null;
+    if (!theadRow) return;
+
+    var ths = Array.from(theadRow.children);
+    var allBodyRows = Array.from(tbody.children);
+    var dataRows = allBodyRows.filter(function(r) {
+      return r.tagName === 'TR' && !r.classList.contains('expand-drawer-row') && !r.classList.contains('total-row');
+    });
+
+    if (FROZEN_COL_IDX >= ths.length) FROZEN_COL_IDX = ths.length - 1;
+    var effectiveRowFreeze = Math.min(FROZEN_ROW_IDX, dataRows.length - 1);
+
+    // 1. Reset previous freeze styles cleanly
+    var hasAnyFreeze = (FROZEN_COL_IDX >= 0 || effectiveRowFreeze >= 0);
+    table.classList.toggle('krito-has-freeze-v1624', hasAnyFreeze);
+
+    for (var c = 0; c < ths.length; c++) {
+      ths[c].classList.remove('krito-frozen-col-cell-v1624', 'krito-frozen-col-edge-v1624');
+      ths[c].style.left = '';
+      ths[c].style.zIndex = '40';
+      ths[c].style.top = '0px';
+      ths[c].style.position = 'sticky';
+    }
+    for (var r = 0; r < allBodyRows.length; r++) {
+      var tr = allBodyRows[r];
+      tr.classList.remove('krito-frozen-row-v1624', 'krito-frozen-row-edge-v1624');
+      var tds = tr.children;
+      for (var j = 0; j < tds.length; j++) {
+        tds[j].classList.remove('krito-frozen-col-cell-v1624', 'krito-frozen-col-edge-v1624');
+        tds[j].style.left = '';
+        tds[j].style.top = '';
+        tds[j].style.zIndex = '';
+      }
+    }
+
+    // 2. Compute exact column widths for sticky left offsets
+    var colLefts = [];
+    if (FROZEN_COL_IDX >= 0) {
+      var cumLeft = 0;
+      for (var ci = 0; ci <= FROZEN_COL_IDX; ci++) {
+        colLefts.push(cumLeft);
+        cumLeft += ths[ci].getBoundingClientRect().width;
+      }
+
+      for (var hc = 0; hc <= FROZEN_COL_IDX; hc++) {
+        ths[hc].classList.add('krito-frozen-col-cell-v1624');
+        if (hc === FROZEN_COL_IDX) ths[hc].classList.add('krito-frozen-col-edge-v1624');
+        ths[hc].style.left = colLefts[hc] + 'px';
+        ths[hc].style.zIndex = '55';
+      }
+
+      for (var br = 0; br < allBodyRows.length; br++) {
+        var bTr = allBodyRows[br];
+        if (bTr.classList.contains('expand-drawer-row')) continue;
+        for (var bc = 0; bc <= FROZEN_COL_IDX && bc < bTr.children.length; bc++) {
+          var td = bTr.children[bc];
+          td.classList.add('krito-frozen-col-cell-v1624');
+          if (bc === FROZEN_COL_IDX) td.classList.add('krito-frozen-col-edge-v1624');
+          td.style.left = colLefts[bc] + 'px';
+          td.style.zIndex = '20';
+        }
+      }
+    }
+
+    // 3. Apply row freeze (rows 0..effectiveRowFreeze locked right below sticky <thead>)
+    if (effectiveRowFreeze >= 0) {
+      var cumTop = thead ? thead.getBoundingClientRect().height : 36;
+      for (var ri = 0; ri <= effectiveRowFreeze; ri++) {
+        var fRow = dataRows[ri];
+        fRow.classList.add('krito-frozen-row-v1624');
+        if (ri === effectiveRowFreeze) fRow.classList.add('krito-frozen-row-edge-v1624');
+        var fCells = fRow.children;
+        for (var fc = 0; fc < fCells.length; fc++) {
+          fCells[fc].style.top = cumTop + 'px';
+          fCells[fc].style.zIndex = (FROZEN_COL_IDX >= 0 && fc <= FROZEN_COL_IDX) ? '42' : '30';
+        }
+        cumTop += fRow.getBoundingClientRect().height;
+      }
+    }
+
+    for (var dr = 0; dr < dataRows.length; dr++) {
+      var rBtn = dataRows[dr].querySelector('.krito-freeze-row-btn-v1624');
+      if (rBtn) rBtn.classList.toggle('is-frozen', dr === FROZEN_ROW_IDX);
+    }
+
+    updateFreezeStatusBadgeV1624(ths, effectiveRowFreeze);
+  }
+
+  document.addEventListener('click', function(ev) {
+    var rBtn = ev.target && ev.target.closest ? ev.target.closest('.krito-freeze-row-btn-v1624') : null;
+    if (!rBtn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var rIdx = parseInt(rBtn.getAttribute('data-freeze-row-v1624') || '-1', 10);
+    FROZEN_ROW_IDX = (FROZEN_ROW_IDX === rIdx) ? -1 : rIdx;
+    applyExcelFreezePanesV1624();
+  });
+
+  // =========================================================================
+  // FEATURE 4: EXPAND "INDIVIDUAL STORE DATA" TO FULL SCREEN
+  // =========================================================================
+  function getStoreCardAndHeaderV1624() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return null;
+    var table = tbody.closest('table');
+    if (!table) return null;
+    var scrollBox = table.closest('.table-scroll') || table.parentElement;
+    var card = scrollBox ? scrollBox.parentElement : null;
+    if (!card) return null;
+    var headBar = scrollBox.previousElementSibling;
+    return { card: card, scrollBox: scrollBox, headBar: headBar };
+  }
+
+  function updateFreezeStatusBadgeV1624(ths, effectiveRowFreeze) {
+    var info = getStoreCardAndHeaderV1624();
+    if (!info || !info.headBar) return;
+    var old = document.getElementById('kritoFreezeStatusBadgeV1624');
+
+    if (FROZEN_COL_IDX < 0 && effectiveRowFreeze < 0) {
+      if (old) old.remove();
+      return;
+    }
+
+    var parts = [];
+    if (FROZEN_COL_IDX >= 0 && ths && ths[FROZEN_COL_IDX]) {
+      var colTitle = (ths[FROZEN_COL_IDX].getAttribute('data-orig-title-v1624') || '').trim();
+      parts.push('Col: ' + colTitle);
+    }
+    if (effectiveRowFreeze >= 0) {
+      parts.push('Rows: 1–' + (effectiveRowFreeze + 1));
+    }
+
+    if (!old) {
+      old = document.createElement('span');
+      old.id = 'kritoFreezeStatusBadgeV1624';
+      old.className = 'krito-freeze-status-v1624';
+      var fsBtn = document.getElementById('kritoStoreExpandFsBtnV1624');
+      if (fsBtn && fsBtn.parentElement) {
+        fsBtn.insertAdjacentElement('afterend', old);
+      } else {
+        info.headBar.insertBefore(old, info.headBar.lastElementChild || null);
+      }
+    }
+    old.innerHTML = '<span>❄️ ' + parts.join(' | ') + '</span><button type="button" id="kritoUnfreezeAllBtnV1624">✖ Unfreeze</button>';
+    var uBtn = document.getElementById('kritoUnfreezeAllBtnV1624');
+    if (uBtn) {
+      uBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        FROZEN_COL_IDX = -1;
+        FROZEN_ROW_IDX = -1;
+        applyExcelFreezePanesV1624();
+      };
+    }
+  }
+
+  function syncStoreFullScreenStateV1624() {
+    var info = getStoreCardAndHeaderV1624();
+    if (!info || !info.card) return;
+
+    info.card.classList.toggle('krito-store-fullscreen-v1624', IS_STORE_FULLSCREEN);
+    document.body.style.overflow = IS_STORE_FULLSCREEN ? 'hidden' : '';
+
+    var btn = document.getElementById('kritoStoreExpandFsBtnV1624');
+    if (btn) {
+      btn.classList.toggle('is-expanded', IS_STORE_FULLSCREEN);
+      btn.textContent = IS_STORE_FULLSCREEN ? '✖ Exit Full Screen' : '⛶ Full Screen';
+      btn.title = IS_STORE_FULLSCREEN ? 'Exit Full Screen (Esc)' : 'Expand Individual Store Data to Full Screen';
+    }
+  }
+
+  function mountStoreExpandButtonV1624() {
+    var info = getStoreCardAndHeaderV1624();
+    if (!info || !info.headBar) return;
+
+    var titleEl = null;
+    var kids = Array.from(info.headBar.children);
+    for (var i = 0; i < kids.length; i++) {
+      if ((kids[i].textContent || '').toUpperCase().includes('INDIVIDUAL STORE DATA') && !kids[i].querySelector('input')) {
+        titleEl = kids[i];
+        break;
+      }
+    }
+
+    var btn = document.getElementById('kritoStoreExpandFsBtnV1624');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'kritoStoreExpandFsBtnV1624';
+      btn.type = 'button';
+      btn.className = 'krito-expand-fs-btn-v1624';
+      btn.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        IS_STORE_FULLSCREEN = !IS_STORE_FULLSCREEN;
+        syncStoreFullScreenStateV1624();
+        setTimeout(applyExcelFreezePanesV1624, 30);
+      });
+    }
+
+    if (titleEl) {
+      if (btn.parentElement !== titleEl) {
+        titleEl.style.display = 'inline-flex';
+        titleEl.style.alignItems = 'center';
+        titleEl.style.flexWrap = 'wrap';
+        titleEl.appendChild(btn);
+      }
+    } else if (btn.parentElement !== info.headBar) {
+      info.headBar.insertBefore(btn, info.headBar.firstChild);
+    }
+
+    syncStoreFullScreenStateV1624();
+  }
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Escape' && IS_STORE_FULLSCREEN) {
+      if (document.querySelector('.fs-modal-backdrop')) return;
+      IS_STORE_FULLSCREEN = false;
+      syncStoreFullScreenStateV1624();
+      setTimeout(applyExcelFreezePanesV1624, 30);
+    }
+  });
+
+  // =========================================================================
+  // ORCHESTRATOR + CLEAN HOOKS ON TOP OF EXISTING SCRIPTS
+  // =========================================================================
+  function applyAllFourUpgradesV1624() {
+    applyHeaderLayoutModeV1624(false);
+    applyRankColumnsAndValueSortV1624();
+    mountStoreExpandButtonV1624();
+    applyExcelFreezePanesV1624();
+  }
+
+  window.addEventListener('resize', function() {
+    if (HEADER_LAYOUT_MODE === 'VERTICAL') {
+      var g = document.querySelector('.krito-attr-vgrid-v1623');
+      if (g && !g.classList.contains('krito-hdr-horiz-v1624')) {
+        scaleVerticalGridFontsV1624(g, Math.max(7, g.children.length));
+      }
+    }
+    if (FROZEN_COL_IDX >= 0 || FROZEN_ROW_IDX >= 0) {
+      applyExcelFreezePanesV1624();
+    }
+  });
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1624) {
+    var _origUpdateStoreV1624 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateStoreV1624.apply(this, arguments);
+      applyRankColumnsAndValueSortV1624();
+      mountStoreExpandButtonV1624();
+      applyExcelFreezePanesV1624();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1624 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1624) {
+    var _origRenderAppV1624 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderAppV1624.apply(this, arguments);
+      applyAllFourUpgradesV1624();
+      return res;
+    };
+    window.renderApp._v1624 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    applyAllFourUpgradesV1624();
+  }
+
+})();
+</script>
 </body>
 </html>
