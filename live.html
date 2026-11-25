@@ -5488,5 +5488,1667 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDON — PART A (v16.31)
+     1. Red Box / Green Box Buttons in Manager-Wise Summary (Tertiary only, NO Sell In):
+        Tertiary (Default ON), Stock, Sell Out, Brand Order, Payment Coll, Target Sheet,
+        + 📊 Sell Thru & 📈 KPI's buttons
+     2. New "Type" column + stacked multi-type rows in Manager-Wise Summary,
+        Individual Store Data, and Date & Month Wise Report
+     3. Top Banner Green Box: Per Day Sale, Per Month Sale, Expected Closing (Avg & LY Trend)
+     (PASTE RIGHT BEFORE </body> IN live.html — NO NEED TO DELETE OLD CODE)
+     ============================================================================ -->
+<script>
+(function installMultiTypeComparisonAndPaceBarV1631() {
+
+  if (window._kritoMultiTypePaceV1631Installed) return;
+  window._kritoMultiTypePaceV1631Installed = true;
+
+  var css = [
+    '.krito-mtype-bar-v1631{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:10px;vertical-align:middle;}',
+    '.krito-mtype-btn-v1631{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:7px;border:1.5px solid #cbd5e1;background:#ffffff;color:#334155;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;line-height:1.2;}',
+    '.krito-mtype-btn-v1631:hover{border-color:#059669;background:#ecfdf5;color:#065f46;}',
+    '.krito-mtype-btn-v1631.is-on{background:#059669;color:#ffffff;border-color:#047857;box-shadow:0 2px 5px rgba(5,150,105,0.25);}',
+    '.krito-mtype-btn-v1631.is-report{border-color:#6366f1;background:#eef2ff;color:#3730a3;}',
+    '.krito-mtype-btn-v1631.is-report:hover{background:#e0e7ff;}',
+    '.krito-mtype-btn-v1631.is-report.is-on{background:#4f46e5;color:#ffffff;border-color:#3730a3;box-shadow:0 2px 6px rgba(79,70,229,0.3);}',
+
+    '.krito-th-type-v1631{text-align:center !important;white-space:nowrap !important;}',
+    '.krito-td-type-v1631{text-align:center !important;white-space:nowrap !important;vertical-align:middle !important;}',
+    '.krito-type-pill-v1631{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:0.2px;white-space:nowrap;border:1px solid transparent;}',
+    '.krito-tp-TERTIARY{background:#dcfce7;color:#166534;border-color:#86efac;}',
+    '.krito-tp-STOCK{background:#e0f2fe;color:#075985;border-color:#7dd3fc;}',
+    '.krito-tp-SELL_OUT{background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe;}',
+    '.krito-tp-BRAND_ORDER{background:#fef3c7;color:#92400e;border-color:#fcd34d;}',
+    '.krito-tp-PAYMENT_COLL{background:#fce7f3;color:#9d174d;border-color:#f9a8d4;}',
+    '.krito-tp-TARGET_SHEET{background:#ffedd5;color:#9a3412;border-color:#fdba74;}',
+    'tr.krito-type-subrow-v1631 > td{background:#f8fafc !important;border-top:1px dashed #e2e8f0 !important;font-size:11.5px !important;}',
+    'tr.krito-type-subrow-v1631.is-total-sub > td{background:#f1f5f9 !important;font-weight:800 !important;}',
+    'tr.krito-type-group-last-v1631 > td{border-bottom:1.5px solid #cbd5e1 !important;}',
+    'tr.krito-hidden-primary-v1631{display:none !important;}',
+    '.krito-sub-entity-muted-v1631{color:#94a3b8;font-size:10.5px;font-weight:700;padding-left:8px;}',
+
+    '.krito-pace-bar-v1631{margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(15,23,42,0.58);border:1.5px solid rgba(52,211,153,0.48);display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;align-items:stretch;}',
+    '.krito-pace-card-v1631{background:rgba(255,255,255,0.06);border:1px solid rgba(148,163,184,0.22);border-radius:8px;padding:7px 10px;display:flex;flex-direction:column;justify-content:center;gap:2px;}',
+    '.krito-pace-lbl-v1631{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;display:flex;align-items:center;justify-content:space-between;gap:4px;}',
+    '.krito-pace-val-v1631{font-size:13px;font-weight:900;color:#f8fafc;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}',
+    '.krito-pace-val-v1631 .pv-qty{color:#ffffff;}',
+    '.krito-pace-val-v1631 .pv-amt{color:#38bdf8;}',
+    '.krito-pace-sub-v1631{font-size:9.5px;color:#cbd5e1;font-weight:600;}',
+    '.krito-pace-tag-v1631{font-size:9px;padding:1px 6px;border-radius:99px;font-weight:800;}',
+    '.krito-pace-tag-avg{background:rgba(16,185,129,0.22);color:#6ee7b7;border:1px solid rgba(16,185,129,0.45);}',
+    '.krito-pace-tag-ly{background:rgba(245,158,11,0.22);color:#fde68a;border:1px solid rgba(245,158,11,0.45);}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoMultiTypePaceCssV1631';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var TYPE_ORDER = [
+    { key: 'TERTIARY',     label: 'Tertiary' },
+    { key: 'STOCK',        label: 'Stock' },
+    { key: 'SELL_OUT',     label: 'Sell Out' },
+    { key: 'BRAND_ORDER',  label: 'Brand Order' },
+    { key: 'PAYMENT_COLL', label: 'Payment Coll' },
+    { key: 'TARGET_SHEET', label: 'Target Sheet' }
+  ];
+
+  var TYPE_LABEL_MAP = {};
+  TYPE_ORDER.forEach(function(t) { TYPE_LABEL_MAP[t.key] = t.label.toUpperCase(); });
+
+  window._kritoMultiTypeStateV1631 = window._kritoMultiTypeStateV1631 || {
+    selectedTypes: ['TERTIARY'],
+    activeReport: ''
+  };
+
+  var STATE = window._kritoMultiTypeStateV1631;
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  function escV1631(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function isTertiaryTabActiveV1631() {
+    return (typeof ACTIVE_DATA_TYPE === 'undefined' || ACTIVE_DATA_TYPE === 'TERTIARY');
+  }
+
+  function getSelectedOrderedTypesV1631() {
+    var selSet = new Set(STATE.selectedTypes || ['TERTIARY']);
+    var out = TYPE_ORDER.filter(function(t) { return selSet.has(t.key); }).map(function(t) { return t.key; });
+    return out.length > 0 ? out : ['TERTIARY'];
+  }
+
+  function getPeriodDataForTypeV1631(typeKey, periodKeyOpt) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD || !LIVE_PAYLOAD.datasets) return null;
+      var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var pKey = periodKeyOpt || (typeof ACTIVE_MONTH !== 'undefined' ? ACTIVE_MONTH : '');
+      var ds = LIVE_PAYLOAD.datasets[typeKey];
+      return (ds && ds[brand] && ds[brand][pKey]) ? ds[brand][pKey] : null;
+    } catch (e) { return null; }
+  }
+
+  function getCompareLyInfoV1631() {
+    try {
+      var compareOn = !!(typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.rights && ACTIVE_LINK.rights.allowCompareLY && typeof COMPARE_LY_ENABLED !== 'undefined' && COMPARE_LY_ENABLED);
+      var lyKey = (typeof getLastYearPeriodKey === 'function' && typeof ACTIVE_MONTH !== 'undefined') ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
+      return { compareOn: compareOn, lyKey: lyKey };
+    } catch (e) { return { compareOn: false, lyKey: '' }; }
+  }
+
+  function makeTypeBadgeHtmlV1631(typeKey) {
+    var lbl = TYPE_LABEL_MAP[typeKey] || typeKey;
+    return '<span class="krito-type-pill-v1631 krito-tp-' + escV1631(typeKey) + '">' + escV1631(lbl) + '</span>';
+  }
+
+  function fmtQtySafe(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtInrSafe(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function growthBadgeSafe(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly) return cur > 0 ? '<span style="color:#0284c7;font-weight:800;">★ NEW</span>' : '-';
+    var pct = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    return (Number(pct) >= 0 ? '+' : '') + pct + '%';
+  }
+
+  function classifyHeadersListV1631(theadRow) {
+    var ths = Array.from(theadRow.children);
+    return ths.map(function(th, idx) {
+      var raw = (th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '')
+        .replace(/❄️|Frozen|Freeze|\+/g, '').replace(/\s+/g, ' ').trim();
+      var u = raw.toUpperCase();
+      var kind = 'OTHER';
+      if (th.classList.contains('krito-th-type-v1631') || u === 'TYPE') kind = 'TYPE';
+      else if (u === '#') kind = 'HASH';
+      else if (u === 'VAL RANK') kind = 'VAL_RANK';
+      else if (u === 'QTY RANK') kind = 'QTY_RANK';
+      else if (u.indexOf('PARTY / STORE') !== -1) kind = 'PARTY';
+      else if (u === 'MANAGER' || u === 'CLUSTER') kind = 'MANAGER';
+      else if (u === 'DATE' || u === 'MONTH') kind = 'DATE';
+      else if (u === 'STORES') kind = 'STORES';
+      else if (u.indexOf('UNIT / LOCATION') !== -1) kind = 'UNIT';
+      else if (u.indexOf('LAST REPORT DATE') !== -1) kind = 'LAST_UPD';
+      else if (u === 'PARTY NAME') kind = 'DATE_PARTY';
+      else if (u.indexOf('LY QTY') === 0) kind = 'LY_QTY';
+      else if (u.indexOf('QTY GROWTH') !== -1) kind = 'QTY_GR';
+      else if (u.indexOf('LY ') === 0) kind = 'LY_VAL';
+      else if (u.indexOf('VAL GROWTH') !== -1) kind = 'VAL_GR';
+      else if (u === 'QTY') kind = 'QTY';
+      else if (u === 'MRP') kind = 'MRP';
+      else if (u.indexOf('DIS %') !== -1 || u === 'DISCOUNT %') kind = 'DIS_PCT';
+      else if (u.indexOf('NET VALUE') !== -1 || u.indexOf('VALUE') !== -1 || u.indexOf('COLLECTION') !== -1 || u.indexOf('TARGET') !== -1 || u.indexOf('ORDER') !== -1) kind = 'VALUE';
+      else if (th.textContent.indexOf('📌') !== -1 || raw.indexOf('Master_') === 0) kind = 'PINNED_ATTR';
+
+      return { idx: idx, kind: kind, raw: raw, hidden: th.classList.contains('krito-col-hidden-v1626') };
+    });
+  }
+
+  function buildSubRowCellsHtmlV1631(colSpecs, opts) {
+    var rec = opts.rec;
+    var lyRec = opts.lyRec || { qty: 0, net: 0 };
+    var tKey = opts.typeKey;
+    var showEntityName = opts.showEntityName;
+    var entityText = opts.entityText || '';
+    var isTotal = !!opts.isTotal;
+
+    return colSpecs.map(function(cs) {
+      var hidCls = cs.hidden ? ' krito-col-hidden-v1626' : '';
+      var k = cs.kind;
+      if (k === 'TYPE') return '<td class="krito-td-type-v1631' + hidCls + '">' + makeTypeBadgeHtmlV1631(tKey) + '</td>';
+      if (k === 'HASH' || k === 'VAL_RANK' || k === 'QTY_RANK') return '<td class="krito-td-rank-v1624' + hidCls + '" style="color:#cbd5e1;text-align:center;">-</td>';
+      if (k === 'MANAGER' || k === 'PARTY' || k === 'DATE') {
+        if (isTotal) return '<td class="' + hidCls + '">TOTAL</td>';
+        if (showEntityName) return '<td class="' + hidCls + '"><b>' + escV1631(entityText) + '</b></td>';
+        return '<td class="' + hidCls + '"><span class="krito-sub-entity-muted-v1631">↳</span></td>';
+      }
+      if (k === 'STORES') {
+        var stCnt = rec && rec.stores !== undefined ? rec.stores : '-';
+        return '<td class="' + hidCls + '" style="text-align:center;color:#475569;font-weight:700;">' + stCnt + '</td>';
+      }
+      if (k === 'UNIT' || k === 'LAST_UPD' || k === 'DATE_PARTY' || k === 'PINNED_ATTR') {
+        if (k === 'UNIT' && rec && Array.isArray(rec.subStores) && rec.subStores.length > 0) {
+          return '<td class="' + hidCls + '" style="text-align:center;color:#64748b;font-weight:700;">' + rec.subStores.length + '</td>';
+        }
+        if (k === 'LAST_UPD' && rec && rec.lastUpd) {
+          return '<td class="' + hidCls + '" style="color:#64748b;font-size:10.5px;">🕒 ' + escV1631(rec.lastUpd) + '</td>';
+        }
+        if (k === 'DATE_PARTY' && rec && rec.partyCount !== undefined) {
+          return '<td class="' + hidCls + '" style="text-align:center;color:#475569;font-weight:700;">' + rec.partyCount + '</td>';
+        }
+        return '<td class="' + hidCls + '" style="text-align:center;color:#94a3b8;">-</td>';
+      }
+      if (k === 'QTY') return '<td class="num' + hidCls + '"><b>' + fmtQtySafe(rec ? rec.qty : 0) + '</b></td>';
+      if (k === 'VALUE') return '<td class="num' + hidCls + '" style="color:#0284c7;"><b>' + fmtInrSafe(rec ? rec.net : 0) + '</b></td>';
+      if (k === 'LY_QTY') return '<td class="ly-td' + hidCls + '">' + fmtQtySafe(lyRec.qty) + '</td>';
+      if (k === 'QTY_GR') return '<td class="num' + hidCls + '">' + growthBadgeSafe(rec ? rec.qty : 0, lyRec.qty) + '</td>';
+      if (k === 'LY_VAL') return '<td class="ly-td' + hidCls + '">' + fmtInrSafe(lyRec.net) + '</td>';
+      if (k === 'VAL_GR') return '<td class="num' + hidCls + '">' + growthBadgeSafe(rec ? rec.net : 0, lyRec.net) + '</td>';
+      if (k === 'MRP') return '<td class="num' + hidCls + '">' + fmtInrSafe(rec ? rec.mrp : 0) + '</td>';
+      if (k === 'DIS_PCT') {
+        var dp = (rec && rec.mrp > 0) ? ((rec.disc / rec.mrp) * 100).toFixed(2) : (rec && rec.discPct !== undefined ? Number(rec.discPct).toFixed(2) : '0.00');
+        return '<td class="num' + hidCls + '" style="color:#dc2626;font-weight:700;">' + dp + '%</td>';
+      }
+      return '<td class="' + hidCls + '" style="color:#94a3b8;">-</td>';
+    }).join('');
+  }
+
+  function findManagerCardInfoV1631() {
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      var tbl = tables[i];
+      if (tbl.id === 'kritoDateReportTableV1626') continue;
+      if (tbl.querySelector('#liveStoreTbody')) continue;
+      var firstTh = tbl.querySelector('thead tr th');
+      if (!firstTh) continue;
+      if ((firstTh.textContent || '').trim().toUpperCase().indexOf('MANAGER') === 0) {
+        var scrollBox = tbl.closest('.table-scroll') || tbl.parentElement;
+        var card = scrollBox ? scrollBox.parentElement : null;
+        var headBar = scrollBox ? scrollBox.previousElementSibling : null;
+        if (card && headBar && (headBar.textContent || '').toUpperCase().indexOf('MANAGER-WISE') !== -1) {
+          return { card: card, headBar: headBar, table: tbl };
+        }
+      }
+    }
+    return null;
+  }
+
+  function mountRedBoxButtonsV1631(mgrInfo) {
+    if (!mgrInfo || !mgrInfo.headBar) return;
+    var existingBar = document.getElementById('kritoMultiTypeBtnBarV1631');
+
+    if (!isTertiaryTabActiveV1631()) {
+      if (existingBar) existingBar.remove();
+      return;
+    }
+
+    if (!existingBar) {
+      existingBar = document.createElement('span');
+      existingBar.id = 'kritoMultiTypeBtnBarV1631';
+      existingBar.className = 'krito-mtype-bar-v1631';
+      mgrInfo.headBar.style.display = 'flex';
+      mgrInfo.headBar.style.alignItems = 'center';
+      mgrInfo.headBar.style.flexWrap = 'wrap';
+      mgrInfo.headBar.style.gap = '6px';
+      mgrInfo.headBar.appendChild(existingBar);
+    }
+
+    var selSet = new Set(getSelectedOrderedTypesV1631());
+    var html = TYPE_ORDER.map(function(t) {
+      var on = selSet.has(t.key);
+      return '<button type="button" class="krito-mtype-btn-v1631' + (on ? ' is-on' : '') + '" data-mtype-key-v1631="' + t.key + '">' +
+        (on ? '☑️ ' : '⬜ ') + escV1631(t.label) +
+      '</button>';
+    }).join('');
+
+    html +=
+      '<button type="button" class="krito-mtype-btn-v1631 is-report' + (STATE.activeReport === 'SELL_THRU' ? ' is-on' : '') + '" data-mtype-report-v1631="SELL_THRU">📊 Sell Thru</button>' +
+      '<button type="button" class="krito-mtype-btn-v1631 is-report' + (STATE.activeReport === 'KPIS' ? ' is-on' : '') + '" data-mtype-report-v1631="KPIS">📈 KPI\'s</button>';
+
+    existingBar.innerHTML = html;
+
+    var typeBtns = existingBar.querySelectorAll('[data-mtype-key-v1631]');
+    for (var i = 0; i < typeBtns.length; i++) {
+      typeBtns[i].onclick = function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var key = this.getAttribute('data-mtype-key-v1631');
+        var cur = new Set(STATE.selectedTypes || ['TERTIARY']);
+        if (cur.has(key)) {
+          if (cur.size > 1) cur.delete(key);
+        } else {
+          cur.add(key);
+        }
+        STATE.selectedTypes = Array.from(cur);
+        applyAllMultiTypeTablesV1631();
+      };
+    }
+
+    var repBtns = existingBar.querySelectorAll('[data-mtype-report-v1631]');
+    for (var j = 0; j < repBtns.length; j++) {
+      repBtns[j].onclick = function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var rk = this.getAttribute('data-mtype-report-v1631');
+        STATE.activeReport = (STATE.activeReport === rk) ? '' : rk;
+        mountRedBoxButtonsV1631(findManagerCardInfoV1631());
+        if (typeof window.renderKritoReportsPanelV1631 === 'function') {
+          window.renderKritoReportsPanelV1631();
+        }
+      };
+    }
+  }
+
+  function buildTypeLookupByManagerV1631(typeKey, periodKeyOpt) {
+    var pData = getPeriodDataForTypeV1631(typeKey, periodKeyOpt);
+    var map = {};
+    var tot = { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 };
+    if (pData && Array.isArray(pData.managers)) {
+      for (var i = 0; i < pData.managers.length; i++) {
+        var m = pData.managers[i];
+        if (!m) continue;
+        var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+        map[mk] = m;
+        tot.stores += Number(m.stores) || 0;
+        tot.qty += Number(m.qty) || 0;
+        tot.net += Number(m.net) || 0;
+        tot.mrp += Number(m.mrp) || 0;
+        tot.disc += Number(m.disc) || 0;
+      }
+    }
+    return { map: map, total: tot };
+  }
+
+  function applyManagerTableTypeRowsV1631(mgrInfo) {
+    if (!mgrInfo || !mgrInfo.table) return;
+    var table = mgrInfo.table;
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody) return;
+
+    var oldSubs = tbody.querySelectorAll('tr.krito-type-subrow-v1631');
+    for (var s = 0; s < oldSubs.length; s++) oldSubs[s].remove();
+    var allTrs = Array.from(tbody.children);
+    for (var r = 0; r < allTrs.length; r++) {
+      allTrs[r].classList.remove('krito-hidden-primary-v1631', 'krito-type-group-last-v1631');
+    }
+
+    if (!isTertiaryTabActiveV1631()) return;
+
+    if (!theadRow.querySelector('.krito-th-type-v1631') && theadRow.children.length >= 1) {
+      var thType = document.createElement('th');
+      thType.className = 'krito-th-type-v1631';
+      thType.textContent = 'Type';
+      theadRow.children[0].insertAdjacentElement('afterend', thType);
+    }
+
+    var selTypes = getSelectedOrderedTypesV1631();
+    var hasTertiary = selTypes.indexOf('TERTIARY') !== -1;
+    var extraTypes = selTypes.filter(function(t) { return t !== 'TERTIARY'; });
+    var lyInfo = getCompareLyInfoV1631();
+
+    var curByType = {}, lyByType = {};
+    extraTypes.forEach(function(tk) {
+      curByType[tk] = buildTypeLookupByManagerV1631(tk);
+      if (lyInfo.compareOn && lyInfo.lyKey) lyByType[tk] = buildTypeLookupByManagerV1631(tk, lyInfo.lyKey);
+    });
+
+    var colSpecs = classifyHeadersListV1631(theadRow);
+    var primaryRows = Array.from(tbody.children).filter(function(tr) {
+      return tr.tagName === 'TR' && !tr.classList.contains('krito-type-subrow-v1631');
+    });
+
+    for (var i = 0; i < primaryRows.length; i++) {
+      var tr = primaryRows[i];
+      var isTotal = tr.classList.contains('total-row') || (tr.children[0] && String(tr.children[0].textContent || '').trim().toUpperCase() === 'TOTAL');
+      var mgrName = tr.children[0] ? String(tr.children[0].textContent || '').trim() : '';
+      var mgrUp = mgrName.toUpperCase();
+
+      var tdType = tr.querySelector('.krito-td-type-v1631');
+      if (!tdType && tr.children.length >= 1) {
+        tdType = document.createElement('td');
+        tdType.className = 'krito-td-type-v1631';
+        tr.children[0].insertAdjacentElement('afterend', tdType);
+      }
+      if (tdType) tdType.innerHTML = makeTypeBadgeHtmlV1631('TERTIARY');
+
+      if (!hasTertiary) tr.classList.add('krito-hidden-primary-v1631');
+
+      var insertAfter = tr;
+      var lastVisibleRow = hasTertiary ? tr : null;
+
+      for (var ei = 0; ei < extraTypes.length; ei++) {
+        var tk = extraTypes[ei];
+        var rec = isTotal ? curByType[tk].total : (curByType[tk].map[mgrUp] || { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 });
+        var lyRec = (lyByType[tk]) ? (isTotal ? lyByType[tk].total : (lyByType[tk].map[mgrUp] || { qty: 0, net: 0 })) : { qty: 0, net: 0 };
+
+        var subTr = document.createElement('tr');
+        subTr.className = 'krito-type-subrow-v1631' + (isTotal ? ' is-total-sub' : '');
+        subTr.innerHTML = buildSubRowCellsHtmlV1631(colSpecs, {
+          rec: rec, lyRec: lyRec, typeKey: tk,
+          showEntityName: (!hasTertiary && ei === 0), entityText: mgrName, isTotal: isTotal
+        });
+        insertAfter.insertAdjacentElement('afterend', subTr);
+        insertAfter = subTr;
+        lastVisibleRow = subTr;
+      }
+
+      if (selTypes.length > 1 && lastVisibleRow && !isTotal) {
+        lastVisibleRow.classList.add('krito-type-group-last-v1631');
+      }
+    }
+  }
+
+  function buildTypeLookupByStoreV1631(typeKey, periodKeyOpt) {
+    var pData = getPeriodDataForTypeV1631(typeKey, periodKeyOpt);
+    var map = {};
+    var tot = { qty: 0, net: 0, mrp: 0, disc: 0 };
+    if (pData && Array.isArray(pData.stores)) {
+      for (var i = 0; i < pData.stores.length; i++) {
+        var st = pData.stores[i];
+        if (!st || !st.party) continue;
+        var pk = String(st.party).trim().toUpperCase();
+        map[pk] = st;
+        tot.qty += Number(st.qty) || 0;
+        tot.net += Number(st.net) || 0;
+        tot.mrp += Number(st.mrp) || 0;
+        tot.disc += Number(st.disc) || 0;
+      }
+    }
+    return { map: map, total: tot };
+  }
+
+  var storeTypeColWasHiddenV1631 = false;
+
+  function cleanStoreSubRowsBeforeSortV1631() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (table) {
+      var oldTh = table.querySelector('thead th.krito-th-type-v1631');
+      if (oldTh) {
+        storeTypeColWasHiddenV1631 = oldTh.classList.contains('krito-col-hidden-v1626');
+        oldTh.remove();
+      }
+    }
+    var oldSubs = tbody.querySelectorAll('tr.krito-type-subrow-v1631');
+    for (var i = 0; i < oldSubs.length; i++) oldSubs[i].remove();
+    var oldTds = tbody.querySelectorAll('td.krito-td-type-v1631');
+    for (var t = 0; t < oldTds.length; t++) oldTds[t].remove();
+    var hid = tbody.querySelectorAll('tr.krito-hidden-primary-v1631');
+    for (var j = 0; j < hid.length; j++) hid[j].classList.remove('krito-hidden-primary-v1631');
+  }
+
+  function applyStoreTableTypeRowsV1631() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    if (!theadRow) return;
+
+    cleanStoreSubRowsBeforeSortV1631();
+    if (!isTertiaryTabActiveV1631()) return;
+
+    var partyColIdx = -1;
+    for (var c = 0; c < theadRow.children.length; c++) {
+      var lbl = (theadRow.children[c].getAttribute('data-orig-title-v1624') || theadRow.children[c].textContent || '').toUpperCase();
+      if (lbl.indexOf('PARTY / STORE NAME') !== -1) { partyColIdx = c; break; }
+    }
+    if (partyColIdx < 0) return;
+
+    if (!theadRow.querySelector('.krito-th-type-v1631')) {
+      var thType = document.createElement('th');
+      thType.className = 'krito-th-type-v1631' + (storeTypeColWasHiddenV1631 ? ' krito-col-hidden-v1626' : '');
+      thType.textContent = 'Type';
+      thType.setAttribute('data-orig-title-v1624', 'Type');
+      theadRow.children[partyColIdx].insertAdjacentElement('afterend', thType);
+    }
+
+    var selTypes = getSelectedOrderedTypesV1631();
+    var hasTertiary = selTypes.indexOf('TERTIARY') !== -1;
+    var extraTypes = selTypes.filter(function(t) { return t !== 'TERTIARY'; });
+    var lyInfo = getCompareLyInfoV1631();
+
+    var curByType = {}, lyByType = {};
+    extraTypes.forEach(function(tk) {
+      curByType[tk] = buildTypeLookupByStoreV1631(tk);
+      if (lyInfo.compareOn && lyInfo.lyKey) lyByType[tk] = buildTypeLookupByStoreV1631(tk, lyInfo.lyKey);
+    });
+
+    var colSpecs = classifyHeadersListV1631(theadRow);
+    var typeColHidden = theadRow.querySelector('.krito-th-type-v1631').classList.contains('krito-col-hidden-v1626');
+    var primaryRows = Array.from(tbody.children);
+
+    for (var i = 0; i < primaryRows.length; i++) {
+      var tr = primaryRows[i];
+      if (!tr || tr.tagName !== 'TR') continue;
+
+      if (tr.classList.contains('expand-drawer-row')) {
+        var dTd = tr.querySelector('td');
+        if (dTd && dTd.getAttribute('data-v1631-cs') !== '1') {
+          var cs = parseInt(dTd.getAttribute('colspan') || '1', 10);
+          dTd.setAttribute('colspan', String(cs + 1));
+          dTd.setAttribute('data-v1631-cs', '1');
+        }
+        continue;
+      }
+
+      tr.classList.remove('krito-type-group-last-v1631');
+      var isTotal = tr.classList.contains('total-row');
+      var partyCell = tr.children[partyColIdx];
+      var bEl = partyCell ? partyCell.querySelector('b') : null;
+      var partyName = bEl ? String(bEl.textContent || '').trim() : (partyCell ? String(partyCell.textContent || '').trim() : '');
+      var partyUp = partyName.toUpperCase();
+
+      var tdType = tr.querySelector('.krito-td-type-v1631');
+      if (!tdType && partyCell) {
+        tdType = document.createElement('td');
+        tdType.className = 'krito-td-type-v1631' + (typeColHidden ? ' krito-col-hidden-v1626' : '');
+        partyCell.insertAdjacentElement('afterend', tdType);
+      }
+      if (tdType) {
+        tdType.innerHTML = makeTypeBadgeHtmlV1631('TERTIARY');
+        tdType.classList.toggle('krito-col-hidden-v1626', typeColHidden);
+      }
+
+      if (!hasTertiary) tr.classList.add('krito-hidden-primary-v1631');
+
+      var insertAfter = tr;
+      var lastVisibleRow = hasTertiary ? tr : null;
+
+      for (var ei = 0; ei < extraTypes.length; ei++) {
+        var tk = extraTypes[ei];
+        var rec = isTotal ? curByType[tk].total : (curByType[tk].map[partyUp] || { qty: 0, net: 0, mrp: 0, disc: 0 });
+        var lyRec = (lyByType[tk]) ? (isTotal ? lyByType[tk].total : (lyByType[tk].map[partyUp] || { qty: 0, net: 0 })) : { qty: 0, net: 0 };
+
+        var subTr = document.createElement('tr');
+        subTr.className = 'krito-type-subrow-v1631' + (isTotal ? ' is-total-sub' : '');
+        subTr.innerHTML = buildSubRowCellsHtmlV1631(colSpecs, {
+          rec: rec, lyRec: lyRec, typeKey: tk,
+          showEntityName: (!hasTertiary && ei === 0), entityText: partyName, isTotal: isTotal
+        });
+        insertAfter.insertAdjacentElement('afterend', subTr);
+        insertAfter = subTr;
+        lastVisibleRow = subTr;
+      }
+
+      if (selTypes.length > 1 && lastVisibleRow && !isTotal) {
+        lastVisibleRow.classList.add('krito-type-group-last-v1631');
+      }
+    }
+
+    requestAnimationFrame(function() {
+      try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+    });
+  }
+
+  function buildTypeLookupByDateV1631(typeKey, periodKeyOpt) {
+    var pData = getPeriodDataForTypeV1631(typeKey, periodKeyOpt);
+    var map = {};
+    var tot = { qty: 0, net: 0, mrp: 0, disc: 0 };
+    if (pData && pData.daily && Array.isArray(pData.daily.r)) {
+      var rows = pData.daily.r;
+      for (var i = 0; i < rows.length; i++) {
+        var rw = rows[i];
+        var iso = rw[0];
+        var lbl = String(rw[1] || '').trim().toUpperCase();
+        var pEntries = Array.isArray(rw[6]) ? rw[6] : [];
+        var pSet = new Set();
+        for (var j = 0; j < pEntries.length; j++) pSet.add(pEntries[j][0]);
+        var obj = {
+          iso: iso, qty: Number(rw[2]) || 0, net: Number(rw[3]) || 0,
+          mrp: Number(rw[4]) || 0, disc: Number(rw[5]) || 0, partyCount: pSet.size
+        };
+        map[lbl] = obj;
+        map[iso] = obj;
+        tot.qty += obj.qty; tot.net += obj.net; tot.mrp += obj.mrp; tot.disc += obj.disc;
+      }
+    }
+    return { map: map, total: tot };
+  }
+
+  function applyDateTableTypeRowsV1631() {
+    var table = document.getElementById('kritoDateReportTableV1626');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody) return;
+
+    var oldSubs = tbody.querySelectorAll('tr.krito-type-subrow-v1631');
+    for (var s = 0; s < oldSubs.length; s++) oldSubs[s].remove();
+    var allTrs = Array.from(tbody.children);
+    for (var r = 0; r < allTrs.length; r++) {
+      allTrs[r].classList.remove('krito-hidden-primary-v1631', 'krito-type-group-last-v1631');
+    }
+
+    if (!isTertiaryTabActiveV1631()) return;
+
+    var dateColIdx = -1;
+    for (var c = 0; c < theadRow.children.length; c++) {
+      var kAttr = theadRow.children[c].getAttribute('data-col-key-v1626') || '';
+      if (kAttr === 'Date') { dateColIdx = c; break; }
+    }
+    if (dateColIdx < 0) return;
+
+    if (!theadRow.querySelector('.krito-th-type-v1631')) {
+      var thType = document.createElement('th');
+      thType.className = 'krito-th-type-v1631';
+      thType.setAttribute('data-col-key-v1626', 'Type');
+      thType.setAttribute('data-orig-title-v1626', 'Type');
+      thType.textContent = 'Type';
+      theadRow.children[dateColIdx].insertAdjacentElement('afterend', thType);
+    }
+
+    var selTypes = getSelectedOrderedTypesV1631();
+    var hasTertiary = selTypes.indexOf('TERTIARY') !== -1;
+    var extraTypes = selTypes.filter(function(t) { return t !== 'TERTIARY'; });
+    var lyInfo = getCompareLyInfoV1631();
+
+    var curByType = {}, lyByType = {};
+    extraTypes.forEach(function(tk) {
+      curByType[tk] = buildTypeLookupByDateV1631(tk);
+      if (lyInfo.compareOn && lyInfo.lyKey) lyByType[tk] = buildTypeLookupByDateV1631(tk, lyInfo.lyKey);
+    });
+
+    var colSpecs = classifyHeadersListV1631(theadRow);
+    var typeColHidden = theadRow.querySelector('.krito-th-type-v1631').classList.contains('krito-col-hidden-v1626');
+    var primaryRows = Array.from(tbody.children).filter(function(tr) {
+      return tr.tagName === 'TR' && !tr.classList.contains('krito-type-subrow-v1631');
+    });
+
+    for (var i = 0; i < primaryRows.length; i++) {
+      var tr = primaryRows[i];
+      if (tr.children.length <= dateColIdx) continue;
+      var isTotal = tr.classList.contains('total-row');
+      var dateCell = tr.children[dateColIdx];
+      var dateLbl = String(dateCell.textContent || '').trim();
+      var dateUp = dateLbl.toUpperCase();
+      var modalBtn = tr.querySelector('[data-iso]');
+      var rowIso = modalBtn ? (modalBtn.getAttribute('data-iso') || '') : '';
+
+      var tdType = tr.querySelector('.krito-td-type-v1631');
+      if (!tdType) {
+        tdType = document.createElement('td');
+        tdType.className = 'krito-td-type-v1631' + (typeColHidden ? ' krito-col-hidden-v1626' : '');
+        dateCell.insertAdjacentElement('afterend', tdType);
+      }
+      tdType.innerHTML = makeTypeBadgeHtmlV1631('TERTIARY');
+      tdType.classList.toggle('krito-col-hidden-v1626', typeColHidden);
+
+      if (!hasTertiary) tr.classList.add('krito-hidden-primary-v1631');
+
+      var insertAfter = tr;
+      var lastVisibleRow = hasTertiary ? tr : null;
+
+      for (var ei = 0; ei < extraTypes.length; ei++) {
+        var tk = extraTypes[ei];
+        var rec = isTotal ? curByType[tk].total : (curByType[tk].map[rowIso] || curByType[tk].map[dateUp] || { qty: 0, net: 0, mrp: 0, disc: 0, partyCount: 0 });
+        var lyRec = { qty: 0, net: 0 };
+        if (lyByType[tk]) {
+          if (isTotal) lyRec = lyByType[tk].total;
+          else if (rowIso) {
+            var mdSuffix = rowIso.slice(4);
+            var lyKeys = Object.keys(lyByType[tk].map);
+            for (var lk = 0; lk < lyKeys.length; lk++) {
+              if (lyKeys[lk].indexOf(mdSuffix) !== -1 && lyKeys[lk].length === rowIso.length) {
+                lyRec = lyByType[tk].map[lyKeys[lk]];
+                break;
+              }
+            }
+          }
+        }
+
+        var subTr = document.createElement('tr');
+        subTr.className = 'krito-type-subrow-v1631' + (isTotal ? ' is-total-sub' : '');
+        subTr.innerHTML = buildSubRowCellsHtmlV1631(colSpecs, {
+          rec: rec, lyRec: lyRec, typeKey: tk,
+          showEntityName: (!hasTertiary && ei === 0), entityText: dateLbl, isTotal: isTotal
+        });
+        insertAfter.insertAdjacentElement('afterend', subTr);
+        insertAfter = subTr;
+        lastVisibleRow = subTr;
+      }
+
+      if (selTypes.length > 1 && lastVisibleRow && !isTotal) {
+        lastVisibleRow.classList.add('krito-type-group-last-v1631');
+      }
+    }
+
+    requestAnimationFrame(function() {
+      try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+    });
+  }
+
+  // =========================================================================
+  // 5. TOP BANNER GREEN BOX: PER DAY / PER MONTH / EXPECTED CLOSING (AVG + LY)
+  // =========================================================================
+  function daysInCalendarMonthV1631(year, mon1to12) {
+    return new Date(year, mon1to12, 0).getDate();
+  }
+
+  function findTopKpiBannerCardV1631() {
+    var divs = document.querySelectorAll('div, section');
+    var best = null;
+    for (var i = 0; i < divs.length; i++) {
+      var el = divs[i];
+      if (el.id === 'kritoPaceClosingBarV1631') continue;
+      if (el.querySelector('table')) continue;
+      var txt = (el.textContent || '').toUpperCase();
+      if (txt.indexOf('UPDATED STORES') !== -1 && (txt.indexOf('TOTAL QTY') !== -1 || txt.indexOf('NET VALUE') !== -1)) {
+        if (!best || best.contains(el)) best = el;
+      }
+    }
+    return best;
+  }
+
+  function computePaceAndExpectedClosingV1631() {
+    var tKey = (typeof ACTIVE_DATA_TYPE !== 'undefined') ? ACTIVE_DATA_TYPE : 'TERTIARY';
+    var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var pKey = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    var mData = getPeriodDataForTypeV1631(tKey, pKey);
+    if (!mData || !mData.summary) return null;
+
+    var curQty = Number(mData.summary.qty) || 0;
+    var curVal = Number(mData.summary.net) || 0;
+    var lyKey = (typeof getLastYearPeriodKey === 'function') ? getLastYearPeriodKey(pKey) : '';
+    var lyData = lyKey ? getPeriodDataForTypeV1631(tKey, lyKey) : null;
+    var lyFullQty = (lyData && lyData.summary) ? (Number(lyData.summary.qty) || 0) : 0;
+    var lyFullVal = (lyData && lyData.summary) ? (Number(lyData.summary.net) || 0) : 0;
+
+    var now = new Date();
+    var isFullFy = String(pKey).indexOf('FULL_FY::') === 0;
+
+    if (!isFullFy) {
+      var mm = String(pKey).match(/^([A-Z]{3})-(\d{4})$/);
+      var mNum = mm ? (MON_NUM[mm[1]] || (now.getMonth() + 1)) : (now.getMonth() + 1);
+      var yr = mm ? parseInt(mm[2], 10) : now.getFullYear();
+      var totalDays = daysInCalendarMonthV1631(yr, mNum);
+
+      var isPastMonth = (yr < now.getFullYear()) || (yr === now.getFullYear() && mNum < (now.getMonth() + 1));
+      var elapsedDays = totalDays;
+      if (!isPastMonth) {
+        var maxDataDay = 0;
+        if (mData.daily && Array.isArray(mData.daily.r)) {
+          var dr = mData.daily.r;
+          for (var i = 0; i < dr.length; i++) {
+            var isoMatch = String(dr[i][0] || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (isoMatch && parseInt(isoMatch[1], 10) === yr && parseInt(isoMatch[2], 10) === mNum) {
+              var dd = parseInt(isoMatch[3], 10);
+              if (dd > maxDataDay) maxDataDay = dd;
+            }
+          }
+        }
+        elapsedDays = maxDataDay > 0 ? Math.min(maxDataDay, totalDays) : Math.max(1, Math.min(now.getDate(), totalDays));
+      }
+
+      var perDayQty = curQty / Math.max(1, elapsedDays);
+      var perDayVal = curVal / Math.max(1, elapsedDays);
+      var expAvgQty = perDayQty * totalDays;
+      var expAvgVal = perDayVal * totalDays;
+
+      var expLyQty = null, expLyVal = null, lyNote = 'No LY Data';
+      if (lyData && (lyFullVal > 0 || lyFullQty > 0)) {
+        if (elapsedDays >= totalDays) {
+          expLyQty = curQty; expLyVal = curVal;
+          var grC = lyFullVal > 0 ? (((curVal - lyFullVal) / lyFullVal) * 100).toFixed(1) : '0.0';
+          lyNote = 'Month Closed | vs LY: ' + (Number(grC) >= 0 ? '+' : '') + grC + '%';
+        } else {
+          var lyTillQty = 0, lyTillVal = 0;
+          if (lyData.daily && Array.isArray(lyData.daily.r)) {
+            var lr = lyData.daily.r;
+            for (var j = 0; j < lr.length; j++) {
+              var lm = String(lr[j][0] || '').match(/^\d{4}-\d{2}-(\d{2})$/);
+              if (lm && parseInt(lm[1], 10) <= elapsedDays) {
+                lyTillQty += Number(lr[j][2]) || 0;
+                lyTillVal += Number(lr[j][3]) || 0;
+              }
+            }
+          }
+          if (lyTillVal > 0 && lyTillQty > 0) {
+            expLyVal = lyFullVal * (curVal / lyTillVal);
+            expLyQty = lyFullQty * (curQty / lyTillQty);
+            var trendGr = (((curVal - lyTillVal) / lyTillVal) * 100).toFixed(1);
+            lyNote = 'LY Till Day ' + elapsedDays + ' Trend (' + (Number(trendGr) >= 0 ? '+' : '') + trendGr + '%)';
+          } else {
+            var remDays = totalDays - elapsedDays;
+            expLyVal = curVal + (lyFullVal / totalDays) * remDays;
+            expLyQty = curQty + (lyFullQty / totalDays) * remDays;
+            lyNote = 'Cur + LY Daily Pace (' + remDays + 'd left)';
+          }
+        }
+      }
+
+      return {
+        perDayQty: perDayQty, perDayVal: perDayVal, daySub: 'Avg of ' + elapsedDays + ' / ' + totalDays + ' Days',
+        perMonthQty: curQty, perMonthVal: curVal, monthSub: pKey + ' Total',
+        expAvgQty: expAvgQty, expAvgVal: expAvgVal, avgSub: 'At Current Daily Avg × ' + totalDays + 'd',
+        expLyQty: expLyQty, expLyVal: expLyVal, lyNote: lyNote
+      };
+    }
+
+    var fyStr = String(pKey).replace('FULL_FY::', '');
+    var fyStartYr = parseInt(fyStr.split('-')[0], 10) || now.getFullYear();
+    var fyMonths = [
+      'APR-' + fyStartYr, 'MAY-' + fyStartYr, 'JUN-' + fyStartYr, 'JUL-' + fyStartYr,
+      'AUG-' + fyStartYr, 'SEP-' + fyStartYr, 'OCT-' + fyStartYr, 'NOV-' + fyStartYr, 'DEC-' + fyStartYr,
+      'JAN-' + (fyStartYr + 1), 'FEB-' + (fyStartYr + 1), 'MAR-' + (fyStartYr + 1)
+    ];
+
+    var brandBucket = (LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[tKey] && LIVE_PAYLOAD.datasets[tKey][brand]) ? LIVE_PAYLOAD.datasets[tKey][brand] : {};
+    var activeMonths = [];
+    var totalElapsedDays = 0;
+
+    for (var mi = 0; mi < fyMonths.length; mi++) {
+      var mk = fyMonths[mi];
+      var md = brandBucket[mk];
+      if (!md || !md.summary || ((Number(md.summary.qty) || 0) === 0 && (Number(md.summary.net) || 0) === 0)) continue;
+      activeMonths.push(mk);
+      var mParts = mk.match(/^([A-Z]{3})-(\d{4})$/);
+      var mN = MON_NUM[mParts[1]], mY = parseInt(mParts[2], 10);
+      var dInM = daysInCalendarMonthV1631(mY, mN);
+      var isPastM = (mY < now.getFullYear()) || (mY === now.getFullYear() && mN < (now.getMonth() + 1));
+      if (isPastM) {
+        totalElapsedDays += dInM;
+      } else {
+        var maxD = 0;
+        if (md.daily && Array.isArray(md.daily.r)) {
+          for (var di = 0; di < md.daily.r.length; di++) {
+            var im = String(md.daily.r[di][0] || '').match(/^\d{4}-\d{2}-(\d{2})$/);
+            if (im) maxD = Math.max(maxD, parseInt(im[1], 10));
+          }
+        }
+        totalElapsedDays += (maxD > 0 ? Math.min(maxD, dInM) : Math.max(1, Math.min(now.getDate(), dInM)));
+      }
+    }
+
+    var mCnt = Math.max(1, activeMonths.length);
+    var dCnt = Math.max(1, totalElapsedDays);
+    var perDayQ = curQty / dCnt, perDayV = curVal / dCnt;
+    var perMonQ = curQty / mCnt, perMonV = curVal / mCnt;
+    var expAvgQ = perMonQ * 12, expAvgV = perMonV * 12;
+
+    var expLyQ = null, expLyV = null, lyFyNote = 'No LY Data';
+    if (lyData && (lyFullVal > 0 || lyFullQty > 0)) {
+      var lySameMonthsQty = 0, lySameMonthsVal = 0;
+      for (var am = 0; am < activeMonths.length; am++) {
+        var amParts = activeMonths[am].match(/^([A-Z]{3})-(\d{4})$/);
+        if (!amParts) continue;
+        var lyMk = amParts[1] + '-' + (parseInt(amParts[2], 10) - 1);
+        var lmd = brandBucket[lyMk];
+        if (lmd && lmd.summary) {
+          lySameMonthsQty += Number(lmd.summary.qty) || 0;
+          lySameMonthsVal += Number(lmd.summary.net) || 0;
+        }
+      }
+      if (lySameMonthsVal > 0 && lySameMonthsQty > 0) {
+        expLyV = lyFullVal * (curVal / lySameMonthsVal);
+        expLyQ = lyFullQty * (curQty / lySameMonthsQty);
+        var fyGr = (((curVal - lySameMonthsVal) / lySameMonthsVal) * 100).toFixed(1);
+        lyFyNote = 'LY Same ' + mCnt + 'M Trend (' + (Number(fyGr) >= 0 ? '+' : '') + fyGr + '%)';
+      } else {
+        expLyV = curVal + (lyFullVal / 12) * Math.max(0, 12 - mCnt);
+        expLyQ = curQty + (lyFullQty / 12) * Math.max(0, 12 - mCnt);
+        lyFyNote = 'Cur + LY Monthly Pace';
+      }
+    }
+
+    return {
+      perDayQty: perDayQ, perDayVal: perDayV, daySub: 'Avg across ' + dCnt + ' Days',
+      perMonthQty: perMonQ, perMonthVal: perMonV, monthSub: 'Avg of ' + mCnt + ' Active Month(s)',
+      expAvgQty: expAvgQ, expAvgVal: expAvgV, avgSub: 'At Current Monthly Avg × 12M',
+      expLyQty: expLyQ, expLyVal: expLyV, lyNote: lyFyNote
+    };
+  }
+
+  function renderTopBannerPaceBarV1631() {
+    var oldBar = document.getElementById('kritoPaceClosingBarV1631');
+    var card = findTopKpiBannerCardV1631();
+    if (!card) return;
+
+    var info = computePaceAndExpectedClosingV1631();
+    if (!info) {
+      if (oldBar) oldBar.remove();
+      return;
+    }
+
+    if (!oldBar || !card.contains(oldBar)) {
+      if (oldBar) oldBar.remove();
+      oldBar = document.createElement('div');
+      oldBar.id = 'kritoPaceClosingBarV1631';
+      oldBar.className = 'krito-pace-bar-v1631';
+      card.appendChild(oldBar);
+    }
+
+    var lyHtmlVal = (info.expLyVal !== null)
+      ? ('<span class="pv-qty">' + fmtQtySafe(info.expLyQty) + ' Qty</span><span class="pv-amt">' + fmtInrSafe(info.expLyVal) + '</span>')
+      : '<span style="color:#94a3b8;font-size:12px;">No LY Data</span>';
+
+    oldBar.innerHTML =
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>📅 Per Day Sale</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtySafe(info.perDayQty) + ' Qty</span><span class="pv-amt">' + fmtInrSafe(info.perDayVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1631(info.daySub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>🗓️ Per Month Sale</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtySafe(info.perMonthQty) + ' Qty</span><span class="pv-amt">' + fmtInrSafe(info.perMonthVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1631(info.monthSub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>🎯 Expected Closing</span><span class="krito-pace-tag-v1631 krito-pace-tag-avg">Avg Trend</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtySafe(info.expAvgQty) + ' Qty</span><span class="pv-amt">' + fmtInrSafe(info.expAvgVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1631(info.avgSub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>📈 Expected Closing</span><span class="krito-pace-tag-v1631 krito-pace-tag-ly">LY Trend</span></div>' +
+        '<div class="krito-pace-val-v1631">' + lyHtmlVal + '</div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1631(info.lyNote) + '</div>' +
+      '</div>';
+  }
+
+  function applyAllMultiTypeTablesV1631() {
+    renderTopBannerPaceBarV1631();
+    var mgrInfo = findManagerCardInfoV1631();
+    mountRedBoxButtonsV1631(mgrInfo);
+    applyManagerTableTypeRowsV1631(mgrInfo);
+    applyStoreTableTypeRowsV1631();
+    applyDateTableTypeRowsV1631();
+    if (typeof window.renderKritoReportsPanelV1631 === 'function') {
+      window.renderKritoReportsPanelV1631();
+    }
+  }
+  window.applyAllMultiTypeTablesV1631 = applyAllMultiTypeTablesV1631;
+
+  document.addEventListener('click', function(ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('[data-krito-tab-v1626="DATE"]')) {
+      setTimeout(applyDateTableTypeRowsV1631, 30);
+    }
+    if (ev.target && ev.target.closest && ev.target.closest('#kritoHideColWrapV1626')) {
+      setTimeout(function() {
+        applyStoreTableTypeRowsV1631();
+        applyDateTableTypeRowsV1631();
+      }, 40);
+    }
+  });
+  document.addEventListener('input', function(ev) {
+    if (ev.target && ev.target.id === 'liveStoreSearch') {
+      setTimeout(applyDateTableTypeRowsV1631, 30);
+    }
+  });
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1631) {
+    var _origUpdateStoreV1631 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      cleanStoreSubRowsBeforeSortV1631();
+      var res = _origUpdateStoreV1631.apply(this, arguments);
+      applyStoreTableTypeRowsV1631();
+      applyDateTableTypeRowsV1631();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1631 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1631) {
+    var _origRenderAppV1631 = window.renderApp;
+    window.renderApp = function() {
+      cleanStoreSubRowsBeforeSortV1631();
+      var res = _origRenderAppV1631.apply(this, arguments);
+      applyAllMultiTypeTablesV1631();
+      return res;
+    };
+    window.renderApp._v1631 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    applyAllMultiTypeTablesV1631();
+  }
+
+})();
+</script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDON — PART B (v16.31)
+     1. 📊 Sell Thru Report (Cluster & Party Wise):
+        - Sell Out (Billed) [+ve], RTV [-ve], Sell Out (Net), Tertiary Qty & Val
+        - Toggle Buttons: Sell Thru (On Billed) | Sell Thru (On Net) | Both
+        - Custom Time Period Multi-Month Selector
+     2. 📈 KPI's Report (Cluster & Party Wise vs Last Year Growth %):
+        - Total Bills, ABV (Net Sale / Bills), ASP (Net Sale / Qty), UPT (Qty / Bills)
+     (PASTE RIGHT AFTER PART 2 & BEFORE </body> IN live.html)
+     ============================================================================ -->
+<script>
+(function installSellThruAndKpisReportsV1631() {
+
+  if (window._kritoSellThruKpisV1631Installed) return;
+  window._kritoSellThruKpisV1631Installed = true;
+
+  var css = [
+    '.krito-rep-card-v1631{margin:14px 0;background:#ffffff;border:2px solid #6366f1;border-radius:14px;padding:14px 16px;box-shadow:0 6px 20px rgba(79,70,229,0.1);}',
+    '.krito-rep-head-v1631{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:10px;margin-bottom:10px;border-bottom:1.5px solid #e2e8f0;}',
+    '.krito-rep-title-v1631{font-size:15px;font-weight:900;color:#1e293b;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}',
+    '.krito-rep-controls-v1631{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}',
+    '.krito-rep-pill-v1631{padding:5px 11px;border-radius:7px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;}',
+    '.krito-rep-pill-v1631:hover{background:#eef2ff;border-color:#818cf8;color:#312e81;}',
+    '.krito-rep-pill-v1631.is-on{background:#4f46e5;color:#ffffff;border-color:#4338ca;}',
+    '.krito-rep-pill-v1631.is-green.is-on{background:#059669;border-color:#047857;}',
+    '.krito-rep-period-bar-v1631{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;}',
+    '.krito-rep-months-wrap-v1631{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}',
+    '.krito-rep-mchk-v1631{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;font-size:11px;font-weight:700;color:#334155;cursor:pointer;user-select:none;}',
+    '.krito-rep-mchk-v1631.is-checked{background:#eef2ff;border-color:#6366f1;color:#312e81;}',
+    '.krito-rep-mchk-v1631 input{margin:0;width:13px;height:13px;cursor:pointer;}',
+    '.krito-rep-kpis-v1631{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;margin-bottom:10px;}',
+    '.krito-rep-kpi-box-v1631{background:#0f172a;color:#ffffff;padding:10px 12px;border-radius:10px;display:flex;flex-direction:column;gap:3px;}',
+    '.krito-rep-kpi-box-v1631 .klbl{font-size:10px;color:#94a3b8;font-weight:800;text-transform:uppercase;}',
+    '.krito-rep-kpi-box-v1631 .kval{font-size:17px;font-weight:900;color:#f8fafc;}',
+    '.krito-rep-kpi-box-v1631 .ksub{font-size:10.5px;color:#cbd5e1;font-weight:700;}',
+    '.krito-st-pct-v1631{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:900;white-space:nowrap;}',
+    '.krito-st-hi{background:#dcfce7;color:#166534;border:1px solid #86efac;}',
+    '.krito-st-mid{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
+    '.krito-st-lo{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}',
+    '.krito-rep-tbl-v1631{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px;}',
+    '.krito-rep-tbl-v1631 th{padding:7px 9px;background:#f1f5f9;color:#1e293b;font-weight:800;white-space:nowrap;border-bottom:2px solid #cbd5e1;position:sticky;top:0;z-index:5;}',
+    '.krito-rep-tbl-v1631 td{padding:6px 9px;white-space:nowrap;border-bottom:1px solid #e2e8f0;}',
+    '.krito-rep-tbl-v1631 tr.total-row td{background:#f1f5f9;font-weight:900;border-top:2px solid #94a3b8;}',
+    '.krito-rep-search-v1631{padding:5px 10px;border-radius:7px;border:1.5px solid #cbd5e1;font-size:12px;width:210px;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoSellThruKpisCssV1631';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  var REP_STATE = {
+    stMode: 'BOTH',          // 'BILLED' | 'NET' | 'BOTH'
+    stView: 'CLUSTER',       // 'CLUSTER' | 'PARTY'
+    stPeriodMode: 'ACTIVE',  // 'ACTIVE' | 'CUSTOM'
+    stCustomMonths: [],
+    stSearch: '',
+
+    kpiView: 'CLUSTER',      // 'CLUSTER' | 'PARTY'
+    kpiPeriodMode: 'ACTIVE', // 'ACTIVE' | 'CUSTOM'
+    kpiCustomMonths: [],
+    kpiSearch: ''
+  };
+
+  function escV1631R(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtDec(v, d) {
+    var n = Number(v);
+    if (!isFinite(n)) return '0.00';
+    return n.toFixed(d === undefined ? 2 : d);
+  }
+
+  function growthHtmlR(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly || ly === 0) return cur > 0 ? '<span style="color:#0284c7;font-weight:800;">★ NEW</span>' : '-';
+    var p = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    var col = Number(p) >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (Number(p) >= 0 ? '+' : '') + p + '%</span>';
+  }
+
+  function sellThruBadgeHtml(tert, base) {
+    if (!base || base <= 0) return '<span style="color:#94a3b8;font-weight:700;">-</span>';
+    var pct = (tert / base) * 100;
+    var cls = pct >= 60 ? 'krito-st-hi' : (pct >= 30 ? 'krito-st-mid' : 'krito-st-lo');
+    return '<span class="krito-st-pct-v1631 ' + cls + '">' + pct.toFixed(1) + '%</span>';
+  }
+
+  function getAvailableMonthsForBrandV1631() {
+    var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var set = new Set();
+    if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD && LIVE_PAYLOAD.datasets) {
+      ['TERTIARY', 'SELL_OUT'].forEach(function(tk) {
+        var bObj = LIVE_PAYLOAD.datasets[tk] && LIVE_PAYLOAD.datasets[tk][brand];
+        if (!bObj) return;
+        Object.keys(bObj).forEach(function(pk) {
+          if (/^[A-Z]{3}-\d{4}$/.test(pk)) set.add(pk);
+        });
+      });
+    }
+    return Array.from(set).sort(function(a, b) {
+      var ma = a.match(/^([A-Z]{3})-(\d{4})$/);
+      var mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+      var ka = ma ? (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0)) : 0;
+      var kb = mb ? (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) : 0;
+      return kb - ka;
+    });
+  }
+
+  function getLyKeyForPeriodV1631(pk) {
+    if (typeof getLastYearPeriodKey === 'function') return getLastYearPeriodKey(pk);
+    var m = String(pk || '').match(/^([A-Z]{3})-(\d{4})$/);
+    if (m) return m[1] + '-' + (parseInt(m[2], 10) - 1);
+    var fy = String(pk || '').match(/^FULL_FY::(\d{4})-(\d{2})$/);
+    if (fy) {
+      var y1 = parseInt(fy[1], 10) - 1;
+      return 'FULL_FY::' + y1 + '-' + String((y1 + 1) % 100).padStart(2, '0');
+    }
+    return '';
+  }
+
+  function getPeriodObjV1631(typeKey, periodKey) {
+    try {
+      var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      return LIVE_PAYLOAD && LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey] && LIVE_PAYLOAD.datasets[typeKey][brand] && LIVE_PAYLOAD.datasets[typeKey][brand][periodKey]
+        ? LIVE_PAYLOAD.datasets[typeKey][brand][periodKey] : null;
+    } catch (e) { return null; }
+  }
+
+  function findReportsMountAnchorV1631() {
+    var btnBar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (btnBar) {
+      var card = btnBar.parentElement;
+      while (card && card.parentElement && !card.querySelector('table')) {
+        card = card.parentElement;
+      }
+      if (card && card.parentElement) return card;
+    }
+    var storeTb = document.getElementById('liveStoreTbody');
+    if (storeTb) {
+      var sc = storeTb.closest('.table-scroll');
+      return sc && sc.parentElement ? sc.parentElement.previousElementSibling : null;
+    }
+    return null;
+  }
+
+  // =========================================================================
+  // 3. SELL THRU REPORT (BILLED / RTV / NET + BOTH MODES + TIME PERIOD SELECT)
+  // =========================================================================
+  function buildSellThruHtmlV1631() {
+    var availMonths = getAvailableMonthsForBrandV1631();
+    var activePeriod = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+
+    var periodsToSum = [];
+    if (REP_STATE.stPeriodMode === 'CUSTOM' && REP_STATE.stCustomMonths.length > 0) {
+      periodsToSum = REP_STATE.stCustomMonths.slice();
+    } else {
+      periodsToSum = activePeriod ? [activePeriod] : availMonths.slice(0, 1);
+    }
+
+    var isCluster = (REP_STATE.stView === 'CLUSTER');
+    var agg = {};
+    var hasExactSplitData = false;
+
+    function ensureRec(key, displayName, subLabel) {
+      if (!agg[key]) {
+        agg[key] = { name: displayName, sub: subLabel || '', bQ: 0, bV: 0, rQ: 0, rV: 0, nQ: 0, nV: 0, tQ: 0, tV: 0 };
+      } else if (subLabel && !agg[key].sub) {
+        agg[key].sub = subLabel;
+      }
+      return agg[key];
+    }
+
+    for (var pi = 0; pi < periodsToSum.length; pi++) {
+      var pk = periodsToSum[pi];
+
+      var tObj = getPeriodObjV1631('TERTIARY', pk);
+      if (tObj) {
+        if (isCluster && Array.isArray(tObj.managers)) {
+          for (var mi = 0; mi < tObj.managers.length; mi++) {
+            var m = tObj.managers[mi];
+            var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+            var r = ensureRec(mk, m.manager || 'Unassigned', '');
+            r.tQ += Number(m.qty) || 0;
+            r.tV += Number(m.net) || 0;
+          }
+        } else if (!isCluster && Array.isArray(tObj.stores)) {
+          for (var si = 0; si < tObj.stores.length; si++) {
+            var st = tObj.stores[si];
+            var sk = String(st.party || '').trim().toUpperCase();
+            if (!sk) continue;
+            var r2 = ensureRec(sk, st.party, st.manager || '');
+            r2.tQ += Number(st.qty) || 0;
+            r2.tV += Number(st.net) || 0;
+          }
+        }
+      }
+
+      var soObj = getPeriodObjV1631('SELL_OUT', pk);
+      if (soObj) {
+        var soMgrByStore = {};
+        if (!isCluster && Array.isArray(soObj.stores)) {
+          for (var sm = 0; sm < soObj.stores.length; sm++) {
+            var ss = soObj.stores[sm];
+            if (ss && ss.party && ss.manager) soMgrByStore[String(ss.party).trim().toUpperCase()] = ss.manager;
+          }
+        }
+
+        if (soObj.sellOutSplit) {
+          hasExactSplitData = true;
+          var splitMap = isCluster ? (soObj.sellOutSplit.byMgr || {}) : (soObj.sellOutSplit.byStore || {});
+          Object.keys(splitMap).forEach(function(rawKey) {
+            var tup = splitMap[rawKey] || [0, 0, 0, 0];
+            var kUp = String(rawKey || 'Unassigned').trim().toUpperCase();
+            var rec = ensureRec(kUp, rawKey, isCluster ? '' : (soMgrByStore[kUp] || ''));
+            rec.bQ += Number(tup[0]) || 0;
+            rec.bV += Number(tup[1]) || 0;
+            rec.rQ += Number(tup[2]) || 0;
+            rec.rV += Number(tup[3]) || 0;
+            rec.nQ += (Number(tup[0]) || 0) + (Number(tup[2]) || 0);
+            rec.nV += (Number(tup[1]) || 0) + (Number(tup[3]) || 0);
+          });
+        } else {
+          var srcArr = isCluster ? (soObj.managers || []) : (soObj.stores || []);
+          for (var xi = 0; xi < srcArr.length; xi++) {
+            var it = srcArr[xi];
+            var nm = isCluster ? (it.manager || 'Unassigned') : (it.party || '');
+            if (!nm) continue;
+            var recF = ensureRec(nm.trim().toUpperCase(), nm, isCluster ? '' : (it.manager || ''));
+            var q = Number(it.qty) || 0;
+            var v = Number(it.net) || 0;
+            recF.bQ += q; recF.bV += v;
+            recF.nQ += q; recF.nV += v;
+          }
+        }
+      }
+    }
+
+    var qSearch = (REP_STATE.stSearch || '').trim().toLowerCase();
+    var list = Object.values(agg).filter(function(x) {
+      if (!qSearch) return true;
+      return x.name.toLowerCase().indexOf(qSearch) !== -1 || x.sub.toLowerCase().indexOf(qSearch) !== -1;
+    }).sort(function(a, b) { return (b.tV - a.tV) || (b.nV - a.nV); });
+
+    var tot = { bQ: 0, bV: 0, rQ: 0, rV: 0, nQ: 0, nV: 0, tQ: 0, tV: 0 };
+    list.forEach(function(x) {
+      tot.bQ += x.bQ; tot.bV += x.bV; tot.rQ += x.rQ; tot.rV += x.rV;
+      tot.nQ += x.nQ; tot.nV += x.nV; tot.tQ += x.tQ; tot.tV += x.tV;
+    });
+
+    var showBilled = (REP_STATE.stMode === 'BILLED' || REP_STATE.stMode === 'BOTH');
+    var showNet = (REP_STATE.stMode === 'NET' || REP_STATE.stMode === 'BOTH');
+
+    var periodLabel = (REP_STATE.stPeriodMode === 'CUSTOM' && REP_STATE.stCustomMonths.length > 0)
+      ? (REP_STATE.stCustomMonths.length + ' Selected Month(s): ' + REP_STATE.stCustomMonths.slice(0, 4).join(', ') + (REP_STATE.stCustomMonths.length > 4 ? '...' : ''))
+      : (typeof getPeriodDisplayLabel === 'function' ? getPeriodDisplayLabel(activePeriod) : activePeriod);
+
+    var monthChksHtml = availMonths.map(function(m) {
+      var chk = REP_STATE.stPeriodMode === 'CUSTOM' && REP_STATE.stCustomMonths.indexOf(m) !== -1;
+      return '<label class="krito-rep-mchk-v1631' + (chk ? ' is-checked' : '') + '">' +
+        '<input type="checkbox" data-st-month-v1631="' + escV1631R(m) + '"' + (chk ? ' checked' : '') + '><span>' + escV1631R(m) + '</span>' +
+      '</label>';
+    }).join('');
+
+    var rowsHtml = list.map(function(x, idx) {
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escV1631R(x.name) + '</b></td>' +
+        (!isCluster ? '<td>' + escV1631R(x.sub || '-') + '</td>' : '') +
+        '<td class="num">' + fmtQ(x.bQ) + '</td>' +
+        '<td class="num">' + fmtI(x.bV) + '</td>' +
+        '<td class="num" style="color:#dc2626;font-weight:700;">' + fmtQ(x.rQ) + '</td>' +
+        '<td class="num" style="color:#dc2626;font-weight:700;">' + fmtI(x.rV) + '</td>' +
+        '<td class="num" style="font-weight:800;">' + fmtQ(x.nQ) + '</td>' +
+        '<td class="num" style="font-weight:800;color:#6d28d9;">' + fmtI(x.nV) + '</td>' +
+        '<td class="num" style="font-weight:800;">' + fmtQ(x.tQ) + '</td>' +
+        '<td class="num" style="font-weight:800;color:#0284c7;">' + fmtI(x.tV) + '</td>' +
+        (showBilled ? '<td class="num">' + sellThruBadgeHtml(x.tQ, x.bQ) + '</td><td class="num">' + sellThruBadgeHtml(x.tV, x.bV) + '</td>' : '') +
+        (showNet ? '<td class="num">' + sellThruBadgeHtml(x.tQ, x.nQ) + '</td><td class="num">' + sellThruBadgeHtml(x.tV, x.nV) + '</td>' : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="16" style="text-align:center;padding:20px;color:#64748b;font-weight:700;">Is time period mein Sell Out / Tertiary data nahi mila.</td></tr>';
+
+    var totalRowHtml = list.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td>' +
+        '<td>TOTAL (' + list.length + ')</td>' +
+        (!isCluster ? '<td>-</td>' : '') +
+        '<td class="num">' + fmtQ(tot.bQ) + '</td>' +
+        '<td class="num">' + fmtI(tot.bV) + '</td>' +
+        '<td class="num" style="color:#dc2626;">' + fmtQ(tot.rQ) + '</td>' +
+        '<td class="num" style="color:#dc2626;">' + fmtI(tot.rV) + '</td>' +
+        '<td class="num">' + fmtQ(tot.nQ) + '</td>' +
+        '<td class="num" style="color:#6d28d9;">' + fmtI(tot.nV) + '</td>' +
+        '<td class="num">' + fmtQ(tot.tQ) + '</td>' +
+        '<td class="num" style="color:#0284c7;">' + fmtI(tot.tV) + '</td>' +
+        (showBilled ? '<td class="num">' + sellThruBadgeHtml(tot.tQ, tot.bQ) + '</td><td class="num">' + sellThruBadgeHtml(tot.tV, tot.bV) + '</td>' : '') +
+        (showNet ? '<td class="num">' + sellThruBadgeHtml(tot.tQ, tot.nQ) + '</td><td class="num">' + sellThruBadgeHtml(tot.tV, tot.nV) + '</td>' : '') +
+      '</tr>'
+    ) : '';
+
+    return '' +
+      '<div class="krito-rep-head-v1631">' +
+        '<div class="krito-rep-title-v1631">' +
+          '<span>📊 SELL THRU REPORT</span>' +
+          '<span style="font-size:11px;background:#eef2ff;color:#4338ca;padding:2px 9px;border-radius:99px;">' + escV1631R(periodLabel) + '</span>' +
+        '</div>' +
+        '<div class="krito-rep-controls-v1631">' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (REP_STATE.stView === 'CLUSTER' ? ' is-on' : '') + '" data-st-view-v1631="CLUSTER">👨‍💼 Cluster Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (REP_STATE.stView === 'PARTY' ? ' is-on' : '') + '" data-st-view-v1631="PARTY">🏪 Party Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (REP_STATE.stMode === 'BILLED' ? ' is-on' : '') + '" data-st-mode-v1631="BILLED">📦 Sell Thru (On Billed)</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (REP_STATE.stMode === 'NET' ? ' is-on' : '') + '" data-st-mode-v1631="NET">📊 Sell Thru (On Net)</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (REP_STATE.stMode === 'BOTH' ? ' is-on' : '') + '" data-st-mode-v1631="BOTH">🔀 Both (Billed + Net)</button>' +
+          '<input type="text" class="krito-rep-search-v1631" id="kritoStSearchV1631" value="' + escV1631R(REP_STATE.stSearch) + '" placeholder="🔍 Search Cluster / Party...">' +
+          '<button type="button" class="krito-rep-pill-v1631" data-close-rep-v1631="1" style="background:#fee2e2;border-color:#fca5a5;color:#b91c1c;">✖ Close</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="krito-rep-period-bar-v1631">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">' +
+          '<span style="font-size:11px;font-weight:800;color:#475569;">📅 Time Period Select Karein (Sell Thru):</span>' +
+          '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
+            '<button type="button" class="krito-rep-pill-v1631' + (REP_STATE.stPeriodMode === 'ACTIVE' ? ' is-on' : '') + '" data-st-preset-v1631="ACTIVE" style="padding:3px 8px;font-size:10.5px;">Current Selected Period</button>' +
+            '<button type="button" class="krito-rep-pill-v1631" data-st-preset-v1631="ALL" style="padding:3px 8px;font-size:10.5px;">Select All Months (' + availMonths.length + ')</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="krito-rep-months-wrap-v1631">' + (monthChksHtml || '<span style="font-size:11px;color:#94a3b8;">No individual months found.</span>') + '</div>' +
+        (!hasExactSplitData ? '<div style="font-size:10.5px;color:#b45309;font-weight:700;">ℹ️ Note: Positive (Billed) &amp; Negative (RTV) alag dekhne ke liye software (index.html) mein Part 1 paste karke ek baar Push Live Data / Save kar dein.</div>' : '') +
+      '</div>' +
+      '<div class="krito-rep-kpis-v1631">' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (BILLED)</span><span class="kval">' + fmtQ(tot.bQ) + ' Qty</span><span class="ksub">' + fmtI(tot.bV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">RTV (NEGATIVE)</span><span class="kval" style="color:#fb7185;">' + fmtQ(tot.rQ) + ' Qty</span><span class="ksub" style="color:#fda4af;">' + fmtI(tot.rV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (NET)</span><span class="kval" style="color:#c4b5fd;">' + fmtQ(tot.nQ) + ' Qty</span><span class="ksub">' + fmtI(tot.nV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TERTIARY SALE</span><span class="kval" style="color:#38bdf8;">' + fmtQ(tot.tQ) + ' Qty</span><span class="ksub">' + fmtI(tot.tV) + '</span></div>' +
+        (showBilled ? '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (ON BILLED)</span><span class="kval" style="color:#34d399;">Qty: ' + (tot.bQ > 0 ? ((tot.tQ / tot.bQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.bV > 0 ? ((tot.tV / tot.bV) * 100).toFixed(1) + '%' : '-') + '</span></div>' : '') +
+        (showNet ? '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (ON NET)</span><span class="kval" style="color:#fbbf24;">Qty: ' + (tot.nQ > 0 ? ((tot.tQ / tot.nQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.nV > 0 ? ((tot.tV / tot.nV) * 100).toFixed(1) + '%' : '-') + '</span></div>' : '') +
+      '</div>' +
+      '<div class="table-scroll" style="max-height:460px;overflow:auto;">' +
+        '<table class="krito-rep-tbl-v1631"><thead><tr>' +
+          '<th>#</th>' +
+          '<th>' + (isCluster ? 'Cluster / Manager' : 'Party / Store Name') + '</th>' +
+          (!isCluster ? '<th>Cluster</th>' : '') +
+          '<th class="num">Sell Out (Billed) Qty</th>' +
+          '<th class="num">Sell Out (Billed) Val</th>' +
+          '<th class="num" style="color:#dc2626;">RTV Qty</th>' +
+          '<th class="num" style="color:#dc2626;">RTV Val</th>' +
+          '<th class="num">Sell Out (Net) Qty</th>' +
+          '<th class="num">Sell Out (Net) Val</th>' +
+          '<th class="num">Tertiary Qty</th>' +
+          '<th class="num">Tertiary Val</th>' +
+          (showBilled ? '<th class="num">Sell Thru Qty % (Billed)</th><th class="num">Sell Thru Val % (Billed)</th>' : '') +
+          (showNet ? '<th class="num">Sell Thru Qty % (Net)</th><th class="num">Sell Thru Val % (Net)</th>' : '') +
+        '</tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+      '</div>';
+  }
+
+  // =========================================================================
+  // 4. KPI'S REPORT (BILLS, ABV, ASP, UPT + LAST YEAR GROWTH %)
+  //    1st Formula: ABV = Total Net Sale / Total Nos of Bills
+  //    2nd Formula: ASP = Total Net Sale / Total Nos of Qty
+  //    3rd Formula: UPT = Total Qty / Total Nos of Bills
+  // =========================================================================
+  function calcKpiMetrics(net, qty, bills) {
+    return {
+      abv: bills > 0 ? (net / bills) : 0,
+      asp: qty > 0 ? (net / qty) : 0,
+      upt: bills > 0 ? (qty / bills) : 0
+    };
+  }
+
+  function buildKpisHtmlV1631() {
+    var availMonths = getAvailableMonthsForBrandV1631();
+    var activePeriod = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+
+    var periodsToSum = [];
+    if (REP_STATE.kpiPeriodMode === 'CUSTOM' && REP_STATE.kpiCustomMonths.length > 0) {
+      periodsToSum = REP_STATE.kpiCustomMonths.slice();
+    } else {
+      periodsToSum = activePeriod ? [activePeriod] : availMonths.slice(0, 1);
+    }
+
+    var isCluster = (REP_STATE.kpiView === 'CLUSTER');
+    var agg = {};
+    var hasBillsExported = false;
+
+    function ensureK(key, displayName, subLabel) {
+      if (!agg[key]) agg[key] = { name: displayName, sub: subLabel || '', bills: 0, qty: 0, net: 0, lyBills: 0, lyQty: 0, lyNet: 0 };
+      else if (subLabel && !agg[key].sub) agg[key].sub = subLabel;
+      return agg[key];
+    }
+
+    function accumulateKpiPeriod(pObj, isLy) {
+      if (!pObj) return;
+      var bMap = null;
+      if (pObj.bills) {
+        hasBillsExported = true;
+        bMap = isCluster ? (pObj.bills.byMgr || {}) : (pObj.bills.byStore || {});
+      }
+
+      var bNorm = {};
+      if (bMap) {
+        Object.keys(bMap).forEach(function(k) {
+          var ku = String(k || '').trim().toUpperCase();
+          bNorm[ku] = (bNorm[ku] || 0) + (Number(bMap[k]) || 0);
+        });
+      }
+
+      if (isCluster && Array.isArray(pObj.managers)) {
+        for (var i = 0; i < pObj.managers.length; i++) {
+          var m = pObj.managers[i];
+          var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+          var rec = ensureK(mk, m.manager || 'Unassigned', '');
+          if (isLy) {
+            rec.lyQty += Number(m.qty) || 0;
+            rec.lyNet += Number(m.net) || 0;
+            rec.lyBills += bNorm[mk] || 0;
+          } else {
+            rec.qty += Number(m.qty) || 0;
+            rec.net += Number(m.net) || 0;
+            rec.bills += bNorm[mk] || 0;
+          }
+        }
+      } else if (!isCluster && Array.isArray(pObj.stores)) {
+        for (var j = 0; j < pObj.stores.length; j++) {
+          var st = pObj.stores[j];
+          var sk = String(st.party || '').trim().toUpperCase();
+          if (!sk) continue;
+          var rec2 = ensureK(sk, st.party, st.manager || '');
+          if (isLy) {
+            rec2.lyQty += Number(st.qty) || 0;
+            rec2.lyNet += Number(st.net) || 0;
+            rec2.lyBills += bNorm[sk] || 0;
+          } else {
+            rec2.qty += Number(st.qty) || 0;
+            rec2.net += Number(st.net) || 0;
+            rec2.bills += bNorm[sk] || 0;
+          }
+        }
+      }
+    }
+
+    for (var pi = 0; pi < periodsToSum.length; pi++) {
+      var pk = periodsToSum[pi];
+      accumulateKpiPeriod(getPeriodObjV1631('TERTIARY', pk), false);
+      var lyPk = getLyKeyForPeriodV1631(pk);
+      if (lyPk) accumulateKpiPeriod(getPeriodObjV1631('TERTIARY', lyPk), true);
+    }
+
+    var qSearch = (REP_STATE.kpiSearch || '').trim().toLowerCase();
+    var list = Object.values(agg).filter(function(x) {
+      if (!qSearch) return true;
+      return x.name.toLowerCase().indexOf(qSearch) !== -1 || x.sub.toLowerCase().indexOf(qSearch) !== -1;
+    }).sort(function(a, b) { return (b.net - a.net) || (b.bills - a.bills); });
+
+    var tot = { bills: 0, qty: 0, net: 0, lyBills: 0, lyQty: 0, lyNet: 0 };
+    list.forEach(function(x) {
+      tot.bills += x.bills; tot.qty += x.qty; tot.net += x.net;
+      tot.lyBills += x.lyBills; tot.lyQty += x.lyQty; tot.lyNet += x.lyNet;
+    });
+
+    var totCurM = calcKpiMetrics(tot.net, tot.qty, tot.bills);
+    var totLyM = calcKpiMetrics(tot.lyNet, tot.lyQty, tot.lyBills);
+
+    var periodLabel = (REP_STATE.kpiPeriodMode === 'CUSTOM' && REP_STATE.kpiCustomMonths.length > 0)
+      ? (REP_STATE.kpiCustomMonths.length + ' Selected Month(s) vs LY')
+      : ((typeof getPeriodDisplayLabel === 'function' ? getPeriodDisplayLabel(activePeriod) : activePeriod) + ' vs LY');
+
+    var monthChksHtml = availMonths.map(function(m) {
+      var chk = REP_STATE.kpiPeriodMode === 'CUSTOM' && REP_STATE.kpiCustomMonths.indexOf(m) !== -1;
+      return '<label class="krito-rep-mchk-v1631' + (chk ? ' is-checked' : '') + '">' +
+        '<input type="checkbox" data-kpi-month-v1631="' + escV1631R(m) + '"' + (chk ? ' checked' : '') + '><span>' + escV1631R(m) + '</span>' +
+      '</label>';
+    }).join('');
+
+    var rowsHtml = list.map(function(x, idx) {
+      var curM = calcKpiMetrics(x.net, x.qty, x.bills);
+      var lyM = calcKpiMetrics(x.lyNet, x.lyQty, x.lyBills);
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escV1631R(x.name) + '</b></td>' +
+        (!isCluster ? '<td>' + escV1631R(x.sub || '-') + '</td>' : '') +
+        '<td class="num" style="font-weight:800;">' + fmtQ(x.bills) + '</td>' +
+        '<td class="num" style="color:#64748b;">' + fmtQ(x.lyBills) + '</td>' +
+        '<td class="num">' + growthHtmlR(x.bills, x.lyBills) + '</td>' +
+        '<td class="num">' + fmtQ(x.qty) + '</td>' +
+        '<td class="num" style="color:#0284c7;font-weight:800;">' + fmtI(x.net) + '</td>' +
+        '<td class="num" style="font-weight:900;color:#0f766e;">' + fmtI(curM.abv) + '</td>' +
+        '<td class="num" style="color:#64748b;">' + fmtI(lyM.abv) + '</td>' +
+        '<td class="num">' + growthHtmlR(curM.abv, lyM.abv) + '</td>' +
+        '<td class="num" style="font-weight:900;color:#4338ca;">' + fmtI(curM.asp) + '</td>' +
+        '<td class="num" style="color:#64748b;">' + fmtI(lyM.asp) + '</td>' +
+        '<td class="num">' + growthHtmlR(curM.asp, lyM.asp) + '</td>' +
+        '<td class="num" style="font-weight:900;color:#b45309;">' + fmtDec(curM.upt, 2) + '</td>' +
+        '<td class="num" style="color:#64748b;">' + fmtDec(lyM.upt, 2) + '</td>' +
+        '<td class="num">' + growthHtmlR(curM.upt, lyM.upt) + '</td>' +
+      '</tr>';
+    }).join('') || '<tr><td colspan="18" style="text-align:center;padding:20px;color:#64748b;font-weight:700;">Koi KPI data nahi mila.</td></tr>';
+
+    var totalRowHtml = list.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td>' +
+        '<td>TOTAL (' + list.length + ')</td>' +
+        (!isCluster ? '<td>-</td>' : '') +
+        '<td class="num">' + fmtQ(tot.bills) + '</td>' +
+        '<td class="num">' + fmtQ(tot.lyBills) + '</td>' +
+        '<td class="num">' + growthHtmlR(tot.bills, tot.lyBills) + '</td>' +
+        '<td class="num">' + fmtQ(tot.qty) + '</td>' +
+        '<td class="num" style="color:#0284c7;">' + fmtI(tot.net) + '</td>' +
+        '<td class="num" style="color:#0f766e;">' + fmtI(totCurM.abv) + '</td>' +
+        '<td class="num">' + fmtI(totLyM.abv) + '</td>' +
+        '<td class="num">' + growthHtmlR(totCurM.abv, totLyM.abv) + '</td>' +
+        '<td class="num" style="color:#4338ca;">' + fmtI(totCurM.asp) + '</td>' +
+        '<td class="num">' + fmtI(totLyM.asp) + '</td>' +
+        '<td class="num">' + growthHtmlR(totCurM.asp, totLyM.asp) + '</td>' +
+        '<td class="num" style="color:#b45309;">' + fmtDec(totCurM.upt, 2) + '</td>' +
+        '<td class="num">' + fmtDec(totLyM.upt, 2) + '</td>' +
+        '<td class="num">' + growthHtmlR(totCurM.upt, totLyM.upt) + '</td>' +
+      '</tr>'
+    ) : '';
+
+    return '' +
+      '<div class="krito-rep-head-v1631">' +
+        '<div class="krito-rep-title-v1631">' +
+          '<span>📈 KPI\'S REPORT (ABV • ASP • UPT vs LY)</span>' +
+          '<span style="font-size:11px;background:#eef2ff;color:#4338ca;padding:2px 9px;border-radius:99px;">' + escV1631R(periodLabel) + '</span>' +
+        '</div>' +
+        '<div class="krito-rep-controls-v1631">' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (REP_STATE.kpiView === 'CLUSTER' ? ' is-on' : '') + '" data-kpi-view-v1631="CLUSTER">👨‍💼 Cluster Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (REP_STATE.kpiView === 'PARTY' ? ' is-on' : '') + '" data-kpi-view-v1631="PARTY">🏪 Party Wise</button>' +
+          '<input type="text" class="krito-rep-search-v1631" id="kritoKpiSearchV1631" value="' + escV1631R(REP_STATE.kpiSearch) + '" placeholder="🔍 Search Cluster / Party...">' +
+          '<button type="button" class="krito-rep-pill-v1631" data-close-rep-v1631="1" style="background:#fee2e2;border-color:#fca5a5;color:#b91c1c;">✖ Close</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="krito-rep-period-bar-v1631">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">' +
+          '<span style="font-size:11px;font-weight:800;color:#475569;">📅 KPI Period:</span>' +
+          '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
+            '<button type="button" class="krito-rep-pill-v1631' + (REP_STATE.kpiPeriodMode === 'ACTIVE' ? ' is-on' : '') + '" data-kpi-preset-v1631="ACTIVE" style="padding:3px 8px;font-size:10.5px;">Current Selected Period</button>' +
+            '<button type="button" class="krito-rep-pill-v1631" data-kpi-preset-v1631="ALL" style="padding:3px 8px;font-size:10.5px;">All Months (' + availMonths.length + ')</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="krito-rep-months-wrap-v1631">' + (monthChksHtml || '') + '</div>' +
+        (!hasBillsExported ? '<div style="font-size:10.5px;color:#b45309;font-weight:700;">ℹ️ Note: Total Bills, ABV aur UPT dekhne ke liye software (index.html) mein Part 1 paste karke ek baar Push Live Data / Save kar dein.</div>' : '') +
+      '</div>' +
+      '<div class="krito-rep-kpis-v1631">' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🧾 TOTAL BILLS</span><span class="kval">' + fmtQ(tot.bills) + '</span><span class="ksub">LY: ' + fmtQ(tot.lyBills) + ' &nbsp;|&nbsp; ' + growthHtmlR(tot.bills, tot.lyBills) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">💰 ABV (NET SALE / BILLS)</span><span class="kval" style="color:#34d399;">' + fmtI(totCurM.abv) + '</span><span class="ksub">LY: ' + fmtI(totLyM.abv) + ' &nbsp;|&nbsp; ' + growthHtmlR(totCurM.abv, totLyM.abv) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🏷️ ASP (NET SALE / QTY)</span><span class="kval" style="color:#38bdf8;">' + fmtI(totCurM.asp) + '</span><span class="ksub">LY: ' + fmtI(totLyM.asp) + ' &nbsp;|&nbsp; ' + growthHtmlR(totCurM.asp, totLyM.asp) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">📦 UPT (QTY / BILLS)</span><span class="kval" style="color:#fbbf24;">' + fmtDec(totCurM.upt, 2) + '</span><span class="ksub">LY: ' + fmtDec(totLyM.upt, 2) + ' &nbsp;|&nbsp; ' + growthHtmlR(totCurM.upt, totLyM.upt) + '</span></div>' +
+      '</div>' +
+      '<div class="table-scroll" style="max-height:460px;overflow:auto;">' +
+        '<table class="krito-rep-tbl-v1631"><thead><tr>' +
+          '<th>#</th>' +
+          '<th>' + (isCluster ? 'Cluster / Manager' : 'Party / Store Name') + '</th>' +
+          (!isCluster ? '<th>Cluster</th>' : '') +
+          '<th class="num">Total Bills</th>' +
+          '<th class="num">LY Bills</th>' +
+          '<th class="num">Bills Gr%</th>' +
+          '<th class="num">Total Qty</th>' +
+          '<th class="num">Net Sale</th>' +
+          '<th class="num">ABV</th>' +
+          '<th class="num">LY ABV</th>' +
+          '<th class="num">ABV Gr%</th>' +
+          '<th class="num">ASP</th>' +
+          '<th class="num">LY ASP</th>' +
+          '<th class="num">ASP Gr%</th>' +
+          '<th class="num">UPT</th>' +
+          '<th class="num">LY UPT</th>' +
+          '<th class="num">UPT Gr%</th>' +
+        '</tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+      '</div>';
+  }
+
+  function renderKritoReportsPanelV1631() {
+    var st = window._kritoMultiTypeStateV1631 || { activeReport: '' };
+    var oldCard = document.getElementById('kritoReportsPanelV1631');
+    var isTert = (typeof ACTIVE_DATA_TYPE === 'undefined' || ACTIVE_DATA_TYPE === 'TERTIARY');
+
+    if (!isTert || !st.activeReport) {
+      if (oldCard) oldCard.remove();
+      return;
+    }
+
+    var anchor = findReportsMountAnchorV1631();
+    if (!anchor || !anchor.parentElement) return;
+
+    if (!oldCard) {
+      oldCard = document.createElement('div');
+      oldCard.id = 'kritoReportsPanelV1631';
+      oldCard.className = 'krito-rep-card-v1631';
+      anchor.insertAdjacentElement('afterend', oldCard);
+    }
+
+    var activeFocusId = document.activeElement ? document.activeElement.id : '';
+    var selPos = (activeFocusId === 'kritoStSearchV1631' || activeFocusId === 'kritoKpiSearchV1631') ? (document.activeElement.selectionStart || 0) : -1;
+
+    if (st.activeReport === 'SELL_THRU') {
+      oldCard.innerHTML = buildSellThruHtmlV1631();
+    } else if (st.activeReport === 'KPIS') {
+      oldCard.innerHTML = buildKpisHtmlV1631();
+    }
+
+    if (selPos >= 0) {
+      var inp = document.getElementById(activeFocusId);
+      if (inp) { inp.focus(); try { inp.setSelectionRange(selPos, selPos); } catch (e) {} }
+    }
+  }
+  window.renderKritoReportsPanelV1631 = renderKritoReportsPanelV1631;
+
+  document.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var closeBtn = t.closest('[data-close-rep-v1631]');
+    if (closeBtn) {
+      if (window._kritoMultiTypeStateV1631) window._kritoMultiTypeStateV1631.activeReport = '';
+      if (typeof window.applyAllMultiTypeTablesV1631 === 'function') window.applyAllMultiTypeTablesV1631();
+      else renderKritoReportsPanelV1631();
+      return;
+    }
+
+    var stViewBtn = t.closest('[data-st-view-v1631]');
+    if (stViewBtn) { REP_STATE.stView = stViewBtn.getAttribute('data-st-view-v1631'); renderKritoReportsPanelV1631(); return; }
+
+    var stModeBtn = t.closest('[data-st-mode-v1631]');
+    if (stModeBtn) { REP_STATE.stMode = stModeBtn.getAttribute('data-st-mode-v1631'); renderKritoReportsPanelV1631(); return; }
+
+    var stPresetBtn = t.closest('[data-st-preset-v1631]');
+    if (stPresetBtn) {
+      var pr = stPresetBtn.getAttribute('data-st-preset-v1631');
+      if (pr === 'ACTIVE') { REP_STATE.stPeriodMode = 'ACTIVE'; REP_STATE.stCustomMonths = []; }
+      else if (pr === 'ALL') { REP_STATE.stPeriodMode = 'CUSTOM'; REP_STATE.stCustomMonths = getAvailableMonthsForBrandV1631(); }
+      renderKritoReportsPanelV1631();
+      return;
+    }
+
+    var kpiViewBtn = t.closest('[data-kpi-view-v1631]');
+    if (kpiViewBtn) { REP_STATE.kpiView = kpiViewBtn.getAttribute('data-kpi-view-v1631'); renderKritoReportsPanelV1631(); return; }
+
+    var kpiPresetBtn = t.closest('[data-kpi-preset-v1631]');
+    if (kpiPresetBtn) {
+      var kp = kpiPresetBtn.getAttribute('data-kpi-preset-v1631');
+      if (kp === 'ACTIVE') { REP_STATE.kpiPeriodMode = 'ACTIVE'; REP_STATE.kpiCustomMonths = []; }
+      else if (kp === 'ALL') { REP_STATE.kpiPeriodMode = 'CUSTOM'; REP_STATE.kpiCustomMonths = getAvailableMonthsForBrandV1631(); }
+      renderKritoReportsPanelV1631();
+      return;
+    }
+  });
+
+  document.addEventListener('change', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+    var stM = el.getAttribute('data-st-month-v1631');
+    if (stM) {
+      var s = new Set(REP_STATE.stPeriodMode === 'CUSTOM' ? REP_STATE.stCustomMonths : []);
+      if (el.checked) s.add(stM); else s.delete(stM);
+      REP_STATE.stCustomMonths = Array.from(s);
+      REP_STATE.stPeriodMode = REP_STATE.stCustomMonths.length > 0 ? 'CUSTOM' : 'ACTIVE';
+      renderKritoReportsPanelV1631();
+      return;
+    }
+    var kpiM = el.getAttribute('data-kpi-month-v1631');
+    if (kpiM) {
+      var s2 = new Set(REP_STATE.kpiPeriodMode === 'CUSTOM' ? REP_STATE.kpiCustomMonths : []);
+      if (el.checked) s2.add(kpiM); else s2.delete(kpiM);
+      REP_STATE.kpiCustomMonths = Array.from(s2);
+      REP_STATE.kpiPeriodMode = REP_STATE.kpiCustomMonths.length > 0 ? 'CUSTOM' : 'ACTIVE';
+      renderKritoReportsPanelV1631();
+    }
+  });
+
+  document.addEventListener('input', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+    if (el.id === 'kritoStSearchV1631') { REP_STATE.stSearch = el.value || ''; renderKritoReportsPanelV1631(); }
+    else if (el.id === 'kritoKpiSearchV1631') { REP_STATE.kpiSearch = el.value || ''; renderKritoReportsPanelV1631(); }
+  });
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    renderKritoReportsPanelV1631();
+  }
+
+})();
+</script>
 </body>
 </html>
