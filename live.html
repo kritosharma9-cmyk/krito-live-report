@@ -4489,5 +4489,1004 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDONS ONLY (v16.26)
+     1. Two Tab Buttons: "🏪 Individual Store Data" & "📅 Date & Month Wise Report"
+     2. Date & Month Wise Report (1 single row per Date/Month):
+        - Date column (Default Frozen), Party Name [ + ] -> Full-Screen Party Popup,
+          Cluster [ + ] -> Full-Screen Cluster Popup, Val Rank, Qty Rank, Metrics, Freeze
+     3. "👁️ Hide Columns" Button/Dropdown -> Hide/Show any column on both tabs
+     (PASTE RIGHT AT THE VERY END OF live.html, AFTER v16.25 & BEFORE </body>)
+     ============================================================================ -->
+<script>
+(function installDateReportTabsAndHideColsV1626() {
+
+  if (window._kritoDateTabsHideColsV1626Installed) return;
+  window._kritoDateTabsHideColsV1626Installed = true;
+
+  // =========================================================================
+  // MINIMAL CSS STRICTLY FOR: (1) TABS, (2) DATE & MONTH REPORT + POPUPS, (3) HIDE COLUMNS
+  // =========================================================================
+  var css = [
+    /* Tab Switcher Buttons */
+    '.krito-store-tabs-v1626{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;vertical-align:middle;}',
+    '.krito-store-tab-btn-v1626{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;}',
+    '.krito-store-tab-btn-v1626:hover{background:#eef2ff;border-color:#818cf8;color:#312e81;}',
+    '.krito-store-tab-btn-v1626.is-active{background:#1e293b;color:#ffffff;border-color:#0f172a;box-shadow:0 2px 6px rgba(15,23,42,0.18);}',
+    '.krito-store-tab-btn-v1626 .tab-cnt{font-size:10.5px;padding:1px 6px;border-radius:99px;background:rgba(148,163,184,0.22);font-weight:800;}',
+    '.krito-store-tab-btn-v1626.is-active .tab-cnt{background:rgba(255,255,255,0.2);color:#f8fafc;}',
+
+    /* Hide Columns Button + Popover Menu */
+    '.krito-hide-col-wrap-v1626{position:relative;display:inline-flex;align-items:center;margin-left:8px;vertical-align:middle;}',
+    '.krito-hide-col-btn-v1626{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:8px;border:1.5px solid #7c3aed;background:#f5f3ff;color:#5b21b6;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;}',
+    '.krito-hide-col-btn-v1626:hover{background:#ede9fe;}',
+    '.krito-hide-col-btn-v1626.has-hidden{background:#6d28d9;color:#ffffff;border-color:#5b21b6;}',
+    '.krito-hide-col-menu-v1626{position:absolute;top:calc(100% + 6px);left:0;min-width:235px;max-width:300px;max-height:360px;overflow-y:auto;background:#ffffff;border:1.5px solid #c4b5fd;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,0.18);padding:8px;z-index:100020;display:none;}',
+    '.krito-hide-col-menu-v1626.is-open{display:block;}',
+    '.krito-hide-col-menu-head-v1626{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:800;color:#1e293b;}',
+    '.krito-hide-col-menu-head-v1626 button{background:#4f46e5;color:#ffffff;border:none;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800;cursor:pointer;}',
+    '.krito-hide-col-item-v1626{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:6px;font-size:11.5px;font-weight:700;color:#334155;cursor:pointer;user-select:none;}',
+    '.krito-hide-col-item-v1626:hover{background:#f1f5f9;}',
+    '.krito-hide-col-item-v1626 input{margin:0;cursor:pointer;width:14px;height:14px;}',
+    '.krito-col-hidden-v1626{display:none !important;}',
+
+    /* Date & Month Wise Report Table Buttons & AutoFit */
+    '#kritoDateReportTableV1626{width:max-content !important;min-width:0 !important;table-layout:auto !important;border-collapse:separate !important;border-spacing:0 !important;}',
+    '#kritoDateReportTableV1626 thead th{padding:6px 8px !important;white-space:nowrap !important;position:sticky;top:0;background:#f8fafc;z-index:40;}',
+    '#kritoDateReportTableV1626 tbody td{padding:5px 8px !important;white-space:nowrap !important;vertical-align:middle !important;}',
+    '#kritoDateReportTableV1626 tbody tr.total-row td{background:#f1f5f9 !important;font-weight:800 !important;}',
+    '.krito-date-plus-btn-v1626{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;transition:0.15s;white-space:nowrap;}',
+    '.krito-date-plus-party-v1626{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;}',
+    '.krito-date-plus-party-v1626:hover{background:#dbeafe;border-color:#2563eb;}',
+    '.krito-date-plus-cluster-v1626{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;}',
+    '.krito-date-plus-cluster-v1626:hover{background:#ede9fe;border-color:#7c3aed;}',
+    '.krito-date-plus-ico-v1626{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;font-size:12px;font-weight:900;line-height:1;color:#ffffff;}',
+    '.krito-date-plus-party-v1626 .krito-date-plus-ico-v1626{background:#2563eb;}',
+    '.krito-date-plus-cluster-v1626 .krito-date-plus-ico-v1626{background:#7c3aed;}'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.id = 'kritoDateTabsHideColsCssV1626';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+  var popupRoot = document.getElementById('kritoDateDetailModalRootV1626');
+  if (!popupRoot) {
+    popupRoot = document.createElement('div');
+    popupRoot.id = 'kritoDateDetailModalRootV1626';
+    document.body.appendChild(popupRoot);
+  }
+
+  // =========================================================================
+  // STATE
+  // =========================================================================
+  var ACTIVE_TAB = 'STORE'; // 'STORE' | 'DATE'
+  var HIDDEN_COLS = { STORE: {}, DATE: {} };
+  var HIDE_MENU_OPEN = false;
+
+  // Date Table Freeze State (Default frozen up to "Date" column = index 3)
+  var DATE_FROZEN_COL = 3;
+  var DATE_FROZEN_ROW = -1;
+  var DATE_USER_UNFROZE = false;
+
+  var DATE_MODAL_STATE = { kind: '', iso: '', label: '', search: '' };
+
+  function escV1626(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s)
+      .split('&').join('&amp;')
+      .split('<').join('&lt;')
+      .split('>').join('&gt;')
+      .split('"').join('&quot;')
+      .split("'").join('&#39;');
+  }
+
+  function getActivePeriodPairV1626() {
+    try {
+      var bucket = (typeof getActiveDatasetBucket === 'function') ? getActiveDatasetBucket() : {};
+      var brandPeriods = (typeof ACTIVE_BRAND !== 'undefined' && bucket[ACTIVE_BRAND]) ? bucket[ACTIVE_BRAND] : {};
+      var mData = (typeof ACTIVE_MONTH !== 'undefined') ? (brandPeriods[ACTIVE_MONTH] || null) : null;
+      var compareOn = !!(typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.rights && ACTIVE_LINK.rights.allowCompareLY && typeof COMPARE_LY_ENABLED !== 'undefined' && COMPARE_LY_ENABLED);
+      var lyKey = (compareOn && typeof getLastYearPeriodKey === 'function') ? getLastYearPeriodKey(ACTIVE_MONTH) : '';
+      var lyData = (compareOn && lyKey && brandPeriods[lyKey]) ? brandPeriods[lyKey] : null;
+      return { mData: mData, lyData: lyData, lyKey: lyKey, compareOn: compareOn };
+    } catch (e) {
+      return { mData: null, lyData: null, lyKey: '', compareOn: false };
+    }
+  }
+
+  function getStoreCardRefsV1626() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return null;
+    var storeTable = tbody.closest('table');
+    if (!storeTable) return null;
+    var storeScroll = storeTable.closest('.table-scroll') || storeTable.parentElement;
+    var card = storeScroll ? storeScroll.parentElement : null;
+    var headBar = storeScroll ? storeScroll.previousElementSibling : null;
+    return { tbody: tbody, storeTable: storeTable, storeScroll: storeScroll, card: card, headBar: headBar };
+  }
+
+  // =========================================================================
+  // 1. TAB SWITCHER ("Individual Store Data" | "Date & Month Wise Report")
+  // =========================================================================
+  function mountTabButtonsAndContainersV1626() {
+    var refs = getStoreCardRefsV1626();
+    if (!refs || !refs.headBar || !refs.card) return null;
+
+    var ctx = getActivePeriodPairV1626();
+    var storeCount = (ctx.mData && Array.isArray(ctx.mData.stores)) ? ctx.mData.stores.length : 0;
+    var dailyObj = (ctx.mData && ctx.mData.daily && Array.isArray(ctx.mData.daily.r)) ? ctx.mData.daily : null;
+    var dateCount = dailyObj ? dailyObj.r.length : 0;
+
+    var titleEl = null;
+    var kids = Array.from(refs.headBar.children);
+    for (var i = 0; i < kids.length; i++) {
+      if ((kids[i].textContent || '').toUpperCase().includes('INDIVIDUAL STORE DATA') && !kids[i].querySelector('input')) {
+        titleEl = kids[i];
+        break;
+      }
+    }
+    if (!titleEl) return refs;
+
+    var tabWrap = titleEl.querySelector('.krito-store-tabs-v1626');
+    if (!tabWrap) {
+      var nodes = Array.from(titleEl.childNodes);
+      for (var n = 0; n < nodes.length; n++) {
+        if (nodes[n].nodeType === 3) {
+          nodes[n].remove();
+        } else if (nodes[n].nodeType === 1 && !nodes[n].id && (nodes[n].textContent || '').toUpperCase().includes('INDIVIDUAL STORE DATA')) {
+          nodes[n].remove();
+        }
+      }
+      tabWrap = document.createElement('span');
+      tabWrap.className = 'krito-store-tabs-v1626';
+      titleEl.insertBefore(tabWrap, titleEl.firstChild);
+    }
+
+    tabWrap.innerHTML =
+      '<button type="button" class="krito-store-tab-btn-v1626' + (ACTIVE_TAB === 'STORE' ? ' is-active' : '') + '" data-krito-tab-v1626="STORE">' +
+        '<span>🏪 Individual Store Data</span><span class="tab-cnt">' + storeCount + '</span>' +
+      '</button>' +
+      '<button type="button" class="krito-store-tab-btn-v1626' + (ACTIVE_TAB === 'DATE' ? ' is-active' : '') + '" data-krito-tab-v1626="DATE">' +
+        '<span>📅 Date &amp; Month Wise Report</span><span class="tab-cnt">' + dateCount + '</span>' +
+      '</button>';
+
+    var tBtns = tabWrap.querySelectorAll('button');
+    for (var b = 0; b < tBtns.length; b++) {
+      tBtns[b].onclick = function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var nextTab = this.getAttribute('data-krito-tab-v1626');
+        if (nextTab && nextTab !== ACTIVE_TAB) {
+          ACTIVE_TAB = nextTab;
+          HIDE_MENU_OPEN = false;
+          syncTabVisibilityAndRenderV1626();
+        }
+      };
+    }
+
+    var dateScroll = document.getElementById('kritoDateReportScrollV1626');
+    if (!dateScroll) {
+      dateScroll = document.createElement('div');
+      dateScroll.id = 'kritoDateReportScrollV1626';
+      dateScroll.className = 'table-scroll';
+      dateScroll.style.display = 'none';
+      refs.storeScroll.insertAdjacentElement('afterend', dateScroll);
+    }
+
+    return refs;
+  }
+
+  // =========================================================================
+  // 2. DATE & MONTH WISE REPORT TABLE + FULL-SCREEN PARTY / CLUSTER POPUPS
+  // =========================================================================
+  function getDateMatchKeyForLyV1626(iso, mode) {
+    if (mode === 'MONTH') {
+      var m = String(iso || '').match(/^\d{4}-(\d{2})$/);
+      return m ? m[1] : iso;
+    }
+    var d = String(iso || '').match(/^\d{4}-(\d{2}-\d{2})$/);
+    return d ? d[1] : iso;
+  }
+
+  function makeRankPillV1626(rankNum, kind) {
+    if (!rankNum || rankNum <= 0) return '<span style="color:#94a3b8;">-</span>';
+    var topCls = rankNum === 1 ? ' krito-rank-top1-v1624' : (rankNum === 2 ? ' krito-rank-top2-v1624' : (rankNum === 3 ? ' krito-rank-top3-v1624' : ''));
+    var baseCls = (kind === 'VAL') ? 'krito-rank-val-v1624' : 'krito-rank-qty-v1624';
+    return '<span class="krito-rank-pill-v1624 ' + baseCls + topCls + '">#' + rankNum + '</span>';
+  }
+
+  function renderDateWiseReportTableV1626() {
+    var dateScroll = document.getElementById('kritoDateReportScrollV1626');
+    if (!dateScroll) return;
+
+    var ctx = getActivePeriodPairV1626();
+    var mData = ctx.mData;
+    var daily = (mData && mData.daily && Array.isArray(mData.daily.r)) ? mData.daily : null;
+
+    if (!daily || daily.r.length === 0) {
+      dateScroll.innerHTML =
+        '<div style="padding:28px 16px;text-align:center;color:#475569;font-size:13px;font-weight:700;">' +
+          '📅 Is period ka Date &amp; Month Wise data abhi available nahi hai.<br>' +
+          '<span style="font-size:11.5px;color:#64748b;font-weight:600;">Software (index.html) mein v16.26 paste karke ek baar <b>Push Live Data / Save</b> kar dein, fir yahan per-date data dikhne lagega.</span>' +
+        '</div>';
+      return;
+    }
+
+    var rights = (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.rights) ? ACTIVE_LINK.rights : {};
+    var dtMeta = (typeof TYPE_META !== 'undefined' && typeof ACTIVE_DATA_TYPE !== 'undefined' && TYPE_META[ACTIVE_DATA_TYPE])
+      ? TYPE_META[ACTIVE_DATA_TYPE]
+      : { label: 'Tertiary', valTitle: 'Net Value' };
+
+    var pDict = daily.p || [];
+    var cDict = daily.c || [];
+    var mode = daily.mode || 'DATE';
+    var firstColTitle = (mode === 'MONTH') ? 'Month' : 'Date';
+
+    var lyByKey = {};
+    if (ctx.compareOn && ctx.lyData && ctx.lyData.daily && Array.isArray(ctx.lyData.daily.r)) {
+      var lyRows = ctx.lyData.daily.r;
+      for (var li = 0; li < lyRows.length; li++) {
+        var lr = lyRows[li];
+        var lk = getDateMatchKeyForLyV1626(lr[0], mode);
+        if (!lyByKey[lk]) lyByKey[lk] = { qty: 0, net: 0 };
+        lyByKey[lk].qty += Number(lr[2]) || 0;
+        lyByKey[lk].net += Number(lr[3]) || 0;
+      }
+    }
+
+    var allItems = daily.r.map(function(row) {
+      var iso = row[0];
+      var lbl = row[1];
+      var qty = Number(row[2]) || 0;
+      var net = Number(row[3]) || 0;
+      var mrp = Number(row[4]) || 0;
+      var disc = Number(row[5]) || 0;
+      var pEntries = Array.isArray(row[6]) ? row[6] : [];
+
+      var pSet = new Set();
+      var cSet = new Set();
+      var searchTokens = [String(lbl || '').toLowerCase()];
+
+      for (var j = 0; j < pEntries.length; j++) {
+        var pe = pEntries[j];
+        var pName = pDict[pe[0]] || 'UNKNOWN';
+        var cName = cDict[pe[1]] || 'UNASSIGNED';
+        pSet.add(pName);
+        cSet.add(cName);
+        searchTokens.push(pName.toLowerCase(), cName.toLowerCase());
+      }
+
+      var lyMatch = lyByKey[getDateMatchKeyForLyV1626(iso, mode)] || { qty: 0, net: 0 };
+      return {
+        iso: iso,
+        label: lbl,
+        qty: qty,
+        net: net,
+        mrp: mrp,
+        disc: disc,
+        discPct: mrp > 0 ? ((disc / mrp) * 100).toFixed(2) : '0.00',
+        partyCount: pSet.size,
+        clusterCount: cSet.size,
+        lyQty: lyMatch.qty,
+        lyNet: lyMatch.net,
+        searchBlob: searchTokens.join(' ')
+      };
+    });
+
+    var byVal = allItems.slice().sort(function(a, b) { return b.net - a.net; });
+    var valRankMap = {};
+    for (var vi = 0; vi < byVal.length; vi++) {
+      valRankMap[byVal[vi].iso] = (vi > 0 && byVal[vi].net === byVal[vi - 1].net) ? valRankMap[byVal[vi - 1].iso] : (vi + 1);
+    }
+    var byQty = allItems.slice().sort(function(a, b) { return b.qty - a.qty; });
+    var qtyRankMap = {};
+    for (var qi = 0; qi < byQty.length; qi++) {
+      qtyRankMap[byQty[qi].iso] = (qi > 0 && byQty[qi].qty === byQty[qi - 1].qty) ? qtyRankMap[byQty[qi - 1].iso] : (qi + 1);
+    }
+
+    var searchEl = document.getElementById('liveStoreSearch');
+    var qSearch = (searchEl && searchEl.value) ? searchEl.value.trim().toLowerCase() : '';
+    var visible = qSearch ? allItems.filter(function(it) { return it.searchBlob.includes(qSearch); }) : allItems;
+
+    var sumQty = 0, sumNet = 0, sumMrp = 0, sumDisc = 0, sumLyQty = 0, sumLyNet = 0;
+    visible.forEach(function(it) {
+      sumQty += it.qty; sumNet += it.net; sumMrp += it.mrp; sumDisc += it.disc;
+      sumLyQty += it.lyQty; sumLyNet += it.lyNet;
+    });
+    var sumDiscPct = sumMrp > 0 ? ((sumDisc / sumMrp) * 100).toFixed(2) : '0.00';
+
+    var lyLabel = ctx.lyKey ? (' (' + ctx.lyKey.replace('FULL_FY::', 'FY ') + ')') : '';
+    var showMrp = !!rights.showMrpAndDisc;
+
+    var headCells = [
+      { key: '#', title: '#' },
+      { key: 'Val Rank', title: 'Val Rank', cls: 'krito-th-rank-v1624' },
+      { key: 'Qty Rank', title: 'Qty Rank', cls: 'krito-th-rank-v1624' },
+      { key: 'Date', title: firstColTitle, primaryFreeze: true },
+      { key: 'Party Name', title: 'Party Name', cls: 'krito-th-unit-v1623' },
+      { key: 'Cluster', title: 'Cluster', cls: 'krito-th-unit-v1623' },
+      { key: 'Qty', title: 'Qty', cls: 'num' },
+      { key: 'Value', title: dtMeta.valTitle || 'Net Value', cls: 'num' }
+    ];
+    if (ctx.compareOn) {
+      headCells.push(
+        { key: 'LY Qty', title: 'LY Qty' + lyLabel, cls: 'ly-th' },
+        { key: 'Qty Growth %', title: 'Qty Growth %', cls: 'ly-th' },
+        { key: 'LY Value', title: 'LY ' + (dtMeta.valTitle || 'Net Value'), cls: 'ly-th' },
+        { key: 'Val Growth %', title: 'Val Growth %', cls: 'ly-th' }
+      );
+    }
+    if (showMrp) {
+      headCells.push(
+        { key: 'MRP', title: 'MRP', cls: 'num' },
+        { key: 'Dis %', title: 'Dis %', cls: 'num' }
+      );
+    }
+
+    var theadHtml = '<tr>' + headCells.map(function(hc, idx) {
+      var isFrz = (DATE_FROZEN_COL === idx);
+      var btnCls = 'krito-freeze-th-btn-v1624' + (hc.primaryFreeze ? ' is-primary' : '') + (isFrz ? ' is-frozen' : '');
+      var btnTxt = hc.primaryFreeze ? (isFrz ? '❄️ Frozen' : '❄️ Freeze') : '❄️';
+      return '<th class="' + (hc.cls || '') + '" data-col-key-v1626="' + escV1626(hc.key) + '" data-orig-title-v1626="' + escV1626(hc.title) + '">' +
+        escV1626(hc.title) +
+        '<button type="button" class="' + btnCls + '" data-date-freeze-col-v1626="' + idx + '" title="Freeze Panes up to ' + escV1626(hc.title) + '">' + btnTxt + '</button>' +
+      '</th>';
+    }).join('') + '</tr>';
+
+    var bodyHtml = visible.map(function(it, idx) {
+      var vRank = valRankMap[it.iso] || (idx + 1);
+      var qRank = qtyRankMap[it.iso] || (idx + 1);
+      var isoEsc = escV1626(it.iso);
+      var lblEsc = escV1626(it.label);
+
+      return '<tr>' +
+        '<td><span>' + (idx + 1) + '</span><button type="button" class="krito-freeze-row-btn-v1624' + (DATE_FROZEN_ROW === idx ? ' is-frozen' : '') + '" data-date-freeze-row-v1626="' + idx + '" title="Freeze top rows up to Row ' + (idx + 1) + '">❄️</button></td>' +
+        '<td class="krito-td-rank-v1624">' + makeRankPillV1626(vRank, 'VAL') + '</td>' +
+        '<td class="krito-td-rank-v1624">' + makeRankPillV1626(qRank, 'QTY') + '</td>' +
+        '<td><b>' + lblEsc + '</b></td>' +
+        '<td style="text-align:center;"><button type="button" class="krito-date-plus-btn-v1626 krito-date-plus-party-v1626" data-open-date-modal-v1626="PARTY" data-iso="' + isoEsc + '" data-lbl="' + lblEsc + '" title="View Party-Wise Sale for ' + lblEsc + ' (Full Screen)"><span class="krito-date-plus-ico-v1626">+</span><span>' + it.partyCount + ' ' + (it.partyCount === 1 ? 'Party' : 'Parties') + '</span></button></td>' +
+        '<td style="text-align:center;"><button type="button" class="krito-date-plus-btn-v1626 krito-date-plus-cluster-v1626" data-open-date-modal-v1626="CLUSTER" data-iso="' + isoEsc + '" data-lbl="' + lblEsc + '" title="View Cluster-Wise Sale for ' + lblEsc + ' (Full Screen)"><span class="krito-date-plus-ico-v1626">+</span><span>' + it.clusterCount + ' ' + (it.clusterCount === 1 ? 'Cluster' : 'Clusters') + '</span></button></td>' +
+        '<td class="num"><b>' + fmtNum(it.qty) + '</b></td>' +
+        '<td class="num" style="color:#0284c7;"><b>' + fmtINR(it.net) + '</b></td>' +
+        (ctx.compareOn
+          ? '<td class="ly-td">' + fmtNum(it.lyQty) + '</td><td class="num">' + calcGrowthBadgeHtml(it.qty, it.lyQty) + '</td><td class="ly-td">' + fmtINR(it.lyNet) + '</td><td class="num">' + calcGrowthBadgeHtml(it.net, it.lyNet) + '</td>'
+          : '') +
+        (showMrp
+          ? '<td class="num">' + fmtINR(it.mrp) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + it.discPct + '%</td>'
+          : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="' + headCells.length + '" style="text-align:center;padding:24px;color:#64748b;font-weight:600;">Koi matching date record nahi mila.</td></tr>';
+
+    var totalRowHtml = visible.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td>' +
+        '<td class="krito-td-rank-v1624">-</td>' +
+        '<td class="krito-td-rank-v1624">-</td>' +
+        '<td>TOTAL (' + visible.length + ' ' + (mode === 'MONTH' ? 'Months' : 'Days') + ')</td>' +
+        '<td style="text-align:center;">-</td>' +
+        '<td style="text-align:center;">-</td>' +
+        '<td class="num">' + fmtNum(sumQty) + '</td>' +
+        '<td class="num" style="color:#0369a1;">' + fmtINR(sumNet) + '</td>' +
+        (ctx.compareOn
+          ? '<td class="num">' + fmtNum(sumLyQty) + '</td><td class="num">' + calcGrowthBadgeHtml(sumQty, sumLyQty) + '</td><td class="num">' + fmtINR(sumLyNet) + '</td><td class="num">' + calcGrowthBadgeHtml(sumNet, sumLyNet) + '</td>'
+          : '') +
+        (showMrp
+          ? '<td class="num">' + fmtINR(sumMrp) + '</td><td class="num" style="color:#dc2626;">' + sumDiscPct + '%</td>'
+          : '') +
+      '</tr>'
+    ) : '';
+
+    dateScroll.innerHTML =
+      '<table id="kritoDateReportTableV1626">' +
+        '<thead>' + theadHtml + '</thead>' +
+        '<tbody>' + bodyHtml + totalRowHtml + '</tbody>' +
+      '</table>';
+
+    if (!DATE_USER_UNFROZE && DATE_FROZEN_COL < 0) DATE_FROZEN_COL = 3;
+
+    applyHiddenColumnsToTableV1626(document.getElementById('kritoDateReportTableV1626'), 'DATE');
+    applyDateTableFreezePanesV1626();
+  }
+
+  function applyDateTableFreezePanesV1626() {
+    var table = document.getElementById('kritoDateReportTableV1626');
+    if (!table) return;
+    var thead = table.querySelector('thead');
+    var theadRow = thead ? thead.querySelector('tr') : null;
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody) return;
+
+    var ths = Array.from(theadRow.children);
+    var allBodyRows = Array.from(tbody.children);
+    var dataRows = allBodyRows.filter(function(r) { return r.tagName === 'TR' && !r.classList.contains('total-row'); });
+
+    if (DATE_FROZEN_COL >= ths.length) DATE_FROZEN_COL = ths.length - 1;
+    var effRow = Math.min(DATE_FROZEN_ROW, dataRows.length - 1);
+
+    for (var c = 0; c < ths.length; c++) {
+      ths[c].classList.remove('krito-frozen-col-cell-v1624', 'krito-frozen-col-edge-v1624');
+      ths[c].style.left = '';
+      ths[c].style.zIndex = '40';
+      ths[c].style.top = '0px';
+      ths[c].style.position = 'sticky';
+      var fb = ths[c].querySelector('[data-date-freeze-col-v1626]');
+      if (fb) {
+        var isA = (DATE_FROZEN_COL === c);
+        fb.classList.toggle('is-frozen', isA);
+        if (fb.classList.contains('is-primary')) fb.textContent = isA ? '❄️ Frozen' : '❄️ Freeze';
+      }
+    }
+    for (var r = 0; r < allBodyRows.length; r++) {
+      var tr = allBodyRows[r];
+      tr.classList.remove('krito-frozen-row-v1624', 'krito-frozen-row-edge-v1624');
+      for (var j = 0; j < tr.children.length; j++) {
+        tr.children[j].classList.remove('krito-frozen-col-cell-v1624', 'krito-frozen-col-edge-v1624');
+        tr.children[j].style.left = '';
+        tr.children[j].style.top = '';
+        tr.children[j].style.zIndex = '';
+      }
+    }
+
+    if (DATE_FROZEN_COL >= 0) {
+      var cumLeft = 0;
+      var colLefts = [];
+      var lastVisibleFrozen = -1;
+      for (var ci = 0; ci <= DATE_FROZEN_COL; ci++) {
+        colLefts.push(cumLeft);
+        if (!ths[ci].classList.contains('krito-col-hidden-v1626')) {
+          lastVisibleFrozen = ci;
+          cumLeft += ths[ci].getBoundingClientRect().width;
+        }
+      }
+      for (var hc = 0; hc <= DATE_FROZEN_COL; hc++) {
+        ths[hc].classList.add('krito-frozen-col-cell-v1624');
+        if (hc === lastVisibleFrozen) ths[hc].classList.add('krito-frozen-col-edge-v1624');
+        ths[hc].style.left = colLefts[hc] + 'px';
+        ths[hc].style.zIndex = '55';
+      }
+      for (var br = 0; br < allBodyRows.length; br++) {
+        var bTr = allBodyRows[br];
+        for (var bc = 0; bc <= DATE_FROZEN_COL && bc < bTr.children.length; bc++) {
+          var td = bTr.children[bc];
+          td.classList.add('krito-frozen-col-cell-v1624');
+          if (bc === lastVisibleFrozen) td.classList.add('krito-frozen-col-edge-v1624');
+          td.style.left = colLefts[bc] + 'px';
+          td.style.zIndex = '20';
+        }
+      }
+    }
+
+    if (effRow >= 0) {
+      var cumTop = thead ? thead.getBoundingClientRect().height : 34;
+      for (var ri = 0; ri <= effRow; ri++) {
+        var fRow = dataRows[ri];
+        fRow.classList.add('krito-frozen-row-v1624');
+        if (ri === effRow) fRow.classList.add('krito-frozen-row-edge-v1624');
+        for (var fc = 0; fc < fRow.children.length; fc++) {
+          fRow.children[fc].style.top = cumTop + 'px';
+          fRow.children[fc].style.zIndex = (DATE_FROZEN_COL >= 0 && fc <= DATE_FROZEN_COL) ? '42' : '30';
+        }
+        cumTop += fRow.getBoundingClientRect().height;
+      }
+    }
+
+    for (var dr = 0; dr < dataRows.length; dr++) {
+      var rb = dataRows[dr].querySelector('[data-date-freeze-row-v1626]');
+      if (rb) rb.classList.toggle('is-frozen', dr === DATE_FROZEN_ROW);
+    }
+
+    updateDateFreezeBadgeV1626(ths, effRow);
+  }
+
+  function updateDateFreezeBadgeV1626(ths, effRow) {
+    var refs = getStoreCardRefsV1626();
+    if (!refs || !refs.headBar) return;
+    var old = document.getElementById('kritoDateFreezeStatusV1626');
+    var storeBadge = document.getElementById('kritoFreezeStatusBadgeV1624');
+
+    if (ACTIVE_TAB !== 'DATE') {
+      if (old) old.style.display = 'none';
+      if (storeBadge) storeBadge.style.display = '';
+      return;
+    }
+
+    if (storeBadge) storeBadge.style.display = 'none';
+
+    if (DATE_FROZEN_COL < 0 && effRow < 0) {
+      if (old) old.remove();
+      return;
+    }
+
+    var parts = [];
+    if (DATE_FROZEN_COL >= 0 && ths && ths[DATE_FROZEN_COL]) {
+      parts.push('Col: ' + (ths[DATE_FROZEN_COL].getAttribute('data-orig-title-v1626') || '').trim());
+    }
+    if (effRow >= 0) {
+      parts.push('Rows: 1–' + (effRow + 1));
+    }
+
+    if (!old) {
+      old = document.createElement('span');
+      old.id = 'kritoDateFreezeStatusV1626';
+      old.className = 'krito-freeze-status-v1624';
+      var fsBtn = document.getElementById('kritoStoreExpandFsBtnV1624');
+      if (fsBtn && fsBtn.parentElement) {
+        fsBtn.insertAdjacentElement('afterend', old);
+      } else {
+        refs.headBar.insertBefore(old, refs.headBar.lastElementChild || null);
+      }
+    }
+    old.style.display = 'inline-flex';
+    old.innerHTML = '<span>❄️ ' + parts.join(' | ') + '</span><button type="button" id="kritoDateUnfreezeAllBtnV1626">✖ Unfreeze</button>';
+    var ub = document.getElementById('kritoDateUnfreezeAllBtnV1626');
+    if (ub) {
+      ub.onclick = function(ev) {
+        ev.stopPropagation();
+        DATE_USER_UNFROZE = true;
+        DATE_FROZEN_COL = -1;
+        DATE_FROZEN_ROW = -1;
+        applyDateTableFreezePanesV1626();
+      };
+    }
+  }
+
+  // Full-Screen Popup Window for Date -> Party-Wise OR Date -> Cluster-Wise
+  window.closeDateDetailModalV1626 = function() {
+    DATE_MODAL_STATE = { kind: '', iso: '', label: '', search: '' };
+    popupRoot.innerHTML = '';
+  };
+
+  window._onDateModalSearchV1626 = function(val) {
+    DATE_MODAL_STATE.search = val || '';
+    renderDateDetailModalV1626();
+  };
+
+  function renderDateDetailModalV1626() {
+    if (!DATE_MODAL_STATE.kind || !DATE_MODAL_STATE.iso) {
+      popupRoot.innerHTML = '';
+      return;
+    }
+
+    var ctx = getActivePeriodPairV1626();
+    var daily = (ctx.mData && ctx.mData.daily && Array.isArray(ctx.mData.daily.r)) ? ctx.mData.daily : null;
+    if (!daily) return;
+
+    var row = null;
+    for (var i = 0; i < daily.r.length; i++) {
+      if (daily.r[i][0] === DATE_MODAL_STATE.iso) { row = daily.r[i]; break; }
+    }
+    if (!row) {
+      window.closeDateDetailModalV1626();
+      return;
+    }
+
+    var pDict = daily.p || [];
+    var cDict = daily.c || [];
+    var pEntries = Array.isArray(row[6]) ? row[6] : [];
+    var rights = (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.rights) ? ACTIVE_LINK.rights : {};
+    var dtMeta = (typeof TYPE_META !== 'undefined' && typeof ACTIVE_DATA_TYPE !== 'undefined' && TYPE_META[ACTIVE_DATA_TYPE])
+      ? TYPE_META[ACTIVE_DATA_TYPE]
+      : { label: 'Tertiary', valTitle: 'Net Value' };
+    var showMrp = !!rights.showMrpAndDisc;
+    var qSearch = DATE_MODAL_STATE.search.trim().toLowerCase();
+
+    var listRows = [];
+    if (DATE_MODAL_STATE.kind === 'PARTY') {
+      var pAgg = {};
+      for (var k = 0; k < pEntries.length; k++) {
+        var pe = pEntries[k];
+        var pName = pDict[pe[0]] || 'UNKNOWN';
+        var cName = cDict[pe[1]] || 'UNASSIGNED';
+        if (!pAgg[pName]) pAgg[pName] = { name: pName, cluster: cName, qty: 0, net: 0, mrp: 0, disc: 0 };
+        pAgg[pName].qty += Number(pe[2]) || 0;
+        pAgg[pName].net += Number(pe[3]) || 0;
+        pAgg[pName].mrp += Number(pe[4]) || 0;
+        pAgg[pName].disc += Number(pe[5]) || 0;
+      }
+      listRows = Object.values(pAgg).sort(function(a, b) { return (b.net - a.net) || (b.qty - a.qty); });
+      if (qSearch) {
+        listRows = listRows.filter(function(x) {
+          return x.name.toLowerCase().includes(qSearch) || x.cluster.toLowerCase().includes(qSearch);
+        });
+      }
+    } else {
+      var cAgg = {};
+      for (var c = 0; c < pEntries.length; c++) {
+        var ce = pEntries[c];
+        var pN = pDict[ce[0]] || 'UNKNOWN';
+        var cN = cDict[ce[1]] || 'UNASSIGNED';
+        if (!cAgg[cN]) cAgg[cN] = { name: cN, parties: new Set(), qty: 0, net: 0, mrp: 0, disc: 0 };
+        cAgg[cN].parties.add(pN);
+        cAgg[cN].qty += Number(ce[2]) || 0;
+        cAgg[cN].net += Number(ce[3]) || 0;
+        cAgg[cN].mrp += Number(ce[4]) || 0;
+        cAgg[cN].disc += Number(ce[5]) || 0;
+      }
+      listRows = Object.values(cAgg).map(function(x) {
+        return { name: x.name, partyCount: x.parties.size, qty: x.qty, net: x.net, mrp: x.mrp, disc: x.disc };
+      }).sort(function(a, b) { return (b.net - a.net) || (b.qty - a.qty); });
+      if (qSearch) {
+        listRows = listRows.filter(function(x) { return x.name.toLowerCase().includes(qSearch); });
+      }
+    }
+
+    var sumQty = 0, sumNet = 0, sumMrp = 0, sumDisc = 0, sumParties = 0;
+    listRows.forEach(function(x) {
+      sumQty += x.qty; sumNet += x.net; sumMrp += x.mrp; sumDisc += x.disc;
+      if (x.partyCount) sumParties += x.partyCount;
+    });
+    var sumDiscPct = sumMrp > 0 ? ((sumDisc / sumMrp) * 100).toFixed(2) : '0.00';
+
+    var isParty = (DATE_MODAL_STATE.kind === 'PARTY');
+    var tableRowsHtml = listRows.map(function(r, idx) {
+      var sharePct = sumNet > 0 ? ((r.net / sumNet) * 100).toFixed(1) : (sumQty > 0 ? ((r.qty / sumQty) * 100).toFixed(1) : '0.0');
+      var dPct = r.mrp > 0 ? ((r.disc / r.mrp) * 100).toFixed(2) : '0.00';
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escV1626(r.name) + '</b></td>' +
+        (isParty
+          ? '<td>' + escV1626(r.cluster) + '</td>'
+          : '<td class="num"><b>' + r.partyCount + '</b></td>') +
+        '<td class="num"><b>' + fmtNum(r.qty) + '</b></td>' +
+        '<td class="num" style="color:#0284c7;"><b>' + fmtINR(r.net) + '</b></td>' +
+        '<td class="num" style="color:#6d28d9;font-weight:700;">' + sharePct + '%</td>' +
+        (showMrp ? '<td class="num">' + fmtINR(r.mrp) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + dPct + '%</td>' : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="10" style="text-align:center;padding:26px;color:#64748b;font-weight:600;">Koi data nahi mila.</td></tr>';
+
+    var totalRowHtml = listRows.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td>' +
+        '<td>TOTAL (' + listRows.length + ' ' + (isParty ? 'Parties' : 'Clusters') + ')</td>' +
+        (isParty ? '<td>-</td>' : '<td class="num">' + sumParties + '</td>') +
+        '<td class="num">' + fmtNum(sumQty) + '</td>' +
+        '<td class="num" style="color:#0369a1;">' + fmtINR(sumNet) + '</td>' +
+        '<td class="num">100.0%</td>' +
+        (showMrp ? '<td class="num">' + fmtINR(sumMrp) + '</td><td class="num" style="color:#dc2626;">' + sumDiscPct + '%</td>' : '') +
+      '</tr>'
+    ) : '';
+
+    popupRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeDateDetailModalV1626();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<span>' + (isParty ? '🏪 Party-Wise Sale' : '📍 Cluster-Wise Sale') + ' — ' + escV1626(DATE_MODAL_STATE.label) + '</span>' +
+                '<span style="background:#10b981;color:#fff;padding:2px 9px;border-radius:99px;font-size:11.5px;">' + listRows.length + ' ' + (isParty ? 'Parties' : 'Clusters') + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">' + escV1626(dtMeta.label) + ' | Brand: <b style="color:#fff;">' + escV1626(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') + '</b> | Period: <b style="color:#6ee7b7;">' + escV1626(typeof getPeriodDisplayLabel === 'function' ? getPeriodDisplayLabel(ACTIVE_MONTH) : '') + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:center;">' +
+              '<input type="text" id="kritoDateModalSearchV1626" value="' + escV1626(DATE_MODAL_STATE.search) + '" oninput="window._onDateModalSearchV1626(this.value)" placeholder="🔍 Search ' + (isParty ? 'Party or Cluster...' : 'Cluster...') + '" style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:240px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeDateDetailModalV1626()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">' +
+              '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">TOTAL QTY (' + escV1626(DATE_MODAL_STATE.label) + ')</div><div style="font-size:19px;font-weight:800;margin-top:2px;">' + fmtNum(sumQty) + '</div></div>' +
+              '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">' + escV1626(dtMeta.valTitle || 'NET VALUE').toUpperCase() + '</div><div style="font-size:19px;font-weight:800;color:#38bdf8;margin-top:2px;">' + fmtINR(sumNet) + '</div></div>' +
+              (showMrp ? '<div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">TOTAL MRP</div><div style="font-size:19px;font-weight:800;color:#fbbf24;margin-top:2px;">' + fmtINR(sumMrp) + '</div></div><div style="background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;"><div style="font-size:10px;color:#94a3b8;font-weight:700;">DISCOUNT</div><div style="font-size:19px;font-weight:800;color:#fb7185;margin-top:2px;">' + fmtINR(sumDisc) + ' <span style="font-size:13px;">(' + sumDiscPct + '%)</span></div></div>' : '') +
+            '</div>' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table><thead><tr>' +
+                '<th>#</th>' +
+                '<th>' + (isParty ? 'Party / Store Name' : 'Cluster Name') + '</th>' +
+                (isParty ? '<th>Cluster</th>' : '<th class="num">Parties</th>') +
+                '<th class="num">Qty</th>' +
+                '<th class="num">' + escV1626(dtMeta.valTitle || 'Net Value') + '</th>' +
+                '<th class="num">Share %</th>' +
+                (showMrp ? '<th class="num">MRP</th><th class="num">Dis %</th>' : '') +
+              '</tr></thead><tbody>' + tableRowsHtml + totalRowHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (DATE_MODAL_STATE.search) {
+      var sInp = document.getElementById('kritoDateModalSearchV1626');
+      if (sInp) { sInp.focus(); var len = sInp.value.length; sInp.setSelectionRange(len, len); }
+    }
+  }
+
+  // =========================================================================
+  // 3. HIDE COLUMN BUTTON / DROPDOWN (WORKS ON BOTH STORE & DATE TABLES!)
+  // =========================================================================
+  function getColumnSpecsForTableV1626(table) {
+    if (!table) return [];
+    var tr = table.querySelector('thead tr');
+    if (!tr) return [];
+    var specs = [];
+    var ths = tr.children;
+    for (var i = 0; i < ths.length; i++) {
+      var th = ths[i];
+      var raw = th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '';
+      var clean = raw.replace(/❄️|Frozen|Freeze|\+/g, '').replace(/\s+/g, ' ').trim();
+      var key = th.getAttribute('data-col-key-v1626') || clean || ('COL_' + i);
+      specs.push({ idx: i, key: key, label: clean || ('Col ' + (i + 1)) });
+    }
+    return specs;
+  }
+
+  function applyHiddenColumnsToTableV1626(table, tabKey) {
+    if (!table) return;
+    var hiddenMap = HIDDEN_COLS[tabKey] || {};
+    var specs = getColumnSpecsForTableV1626(table);
+    var visibleCount = 0;
+
+    var theadRow = table.querySelector('thead tr');
+    if (theadRow) {
+      for (var c = 0; c < specs.length && c < theadRow.children.length; c++) {
+        var isHid = !!hiddenMap[specs[c].key];
+        theadRow.children[c].classList.toggle('krito-col-hidden-v1626', isHid);
+        if (!isHid) visibleCount++;
+      }
+    }
+
+    var tbody = table.querySelector('tbody');
+    if (tbody) {
+      var rows = tbody.children;
+      for (var r = 0; r < rows.length; r++) {
+        var tr = rows[r];
+        if (!tr || tr.tagName !== 'TR') continue;
+        if (tr.classList.contains('expand-drawer-row')) {
+          var dTd = tr.querySelector('td');
+          if (dTd && visibleCount > 0) dTd.setAttribute('colspan', String(visibleCount));
+          continue;
+        }
+        for (var j = 0; j < specs.length && j < tr.children.length; j++) {
+          tr.children[j].classList.toggle('krito-col-hidden-v1626', !!hiddenMap[specs[j].key]);
+        }
+      }
+    }
+  }
+
+  function getActiveTableElV1626() {
+    if (ACTIVE_TAB === 'DATE') return document.getElementById('kritoDateReportTableV1626');
+    var tb = document.getElementById('liveStoreTbody');
+    return tb ? tb.closest('table') : null;
+  }
+
+  function renderHideColumnsMenuV1626() {
+    var wrap = document.getElementById('kritoHideColWrapV1626');
+    if (!wrap) return;
+    var btn = wrap.querySelector('.krito-hide-col-btn-v1626');
+    var menu = wrap.querySelector('.krito-hide-col-menu-v1626');
+    if (!btn || !menu) return;
+
+    var table = getActiveTableElV1626();
+    var specs = getColumnSpecsForTableV1626(table);
+    var hiddenMap = HIDDEN_COLS[ACTIVE_TAB] || {};
+    var hiddenCount = specs.filter(function(sp) { return !!hiddenMap[sp.key]; }).length;
+
+    btn.classList.toggle('has-hidden', hiddenCount > 0);
+    btn.innerHTML = hiddenCount > 0
+      ? ('<span>👁️ Hide Columns (' + hiddenCount + ' Hidden)</span>')
+      : '<span>👁️ Hide Columns</span>';
+
+    menu.classList.toggle('is-open', HIDE_MENU_OPEN);
+    if (!HIDE_MENU_OPEN) return;
+
+    var itemsHtml = specs.map(function(sp) {
+      var isHidden = !!hiddenMap[sp.key];
+      return '<label class="krito-hide-col-item-v1626">' +
+        '<input type="checkbox" data-hide-col-key-v1626="' + escV1626(sp.key) + '"' + (isHidden ? '' : ' checked') + '>' +
+        '<span>' + escV1626(sp.label) + (isHidden ? ' <small style="color:#dc2626;">(Hidden)</small>' : '') + '</span>' +
+      '</label>';
+    }).join('');
+
+    menu.innerHTML =
+      '<div class="krito-hide-col-menu-head-v1626">' +
+        '<span>Untick to Hide Column</span>' +
+        '<button type="button" id="kritoShowAllColsBtnV1626">Show All</button>' +
+      '</div>' +
+      (itemsHtml || '<div style="padding:8px;font-size:11px;color:#64748b;">No columns found.</div>');
+
+    var showAllBtn = menu.querySelector('#kritoShowAllColsBtnV1626');
+    if (showAllBtn) {
+      showAllBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        HIDDEN_COLS[ACTIVE_TAB] = {};
+        applyHiddenColumnsToTableV1626(getActiveTableElV1626(), ACTIVE_TAB);
+        recalcActiveFreezeOffsetsV1626();
+        renderHideColumnsMenuV1626();
+      };
+    }
+
+    var chks = menu.querySelectorAll('input[data-hide-col-key-v1626]');
+    for (var i = 0; i < chks.length; i++) {
+      chks[i].onchange = function(ev) {
+        ev.stopPropagation();
+        var k = this.getAttribute('data-hide-col-key-v1626');
+        if (this.checked) {
+          delete HIDDEN_COLS[ACTIVE_TAB][k];
+        } else {
+          HIDDEN_COLS[ACTIVE_TAB][k] = true;
+        }
+        applyHiddenColumnsToTableV1626(getActiveTableElV1626(), ACTIVE_TAB);
+        recalcActiveFreezeOffsetsV1626();
+        renderHideColumnsMenuV1626();
+      };
+    }
+  }
+
+  function recalcActiveFreezeOffsetsV1626() {
+    requestAnimationFrame(function() {
+      if (ACTIVE_TAB === 'DATE') {
+        applyDateTableFreezePanesV1626();
+      } else {
+        try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+      }
+    });
+  }
+
+  function mountHideColumnsControlV1626() {
+    var refs = getStoreCardRefsV1626();
+    if (!refs || !refs.headBar) return;
+
+    var wrap = document.getElementById('kritoHideColWrapV1626');
+    if (!wrap) {
+      wrap = document.createElement('span');
+      wrap.id = 'kritoHideColWrapV1626';
+      wrap.className = 'krito-hide-col-wrap-v1626';
+      wrap.innerHTML =
+        '<button type="button" class="krito-hide-col-btn-v1626">👁️ Hide Columns</button>' +
+        '<div class="krito-hide-col-menu-v1626"></div>';
+
+      wrap.querySelector('.krito-hide-col-btn-v1626').addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        HIDE_MENU_OPEN = !HIDE_MENU_OPEN;
+        renderHideColumnsMenuV1626();
+      });
+      wrap.querySelector('.krito-hide-col-menu-v1626').addEventListener('click', function(ev) {
+        ev.stopPropagation();
+      });
+    }
+
+    var anchor = document.getElementById('kritoStoreExpandFsBtnV1624');
+    if (anchor && anchor.parentElement) {
+      if (wrap.parentElement !== anchor.parentElement) {
+        anchor.insertAdjacentElement('afterend', wrap);
+      }
+    } else if (wrap.parentElement !== refs.headBar) {
+      refs.headBar.insertBefore(wrap, refs.headBar.lastElementChild || null);
+    }
+
+    renderHideColumnsMenuV1626();
+  }
+
+  // =========================================================================
+  // ORCHESTRATION & EVENT LISTENERS
+  // =========================================================================
+  function syncTabVisibilityAndRenderV1626() {
+    var refs = mountTabButtonsAndContainersV1626();
+    if (!refs) return;
+    var dateScroll = document.getElementById('kritoDateReportScrollV1626');
+
+    if (ACTIVE_TAB === 'DATE') {
+      refs.storeScroll.style.display = 'none';
+      if (dateScroll) dateScroll.style.display = '';
+      renderDateWiseReportTableV1626();
+    } else {
+      refs.storeScroll.style.display = '';
+      if (dateScroll) dateScroll.style.display = 'none';
+      applyHiddenColumnsToTableV1626(refs.storeTable, 'STORE');
+      updateDateFreezeBadgeV1626(null, -1);
+      recalcActiveFreezeOffsetsV1626();
+    }
+
+    mountHideColumnsControlV1626();
+  }
+
+  document.addEventListener('click', function(ev) {
+    var target = ev.target;
+
+    var modalBtn = target && target.closest ? target.closest('[data-open-date-modal-v1626]') : null;
+    if (modalBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      DATE_MODAL_STATE = {
+        kind: modalBtn.getAttribute('data-open-date-modal-v1626') || 'PARTY',
+        iso: modalBtn.getAttribute('data-iso') || '',
+        label: modalBtn.getAttribute('data-lbl') || '',
+        search: ''
+      };
+      renderDateDetailModalV1626();
+      return;
+    }
+
+    var fColBtn = target && target.closest ? target.closest('[data-date-freeze-col-v1626]') : null;
+    if (fColBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var ci = parseInt(fColBtn.getAttribute('data-date-freeze-col-v1626') || '-1', 10);
+      DATE_USER_UNFROZE = true;
+      DATE_FROZEN_COL = (DATE_FROZEN_COL === ci) ? -1 : ci;
+      applyDateTableFreezePanesV1626();
+      return;
+    }
+
+    var fRowBtn = target && target.closest ? target.closest('[data-date-freeze-row-v1626]') : null;
+    if (fRowBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var ri = parseInt(fRowBtn.getAttribute('data-date-freeze-row-v1626') || '-1', 10);
+      DATE_FROZEN_ROW = (DATE_FROZEN_ROW === ri) ? -1 : ri;
+      applyDateTableFreezePanesV1626();
+      return;
+    }
+
+    if (HIDE_MENU_OPEN && (!target || !target.closest || !target.closest('#kritoHideColWrapV1626'))) {
+      HIDE_MENU_OPEN = false;
+      renderHideColumnsMenuV1626();
+    }
+  });
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Escape') {
+      if (DATE_MODAL_STATE.kind) {
+        window.closeDateDetailModalV1626();
+      } else if (HIDE_MENU_OPEN) {
+        HIDE_MENU_OPEN = false;
+        renderHideColumnsMenuV1626();
+      }
+    }
+  });
+
+  window.addEventListener('resize', function() {
+    if (ACTIVE_TAB === 'DATE') {
+      applyDateTableFreezePanesV1626();
+    }
+  });
+
+  document.addEventListener('input', function(ev) {
+    if (ev.target && ev.target.id === 'liveStoreSearch' && ACTIVE_TAB === 'DATE') {
+      renderDateWiseReportTableV1626();
+    }
+  });
+
+  document.addEventListener('click', function(ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('#kritoStoreExpandFsBtnV1624')) {
+      setTimeout(function() {
+        if (ACTIVE_TAB === 'DATE') applyDateTableFreezePanesV1626();
+      }, 40);
+    }
+  });
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1626) {
+    var _origUpdateStoreV1626 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateStoreV1626.apply(this, arguments);
+      if (ACTIVE_TAB === 'DATE') {
+        renderDateWiseReportTableV1626();
+      } else {
+        var refs = getStoreCardRefsV1626();
+        if (refs) applyHiddenColumnsToTableV1626(refs.storeTable, 'STORE');
+      }
+      mountHideColumnsControlV1626();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1626 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1626) {
+    var _origRenderAppV1626 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderAppV1626.apply(this, arguments);
+      syncTabVisibilityAndRenderV1626();
+      if (DATE_MODAL_STATE.kind) renderDateDetailModalV1626();
+      return res;
+    };
+    window.renderApp._v1626 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    syncTabVisibilityAndRenderV1626();
+  }
+
+})();
+</script>
 </body>
 </html>
