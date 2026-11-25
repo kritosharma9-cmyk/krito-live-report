@@ -7485,5 +7485,633 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL FIX ONLY: MULTI-TYPE HEADER PILLS + CLICKABLE UNIT + DATE STYLE (v16.33)
+     - NO need to delete old code & NO data push required (live.html ONLY)
+     - FIX 1: Shows clickable purple [+ Qty (N)] header breakdown in Manager-Wise,
+              Individual Store Data & TOTAL rows for Stock / Sell Out / Brand Order / etc.
+     - FIX 2: Makes Unit / Location a clickable blue [+ N] button with expandable drawer
+     - FIX 3: Applies exact same amber pill badge to Last Report Date & clean Manager name
+     (PASTE RIGHT AFTER v16.32 & BEFORE </body> IN live.html)
+     ============================================================================ -->
+<script>
+(function fixMultiTypeHeadersUnitAndDateStyleV1633() {
+
+  if (window._kritoMultiTypeRichCellsV1633Installed) return;
+  window._kritoMultiTypeRichCellsV1633Installed = true;
+
+  var css = [
+    '.krito-sub-attr-btn-v1633{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;border:1px solid #a78bfa;background:#ffffff;color:#6d28d9;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;line-height:1.2;}',
+    '.krito-sub-attr-btn-v1633:hover{background:#f5f3ff;border-color:#7c3aed;box-shadow:0 2px 6px rgba(124,58,237,0.16);}',
+    '.krito-sub-attr-ico-v1633{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#7c3aed;color:#ffffff;font-size:12px;font-weight:900;line-height:1;}',
+    '.krito-sub-attr-cnt-v1633{font-size:10px;font-weight:700;color:#7c3aed;opacity:0.85;}',
+
+    '.krito-sub-unit-btn-v1633{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:2px 9px;border-radius:99px;border:none;background:#2563eb;color:#ffffff;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;line-height:1.35;}',
+    '.krito-sub-unit-btn-v1633:hover{background:#1d4ed8;}',
+    '.krito-sub-unit-btn-v1633.is-open{background:#0f172a;color:#ffffff;}',
+
+    'tr.krito-sub-unit-drawer-v1633 > td{background:#f8fafc !important;padding:10px 14px !important;white-space:normal !important;border-bottom:2px solid #93c5fd !important;}',
+    '.krito-sub-unit-box-v1633{background:#ffffff;border:1.5px solid #bfdbfe;border-radius:10px;overflow:hidden;box-shadow:0 3px 10px rgba(37,99,235,0.08);}',
+    '.krito-sub-unit-head-v1633{background:#eff6ff;color:#1e40af;padding:7px 12px;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #bfdbfe;}',
+    '.krito-sub-unit-tbl-v1633{width:100%;border-collapse:collapse;font-size:11.5px;}',
+    '.krito-sub-unit-tbl-v1633 th{background:#f8fafc;color:#334155;font-weight:800;padding:6px 10px;border-bottom:1px solid #cbd5e1;text-align:left;white-space:nowrap;}',
+    '.krito-sub-unit-tbl-v1633 td{padding:5px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap;}',
+    '.krito-sub-unit-tbl-v1633 tr.total-row td{background:#f1f5f9;font-weight:800;border-top:1.5px solid #cbd5e1;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoMultiTypeRichCellsCssV1633';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var modalRoot = document.getElementById('kritoSubAttrModalRootV1633');
+  if (!modalRoot) {
+    modalRoot = document.createElement('div');
+    modalRoot.id = 'kritoSubAttrModalRootV1633';
+    document.body.appendChild(modalRoot);
+  }
+
+  var ATTR_MODAL_STATE = { open: false, typeKey: '', scope: '', entity: '', headerName: '', search: '' };
+
+  function escV1633(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ33(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI33(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function getPeriodObjV1633(typeKey) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return null;
+      var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var pKey = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+      var ds = LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey];
+      if (ds && ds[brand] && ds[brand][pKey]) return ds[brand][pKey];
+      if (typeKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[brand] && LIVE_PAYLOAD.brands[brand][pKey]) {
+        return LIVE_PAYLOAD.brands[brand][pKey];
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function extractTypeKeyFromSubRowV1633(subTr) {
+    if (!subTr) return '';
+    var pill = subTr.querySelector('.krito-type-pill-v1631');
+    if (!pill) return '';
+    var clsList = String(pill.className || '').split(/\s+/);
+    for (var i = 0; i < clsList.length; i++) {
+      if (clsList[i].indexOf('krito-tp-') === 0) {
+        return clsList[i].slice('krito-tp-'.length);
+      }
+    }
+    return '';
+  }
+
+  function getParentPrimaryRowV1633(subTr) {
+    var cur = subTr ? subTr.previousElementSibling : null;
+    while (cur) {
+      if (cur.tagName === 'TR' && !cur.classList.contains('krito-type-subrow-v1631') && !cur.classList.contains('expand-drawer-row') && !cur.classList.contains('krito-sub-unit-drawer-v1633')) {
+        return cur;
+      }
+      cur = cur.previousElementSibling;
+    }
+    return null;
+  }
+
+  function cleanHeaderTitleFromThV1633(th) {
+    if (!th) return '';
+    var raw = th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '';
+    return raw.replace(/📌|❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function resolveAttrObjV1633(pData, headerTitle) {
+    if (!pData || !pData.attributes || !headerTitle) return null;
+    if (pData.attributes[headerTitle]) return { key: headerTitle, obj: pData.attributes[headerTitle] };
+    var targetUp = headerTitle.trim().toUpperCase();
+    var keys = Object.keys(pData.attributes);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].trim().toUpperCase() === targetUp) {
+        return { key: keys[i], obj: pData.attributes[keys[i]] };
+      }
+    }
+    return null;
+  }
+
+  function getActiveSubValFilterSetV1633(headerName) {
+    try {
+      if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && SELECTED_ATTR_SUBVALS[headerName] instanceof Set) {
+        var tertData = getPeriodObjV1633('TERTIARY');
+        var tertAttr = tertData && tertData.attributes && tertData.attributes[headerName];
+        var totalPossible = (tertAttr && Array.isArray(tertAttr.values)) ? tertAttr.values.length : 0;
+        var selSet = SELECTED_ATTR_SUBVALS[headerName];
+        if (totalPossible > 0 && selSet.size > 0 && selSet.size < totalPossible) {
+          return selSet;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function getCaseInsensitiveMapEntryV1633(objMap, keyName) {
+    if (!objMap || !keyName) return null;
+    if (objMap[keyName]) return objMap[keyName];
+    var up = String(keyName).trim().toUpperCase();
+    var ks = Object.keys(objMap);
+    for (var i = 0; i < ks.length; i++) {
+      if (String(ks[i]).trim().toUpperCase() === up) return objMap[ks[i]];
+    }
+    return null;
+  }
+
+  function summarizeAttrMapV1633(valQtyMap, filterSet) {
+    if (!valQtyMap || typeof valQtyMap !== 'object') return { qty: 0, count: 0, entries: [] };
+    var qtySum = 0;
+    var entries = [];
+    var ks = Object.keys(valQtyMap);
+    for (var i = 0; i < ks.length; i++) {
+      var v = ks[i];
+      if (filterSet && !filterSet.has(v)) continue;
+      var q = Number(valQtyMap[v]) || 0;
+      if (q === 0) continue;
+      qtySum += q;
+      entries.push({ val: v, qty: q });
+    }
+    entries.sort(function(a, b) { return b.qty - a.qty; });
+    return { qty: qtySum, count: entries.length, entries: entries };
+  }
+
+  function getPinnedAttrColsV1633(theadRow) {
+    var out = [];
+    if (!theadRow) return out;
+    var ths = theadRow.children;
+    for (var i = 0; i < ths.length; i++) {
+      var th = ths[i];
+      var txt = th.textContent || '';
+      var clean = cleanHeaderTitleFromThV1633(th);
+      if (txt.indexOf('📌') !== -1 || clean.indexOf('Master_') === 0) {
+        out.push({ idx: i, headerName: clean });
+      }
+    }
+    return out;
+  }
+
+  function findStoreObjV1633(pData, partyName) {
+    if (!pData || !Array.isArray(pData.stores) || !partyName) return null;
+    var up = String(partyName).trim().toUpperCase();
+    for (var i = 0; i < pData.stores.length; i++) {
+      var st = pData.stores[i];
+      if (st && String(st.party || '').trim().toUpperCase() === up) return st;
+    }
+    return null;
+  }
+
+  function makePurpleAttrBtnHtmlV1633(typeKey, scope, entityName, headerName, summary) {
+    if (!summary || summary.count === 0) {
+      return '<span style="color:#94a3b8;">-</span>';
+    }
+    return '<button type="button" class="krito-sub-attr-btn-v1633"' +
+      ' data-open-sub-attr-v1633="1"' +
+      ' data-type="' + escV1633(typeKey) + '"' +
+      ' data-scope="' + escV1633(scope) + '"' +
+      ' data-entity="' + escV1633(entityName) + '"' +
+      ' data-hdr="' + escV1633(headerName) + '"' +
+      ' title="Click to view ' + escV1633(headerName) + ' breakdown (' + escV1633(typeKey) + ')">' +
+        '<span class="krito-sub-attr-ico-v1633">+</span>' +
+        '<span>' + fmtQ33(summary.qty) + ' Qty</span>' +
+        '<span class="krito-sub-attr-cnt-v1633">(' + summary.count + ')</span>' +
+      '</button>';
+  }
+
+  // 1. FIX MANAGER-WISE SUMMARY SUB-ROWS (PINNED HEADERS + TOTAL ROW)
+  function enhanceManagerSubRowsV1633() {
+    var btnBar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (!btnBar) return;
+    var card = btnBar.parentElement;
+    while (card && card.parentElement && !card.querySelector('table')) card = card.parentElement;
+    if (!card) return;
+    var table = card.querySelector('table');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody) return;
+
+    var pinnedCols = getPinnedAttrColsV1633(theadRow);
+    if (pinnedCols.length === 0) return;
+
+    var subRows = tbody.querySelectorAll('tr.krito-type-subrow-v1631');
+    for (var i = 0; i < subRows.length; i++) {
+      var subTr = subRows[i];
+      var typeKey = extractTypeKeyFromSubRowV1633(subTr);
+      if (!typeKey || typeKey === 'TERTIARY') continue;
+
+      var pData = getPeriodObjV1633(typeKey);
+      var isTotal = subTr.classList.contains('is-total-sub');
+      var parentTr = getParentPrimaryRowV1633(subTr);
+      var mgrName = (!isTotal && parentTr && parentTr.children[0]) ? String(parentTr.children[0].textContent || '').trim() : '';
+
+      for (var p = 0; p < pinnedCols.length; p++) {
+        var pc = pinnedCols[p];
+        var td = subTr.children[pc.idx];
+        if (!td) continue;
+
+        var attrHit = resolveAttrObjV1633(pData, pc.headerName);
+        if (!attrHit || !attrHit.obj) {
+          td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+          continue;
+        }
+
+        var filterSet = getActiveSubValFilterSetV1633(attrHit.key);
+        if (isTotal) {
+          var totSum = summarizeAttrMapV1633(attrHit.obj.totals, filterSet);
+          td.style.textAlign = 'center';
+          td.innerHTML = totSum.count > 0 ? ('<b>' + fmtQ33(totSum.qty) + ' Qty</b>') : '<span style="color:#94a3b8;">-</span>';
+        } else {
+          var mgrMap = getCaseInsensitiveMapEntryV1633(attrHit.obj.byManager, mgrName);
+          var mgrSum = summarizeAttrMapV1633(mgrMap, filterSet);
+          td.style.textAlign = 'center';
+          td.innerHTML = makePurpleAttrBtnHtmlV1633(typeKey, 'MANAGER', mgrName, attrHit.key, mgrSum);
+        }
+      }
+    }
+  }
+
+  // 2. FIX INDIVIDUAL STORE DATA SUB-ROWS (UNIT/LOCATION + LAST REPORT DATE + MANAGER + HEADERS)
+  function enhanceStoreSubRowsV1633() {
+    var tbody = document.getElementById('liveStoreTbody');
+    if (!tbody) return;
+    var table = tbody.closest('table');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    if (!theadRow) return;
+
+    var oldDrawers = tbody.querySelectorAll('tr.krito-sub-unit-drawer-v1633');
+    for (var d = 0; d < oldDrawers.length; d++) oldDrawers[d].remove();
+
+    var ths = Array.from(theadRow.children);
+    var partyIdx = -1, unitIdx = -1, dateIdx = -1, mgrIdx = -1;
+    for (var c = 0; c < ths.length; c++) {
+      var clean = cleanHeaderTitleFromThV1633(ths[c]).toUpperCase();
+      if (clean.indexOf('PARTY / STORE NAME') !== -1) partyIdx = c;
+      else if (clean.indexOf('UNIT / LOCATION') !== -1) unitIdx = c;
+      else if (clean.indexOf('LAST REPORT DATE') !== -1) dateIdx = c;
+      else if (clean === 'MANAGER') mgrIdx = c;
+    }
+    if (partyIdx < 0) return;
+
+    var pinnedCols = getPinnedAttrColsV1633(theadRow);
+    var subRows = tbody.querySelectorAll('tr.krito-type-subrow-v1631');
+
+    for (var i = 0; i < subRows.length; i++) {
+      var subTr = subRows[i];
+      var typeKey = extractTypeKeyFromSubRowV1633(subTr);
+      if (!typeKey || typeKey === 'TERTIARY') continue;
+
+      var pData = getPeriodObjV1633(typeKey);
+      var isTotal = subTr.classList.contains('is-total-sub');
+      var parentTr = getParentPrimaryRowV1633(subTr);
+
+      var partyName = '';
+      if (!isTotal && parentTr && parentTr.children[partyIdx]) {
+        var bEl = parentTr.children[partyIdx].querySelector('b');
+        partyName = bEl ? String(bEl.textContent || '').trim() : String(parentTr.children[partyIdx].textContent || '').trim();
+      }
+      var storeObj = !isTotal ? findStoreObjV1633(pData, partyName) : null;
+
+      // (a) Unit / Location -> Clickable Blue [+ N] pill matching Tertiary
+      if (!isTotal && unitIdx >= 0 && subTr.children[unitIdx]) {
+        var uTd = subTr.children[unitIdx];
+        uTd.style.textAlign = 'center';
+        if (storeObj) {
+          var unitCnt = (Array.isArray(storeObj.subStores) && storeObj.subStores.length > 0) ? storeObj.subStores.length : 1;
+          uTd.innerHTML =
+            '<button type="button" class="krito-sub-unit-btn-v1633"' +
+            ' data-toggle-sub-unit-v1633="1"' +
+            ' data-type="' + escV1633(typeKey) + '"' +
+            ' data-party="' + escV1633(partyName) + '"' +
+            ' title="Click to view Unit / Location breakdown (' + escV1633(typeKey) + ')">' +
+              '+ ' + unitCnt +
+            '</button>';
+        } else {
+          uTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+        }
+      }
+
+      // (b) Last Report Date -> Exact Same Amber Pill (.party-upd-badge-v1617)
+      if (!isTotal && dateIdx >= 0 && subTr.children[dateIdx]) {
+        var dTd = subTr.children[dateIdx];
+        if (storeObj && storeObj.lastUpd) {
+          dTd.innerHTML = '<span class="party-upd-badge-v1617" style="margin-left:0;" title="Party Last File Updated Date &amp; Time">🕒 ' + escV1633(storeObj.lastUpd) + '</span>';
+        } else {
+          dTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+        }
+      }
+
+      // (c) Manager -> Show actual Manager Name instead of "↳"
+      if (!isTotal && mgrIdx >= 0 && subTr.children[mgrIdx]) {
+        var mTd = subTr.children[mgrIdx];
+        if (storeObj && storeObj.manager) {
+          mTd.textContent = storeObj.manager;
+        } else {
+          mTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+        }
+      }
+
+      // (d) Pinned Header(s) -> Clickable Purple [+ Qty (N)] Button + Total Row
+      for (var p = 0; p < pinnedCols.length; p++) {
+        var pc = pinnedCols[p];
+        var aTd = subTr.children[pc.idx];
+        if (!aTd) continue;
+
+        var attrHit = resolveAttrObjV1633(pData, pc.headerName);
+        if (!attrHit || !attrHit.obj) {
+          aTd.innerHTML = '<span style="color:#94a3b8;">-</span>';
+          continue;
+        }
+
+        var filterSet = getActiveSubValFilterSetV1633(attrHit.key);
+        if (isTotal) {
+          var totSum = summarizeAttrMapV1633(attrHit.obj.totals, filterSet);
+          aTd.style.textAlign = 'center';
+          aTd.innerHTML = totSum.count > 0 ? ('<b>' + fmtQ33(totSum.qty) + ' Qty</b>') : '<span style="color:#94a3b8;">-</span>';
+        } else {
+          var stMap = getCaseInsensitiveMapEntryV1633(attrHit.obj.byStore, partyName);
+          var stSum = summarizeAttrMapV1633(stMap, filterSet);
+          aTd.style.textAlign = 'center';
+          aTd.innerHTML = makePurpleAttrBtnHtmlV1633(typeKey, 'STORE', partyName, attrHit.key, stSum);
+        }
+      }
+    }
+  }
+
+  // 3. INLINE EXPAND DRAWER FOR CLICKING [+ N] UNIT/LOCATION BUTTON
+  function toggleSubUnitDrawerV1633(btn) {
+    var subTr = btn.closest('tr');
+    if (!subTr) return;
+    var nextTr = subTr.nextElementSibling;
+
+    if (nextTr && nextTr.classList.contains('krito-sub-unit-drawer-v1633')) {
+      nextTr.remove();
+      btn.classList.remove('is-open');
+      btn.textContent = btn.textContent.replace(/^−/, '+');
+      return;
+    }
+
+    var typeKey = btn.getAttribute('data-type') || '';
+    var partyName = btn.getAttribute('data-party') || '';
+    var pData = getPeriodObjV1633(typeKey);
+    var storeObj = findStoreObjV1633(pData, partyName);
+    if (!storeObj) return;
+
+    var table = subTr.closest('table');
+    var theadRow = table ? table.querySelector('thead tr') : null;
+    var pinnedCols = getPinnedAttrColsV1633(theadRow);
+    var visibleColCount = 1;
+    if (theadRow) {
+      visibleColCount = Array.from(theadRow.children).filter(function(th) {
+        return !th.classList.contains('krito-col-hidden-v1626');
+      }).length || theadRow.children.length;
+    }
+
+    var units = (Array.isArray(storeObj.subStores) && storeObj.subStores.length > 0)
+      ? storeObj.subStores
+      : [{
+          store: storeObj.party,
+          manager: storeObj.manager || '-',
+          qty: storeObj.qty || 0,
+          net: storeObj.net || 0,
+          mrp: storeObj.mrp || 0,
+          disc: storeObj.disc || 0,
+          discPct: storeObj.discPct || 0,
+          attrs: null
+        }];
+
+    var sumQ = 0, sumN = 0, sumM = 0, sumD = 0;
+    var uRowsHtml = units.map(function(u, idx) {
+      sumQ += Number(u.qty) || 0;
+      sumN += Number(u.net) || 0;
+      sumM += Number(u.mrp) || 0;
+      sumD += Number(u.disc) || 0;
+      var dp = (u.mrp > 0) ? (((Number(u.disc) || 0) / u.mrp) * 100).toFixed(2) : Number(u.discPct || 0).toFixed(2);
+
+      var pinnedTds = pinnedCols.map(function(pc) {
+        var uAttrMap = u.attrs ? getCaseInsensitiveMapEntryV1633(u.attrs, pc.headerName) : null;
+        if (!uAttrMap) return '<td style="color:#94a3b8;">-</td>';
+        var s = summarizeAttrMapV1633(uAttrMap, getActiveSubValFilterSetV1633(pc.headerName));
+        if (s.count === 0) return '<td style="color:#94a3b8;">-</td>';
+        var topTxt = s.entries.slice(0, 3).map(function(e) { return escV1633(e.val) + ': ' + fmtQ33(e.qty); }).join(' | ');
+        if (s.entries.length > 3) topTxt += ' +' + (s.entries.length - 3) + ' more';
+        return '<td style="font-size:10.5px;color:#5b21b6;font-weight:700;">' + fmtQ33(s.qty) + ' Qty <span style="color:#64748b;font-weight:600;">(' + topTxt + ')</span></td>';
+      }).join('');
+
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escV1633(u.store || partyName) + '</b></td>' +
+        '<td>' + escV1633(u.manager || storeObj.manager || '-') + '</td>' +
+        pinnedTds +
+        '<td class="num"><b>' + fmtQ33(u.qty) + '</b></td>' +
+        '<td class="num" style="color:#0284c7;"><b>' + fmtI33(u.net) + '</b></td>' +
+        '<td class="num">' + fmtI33(u.mrp) + '</td>' +
+        '<td class="num" style="color:#dc2626;font-weight:700;">' + dp + '%</td>' +
+      '</tr>';
+    }).join('');
+
+    var totDp = sumM > 0 ? ((sumD / sumM) * 100).toFixed(2) : '0.00';
+    var pinnedThs = pinnedCols.map(function(pc) { return '<th>📌 ' + escV1633(pc.headerName) + '</th>'; }).join('');
+    var pinnedTotTds = pinnedCols.map(function() { return '<td>-</td>'; }).join('');
+
+    var drawerTr = document.createElement('tr');
+    drawerTr.className = 'expand-drawer-row krito-sub-unit-drawer-v1633';
+    drawerTr.innerHTML =
+      '<td colspan="' + visibleColCount + '">' +
+        '<div class="krito-sub-unit-box-v1633">' +
+          '<div class="krito-sub-unit-head-v1633">' +
+            '<span>📍 Unit / Location Breakdown — ' + escV1633(partyName) + ' (' + escV1633(typeKey.replace('_', ' ')) + ' • ' + units.length + ' Unit' + (units.length === 1 ? '' : 's') + ')</span>' +
+            (storeObj.lastUpd ? '<span class="party-upd-badge-v1617" style="margin:0;">🕒 ' + escV1633(storeObj.lastUpd) + '</span>' : '') +
+          '</div>' +
+          '<div style="overflow-x:auto;">' +
+            '<table class="krito-sub-unit-tbl-v1633">' +
+              '<thead><tr><th>#</th><th>Unit / Location</th><th>Manager</th>' + pinnedThs + '<th class="num">Qty</th><th class="num">Value</th><th class="num">MRP</th><th class="num">Dis %</th></tr></thead>' +
+              '<tbody>' + uRowsHtml +
+                '<tr class="total-row"><td></td><td>TOTAL (' + units.length + ')</td><td>-</td>' + pinnedTotTds + '<td class="num">' + fmtQ33(sumQ) + '</td><td class="num" style="color:#0369a1;">' + fmtI33(sumN) + '</td><td class="num">' + fmtI33(sumM) + '</td><td class="num" style="color:#dc2626;">' + totDp + '%</td></tr>' +
+              '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>' +
+      '</td>';
+
+    subTr.insertAdjacentElement('afterend', drawerTr);
+    btn.classList.add('is-open');
+    btn.textContent = btn.textContent.replace(/^\+/, '−');
+  }
+
+  // 4. FULL-SCREEN BREAKDOWN MODAL FOR CLICKING PURPLE HEADER PILL
+  window.closeSubAttrModalV1633 = function() {
+    ATTR_MODAL_STATE.open = false;
+    modalRoot.innerHTML = '';
+  };
+
+  window._onSubAttrModalSearchV1633 = function(val) {
+    ATTR_MODAL_STATE.search = val || '';
+    renderSubAttrModalV1633();
+  };
+
+  function renderSubAttrModalV1633() {
+    if (!ATTR_MODAL_STATE.open) { modalRoot.innerHTML = ''; return; }
+    var st = ATTR_MODAL_STATE;
+    var pData = getPeriodObjV1633(st.typeKey);
+    var attrHit = resolveAttrObjV1633(pData, st.headerName);
+    if (!attrHit || !attrHit.obj) { window.closeSubAttrModalV1633(); return; }
+
+    var srcMap = (st.scope === 'MANAGER')
+      ? getCaseInsensitiveMapEntryV1633(attrHit.obj.byManager, st.entity)
+      : getCaseInsensitiveMapEntryV1633(attrHit.obj.byStore, st.entity);
+    var summary = summarizeAttrMapV1633(srcMap, getActiveSubValFilterSetV1633(attrHit.key));
+    var q = (st.search || '').trim().toLowerCase();
+    var filtered = q ? summary.entries.filter(function(e) { return e.val.toLowerCase().indexOf(q) !== -1; }) : summary.entries;
+
+    var sumQty = 0;
+    filtered.forEach(function(e) { sumQty += e.qty; });
+
+    var rowsHtml = filtered.map(function(e, idx) {
+      var share = sumQty > 0 ? ((e.qty / sumQty) * 100).toFixed(1) : '0.0';
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + escV1633(e.val) + '</b></td>' +
+        '<td class="num"><b>' + fmtQ33(e.qty) + '</b></td>' +
+        '<td class="num" style="color:#6d28d9;font-weight:700;">' + share + '%</td>' +
+      '</tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">Koi matching value nahi mila.</td></tr>';
+
+    var totalRowHtml = filtered.length > 0
+      ? '<tr class="total-row"><td></td><td>TOTAL (' + filtered.length + ' Values)</td><td class="num">' + fmtQ33(sumQty) + '</td><td class="num">100.0%</td></tr>'
+      : '';
+
+    var typeNice = st.typeKey.replace('_', ' ');
+    var periodNice = (typeof getPeriodDisplayLabel === 'function' && typeof ACTIVE_MONTH !== 'undefined') ? getPeriodDisplayLabel(ACTIVE_MONTH) : '';
+
+    modalRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeSubAttrModalV1633();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<span>📌 ' + escV1633(attrHit.key) + ' — ' + escV1633(st.entity) + '</span>' +
+                '<span style="background:#059669;color:#fff;padding:2px 9px;border-radius:99px;font-size:11px;">' + escV1633(typeNice) + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">Brand: <b style="color:#fff;">' + escV1633(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') + '</b> | Period: <b style="color:#6ee7b7;">' + escV1633(periodNice) + '</b> | Total Qty: <b style="color:#38bdf8;">' + fmtQ33(sumQty) + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:center;">' +
+              '<input type="text" id="kritoSubAttrSearchV1633" value="' + escV1633(st.search) + '" oninput="window._onSubAttrModalSearchV1633(this.value)" placeholder="🔍 Search ' + escV1633(attrHit.key) + '..." style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:230px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeSubAttrModalV1633()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table><thead><tr><th>#</th><th>' + escV1633(attrHit.key) + '</th><th class="num">Qty (' + escV1633(typeNice) + ')</th><th class="num">Share %</th></tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (st.search) {
+      var inp = document.getElementById('kritoSubAttrSearchV1633');
+      if (inp) { inp.focus(); var len = inp.value.length; try { inp.setSelectionRange(len, len); } catch (e) {} }
+    }
+  }
+
+  function enhanceAllMultiTypeSubRowsV1633() {
+    enhanceManagerSubRowsV1633();
+    enhanceStoreSubRowsV1633();
+  }
+
+  document.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var unitBtn = t.closest('[data-toggle-sub-unit-v1633]');
+    if (unitBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      toggleSubUnitDrawerV1633(unitBtn);
+      return;
+    }
+
+    var attrBtn = t.closest('[data-open-sub-attr-v1633]');
+    if (attrBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ATTR_MODAL_STATE = {
+        open: true,
+        typeKey: attrBtn.getAttribute('data-type') || '',
+        scope: attrBtn.getAttribute('data-scope') || 'STORE',
+        entity: attrBtn.getAttribute('data-entity') || '',
+        headerName: attrBtn.getAttribute('data-hdr') || '',
+        search: ''
+      };
+      renderSubAttrModalV1633();
+      return;
+    }
+  });
+
+  // Capture-phase listener (fires even when v16.31/v16.26 calls ev.stopPropagation())
+  document.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+    if (t.closest('[data-mtype-key-v1631]') || t.closest('#kritoHideColWrapV1626')) {
+      setTimeout(enhanceAllMultiTypeSubRowsV1633, 0);
+      setTimeout(enhanceAllMultiTypeSubRowsV1633, 60);
+    }
+  }, true);
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Escape' && ATTR_MODAL_STATE.open) {
+      window.closeSubAttrModalV1633();
+    }
+  });
+
+  if (typeof window.applyAllMultiTypeTablesV1631 === 'function' && !window.applyAllMultiTypeTablesV1631._v1633) {
+    var _origApplyV1633 = window.applyAllMultiTypeTablesV1631;
+    window.applyAllMultiTypeTablesV1631 = function() {
+      var res = _origApplyV1633.apply(this, arguments);
+      enhanceAllMultiTypeSubRowsV1633();
+      return res;
+    };
+    window.applyAllMultiTypeTablesV1631._v1633 = true;
+  }
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1633) {
+    var _origUpdateV1633 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpdateV1633.apply(this, arguments);
+      enhanceStoreSubRowsV1633();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1633 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1633) {
+    var _origRenderV1633 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderV1633.apply(this, arguments);
+      enhanceAllMultiTypeSubRowsV1633();
+      return res;
+    };
+    window.renderApp._v1633 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    enhanceAllMultiTypeSubRowsV1633();
+  }
+
+})();
+</script>
 </body>
 </html>
