@@ -7150,5 +7150,340 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL FIX ONLY: TOP BANNER PER DAY / PER MONTH / EXPECTED CLOSING (v16.32)
+     - Reads exact `grandTotal` key from live_data.json (fixes v16.31 `summary` mismatch)
+     - NO need to delete old code & NO data push required
+     - 0% change to any other section of live.html
+     (PASTE RIGHT BEFORE </body> IN live.html)
+     ============================================================================ -->
+<script>
+(function fixTopBannerPaceAndExpectedClosingV1632() {
+
+  if (window._kritoPaceBarFixV1632Installed) return;
+  window._kritoPaceBarFixV1632Installed = true;
+
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  function escV1632(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQtyV1632(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtInrV1632(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function getPeriodObjV1632(typeKey, periodKeyOpt) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return null;
+      var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var pKey = periodKeyOpt || (typeof ACTIVE_MONTH !== 'undefined' ? ACTIVE_MONTH : '');
+      var ds = LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey];
+      if (ds && ds[brand] && ds[brand][pKey]) return ds[brand][pKey];
+      if (typeKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[brand] && LIVE_PAYLOAD.brands[brand][pKey]) {
+        return LIVE_PAYLOAD.brands[brand][pKey];
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function getPeriodTotalsV1632(pObj) {
+    if (!pObj) return null;
+    var gt = pObj.grandTotal || pObj.summary;
+    if (gt) {
+      return { qty: Number(gt.qty) || 0, net: Number(gt.net) || 0 };
+    }
+    if (Array.isArray(pObj.stores) && pObj.stores.length > 0) {
+      var q = 0, n = 0;
+      for (var i = 0; i < pObj.stores.length; i++) {
+        q += Number(pObj.stores[i].qty) || 0;
+        n += Number(pObj.stores[i].net) || 0;
+      }
+      return { qty: q, net: n };
+    }
+    return null;
+  }
+
+  function daysInMonthV1632(year, mon1to12) {
+    return new Date(year, mon1to12, 0).getDate();
+  }
+
+  function findTopKpiBannerCardV1632() {
+    var divs = document.querySelectorAll('div, section');
+    var best = null;
+    for (var i = 0; i < divs.length; i++) {
+      var el = divs[i];
+      if (el.id === 'kritoPaceClosingBarV1632' || el.id === 'kritoPaceClosingBarV1631') continue;
+      if (el.querySelector('table')) continue;
+      var txt = (el.textContent || '').toUpperCase();
+      if (txt.indexOf('UPDATED STORES') !== -1 && (txt.indexOf('TOTAL QTY') !== -1 || txt.indexOf('NET VALUE') !== -1 || txt.indexOf('TOTAL MRP') !== -1 || txt.indexOf('FULL ') !== -1)) {
+        if (!best || best.contains(el)) best = el;
+      }
+    }
+    return best;
+  }
+
+  function computePaceAndExpectedClosingV1632() {
+    var tKey = (typeof ACTIVE_DATA_TYPE !== 'undefined') ? ACTIVE_DATA_TYPE : 'TERTIARY';
+    var brand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var pKey = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    var mData = getPeriodObjV1632(tKey, pKey);
+    var curTot = getPeriodTotalsV1632(mData);
+    if (!curTot) return null;
+
+    var curQty = curTot.qty;
+    var curVal = curTot.net;
+    var lyKey = (typeof getLastYearPeriodKey === 'function') ? getLastYearPeriodKey(pKey) : '';
+    var lyData = lyKey ? getPeriodObjV1632(tKey, lyKey) : null;
+    var lyTot = getPeriodTotalsV1632(lyData);
+    var lyFullQty = lyTot ? lyTot.qty : 0;
+    var lyFullVal = lyTot ? lyTot.net : 0;
+
+    var now = new Date();
+    var isFullFy = String(pKey).indexOf('FULL_FY::') === 0;
+
+    if (!isFullFy) {
+      var mm = String(pKey).match(/^([A-Z]{3})-(\d{4})$/);
+      var mNum = mm ? (MON_NUM[mm[1]] || (now.getMonth() + 1)) : (now.getMonth() + 1);
+      var yr = mm ? parseInt(mm[2], 10) : now.getFullYear();
+      var totalDays = daysInMonthV1632(yr, mNum);
+
+      var isPastMonth = (yr < now.getFullYear()) || (yr === now.getFullYear() && mNum < (now.getMonth() + 1));
+      var elapsedDays = totalDays;
+      if (!isPastMonth) {
+        var maxDataDay = 0;
+        if (mData.daily && Array.isArray(mData.daily.r)) {
+          var dr = mData.daily.r;
+          for (var i = 0; i < dr.length; i++) {
+            var isoMatch = String(dr[i][0] || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (isoMatch && parseInt(isoMatch[1], 10) === yr && parseInt(isoMatch[2], 10) === mNum) {
+              var dd = parseInt(isoMatch[3], 10);
+              if (dd > maxDataDay) maxDataDay = dd;
+            }
+          }
+        }
+        elapsedDays = maxDataDay > 0 ? Math.min(maxDataDay, totalDays) : Math.max(1, Math.min(now.getDate(), totalDays));
+      }
+
+      var perDayQty = curQty / Math.max(1, elapsedDays);
+      var perDayVal = curVal / Math.max(1, elapsedDays);
+      var expAvgQty = perDayQty * totalDays;
+      var expAvgVal = perDayVal * totalDays;
+
+      var expLyQty = null, expLyVal = null, lyNote = 'No LY Data';
+      if (lyData && (lyFullVal > 0 || lyFullQty > 0)) {
+        if (elapsedDays >= totalDays) {
+          expLyQty = curQty;
+          expLyVal = curVal;
+          var grC = lyFullVal > 0 ? (((curVal - lyFullVal) / lyFullVal) * 100).toFixed(1) : '0.0';
+          lyNote = 'Month Closed | vs LY: ' + (Number(grC) >= 0 ? '+' : '') + grC + '%';
+        } else {
+          var lyTillQty = 0, lyTillVal = 0;
+          if (lyData.daily && Array.isArray(lyData.daily.r)) {
+            var lr = lyData.daily.r;
+            for (var j = 0; j < lr.length; j++) {
+              var lm = String(lr[j][0] || '').match(/^\d{4}-\d{2}-(\d{2})$/);
+              if (lm && parseInt(lm[1], 10) <= elapsedDays) {
+                lyTillQty += Number(lr[j][2]) || 0;
+                lyTillVal += Number(lr[j][3]) || 0;
+              }
+            }
+          }
+          if (lyTillVal > 0 && lyTillQty > 0) {
+            expLyVal = lyFullVal * (curVal / lyTillVal);
+            expLyQty = lyFullQty * (curQty / lyTillQty);
+            var trendGr = (((curVal - lyTillVal) / lyTillVal) * 100).toFixed(1);
+            lyNote = 'LY Till Day ' + elapsedDays + ' Trend (' + (Number(trendGr) >= 0 ? '+' : '') + trendGr + '%)';
+          } else {
+            var remDays = totalDays - elapsedDays;
+            expLyVal = curVal + (lyFullVal / totalDays) * remDays;
+            expLyQty = curQty + (lyFullQty / totalDays) * remDays;
+            lyNote = 'Cur + LY Daily Pace (' + remDays + 'd left)';
+          }
+        }
+      }
+
+      return {
+        perDayQty: perDayQty,
+        perDayVal: perDayVal,
+        daySub: 'Avg of ' + elapsedDays + ' / ' + totalDays + ' Days',
+        perMonthQty: curQty,
+        perMonthVal: curVal,
+        monthSub: pKey + (elapsedDays < totalDays ? ' Till Date' : ' Total'),
+        expAvgQty: expAvgQty,
+        expAvgVal: expAvgVal,
+        avgSub: elapsedDays < totalDays ? ('At Current Daily Avg × ' + totalDays + 'd') : ('Closed Month (' + totalDays + 'd)'),
+        expLyQty: expLyQty,
+        expLyVal: expLyVal,
+        lyNote: lyNote
+      };
+    }
+
+    // FULL FINANCIAL YEAR (FULL_FY::YYYY-YY)
+    var fyStr = String(pKey).replace('FULL_FY::', '');
+    var fyStartYr = parseInt(fyStr.split('-')[0], 10) || now.getFullYear();
+    var fyMonths = [
+      'APR-' + fyStartYr, 'MAY-' + fyStartYr, 'JUN-' + fyStartYr, 'JUL-' + fyStartYr,
+      'AUG-' + fyStartYr, 'SEP-' + fyStartYr, 'OCT-' + fyStartYr, 'NOV-' + fyStartYr, 'DEC-' + fyStartYr,
+      'JAN-' + (fyStartYr + 1), 'FEB-' + (fyStartYr + 1), 'MAR-' + (fyStartYr + 1)
+    ];
+
+    var brandBucket = (LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[tKey] && LIVE_PAYLOAD.datasets[tKey][brand])
+      ? LIVE_PAYLOAD.datasets[tKey][brand]
+      : ((tKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[brand]) ? LIVE_PAYLOAD.brands[brand] : {});
+
+    var activeMonths = [];
+    var totalElapsedDays = 0;
+
+    for (var mi = 0; mi < fyMonths.length; mi++) {
+      var mk = fyMonths[mi];
+      var md = brandBucket[mk];
+      var mTot = getPeriodTotalsV1632(md);
+      if (!mTot || (mTot.qty === 0 && mTot.net === 0)) continue;
+      activeMonths.push(mk);
+      var mParts = mk.match(/^([A-Z]{3})-(\d{4})$/);
+      var mN = MON_NUM[mParts[1]], mY = parseInt(mParts[2], 10);
+      var dInM = daysInMonthV1632(mY, mN);
+      var isPastM = (mY < now.getFullYear()) || (mY === now.getFullYear() && mN < (now.getMonth() + 1));
+      if (isPastM) {
+        totalElapsedDays += dInM;
+      } else {
+        var maxD = 0;
+        if (md.daily && Array.isArray(md.daily.r)) {
+          for (var di = 0; di < md.daily.r.length; di++) {
+            var im = String(md.daily.r[di][0] || '').match(/^\d{4}-\d{2}-(\d{2})$/);
+            if (im) maxD = Math.max(maxD, parseInt(im[1], 10));
+          }
+        }
+        totalElapsedDays += (maxD > 0 ? Math.min(maxD, dInM) : Math.max(1, Math.min(now.getDate(), dInM)));
+      }
+    }
+
+    var mCnt = Math.max(1, activeMonths.length);
+    var dCnt = Math.max(1, totalElapsedDays);
+    var perDayQ = curQty / dCnt, perDayV = curVal / dCnt;
+    var perMonQ = curQty / mCnt, perMonV = curVal / mCnt;
+    var expAvgQ = perMonQ * 12, expAvgV = perMonV * 12;
+
+    var expLyQ = null, expLyV = null, lyFyNote = 'No LY Data';
+    if (lyData && (lyFullVal > 0 || lyFullQty > 0)) {
+      var lySameMonthsQty = 0, lySameMonthsVal = 0;
+      for (var am = 0; am < activeMonths.length; am++) {
+        var amParts = activeMonths[am].match(/^([A-Z]{3})-(\d{4})$/);
+        if (!amParts) continue;
+        var lyMk = amParts[1] + '-' + (parseInt(amParts[2], 10) - 1);
+        var lTot = getPeriodTotalsV1632(brandBucket[lyMk]);
+        if (lTot) {
+          lySameMonthsQty += lTot.qty;
+          lySameMonthsVal += lTot.net;
+        }
+      }
+      if (lySameMonthsVal > 0 && lySameMonthsQty > 0) {
+        expLyV = lyFullVal * (curVal / lySameMonthsVal);
+        expLyQ = lyFullQty * (curQty / lySameMonthsQty);
+        var fyGr = (((curVal - lySameMonthsVal) / lySameMonthsVal) * 100).toFixed(1);
+        lyFyNote = 'LY Same ' + mCnt + 'M Trend (' + (Number(fyGr) >= 0 ? '+' : '') + fyGr + '%)';
+      } else {
+        expLyV = curVal + (lyFullVal / 12) * Math.max(0, 12 - mCnt);
+        expLyQ = curQty + (lyFullQty / 12) * Math.max(0, 12 - mCnt);
+        lyFyNote = 'Cur + LY Monthly Pace';
+      }
+    }
+
+    return {
+      perDayQty: perDayQ,
+      perDayVal: perDayV,
+      daySub: 'Avg across ' + dCnt + ' Days',
+      perMonthQty: perMonQ,
+      perMonthVal: perMonV,
+      monthSub: 'Avg of ' + mCnt + ' Active Month(s)',
+      expAvgQty: expAvgQ,
+      expAvgVal: expAvgV,
+      avgSub: 'At Current Monthly Avg × 12M',
+      expLyQty: expLyQ,
+      expLyVal: expLyV,
+      lyNote: lyFyNote
+    };
+  }
+
+  function renderTopBannerPaceBarV1632() {
+    var oldBar = document.getElementById('kritoPaceClosingBarV1632');
+    var card = findTopKpiBannerCardV1632();
+    if (!card) return;
+
+    var info = computePaceAndExpectedClosingV1632();
+    if (!info) {
+      if (oldBar) oldBar.remove();
+      return;
+    }
+
+    if (!oldBar || !card.contains(oldBar)) {
+      if (oldBar) oldBar.remove();
+      oldBar = document.createElement('div');
+      oldBar.id = 'kritoPaceClosingBarV1632';
+      oldBar.className = 'krito-pace-bar-v1631';
+      card.appendChild(oldBar);
+    }
+
+    var lyHtmlVal = (info.expLyVal !== null)
+      ? ('<span class="pv-qty">' + fmtQtyV1632(info.expLyQty) + ' Qty</span><span class="pv-amt">' + fmtInrV1632(info.expLyVal) + '</span>')
+      : '<span style="color:#94a3b8;font-size:12px;">No LY Data</span>';
+
+    oldBar.innerHTML =
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>📅 Per Day Sale</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtyV1632(info.perDayQty) + ' Qty</span><span class="pv-amt">' + fmtInrV1632(info.perDayVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1632(info.daySub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>🗓️ Per Month Sale</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtyV1632(info.perMonthQty) + ' Qty</span><span class="pv-amt">' + fmtInrV1632(info.perMonthVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1632(info.monthSub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>🎯 Expected Closing</span><span class="krito-pace-tag-v1631 krito-pace-tag-avg">Avg Trend</span></div>' +
+        '<div class="krito-pace-val-v1631"><span class="pv-qty">' + fmtQtyV1632(info.expAvgQty) + ' Qty</span><span class="pv-amt">' + fmtInrV1632(info.expAvgVal) + '</span></div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1632(info.avgSub) + '</div>' +
+      '</div>' +
+      '<div class="krito-pace-card-v1631">' +
+        '<div class="krito-pace-lbl-v1631"><span>📈 Expected Closing</span><span class="krito-pace-tag-v1631 krito-pace-tag-ly">LY Trend</span></div>' +
+        '<div class="krito-pace-val-v1631">' + lyHtmlVal + '</div>' +
+        '<div class="krito-pace-sub-v1631">' + escV1632(info.lyNote) + '</div>' +
+      '</div>';
+  }
+
+  if (typeof window.applyAllMultiTypeTablesV1631 === 'function' && !window.applyAllMultiTypeTablesV1631._v1632) {
+    var _origApplyV1632 = window.applyAllMultiTypeTablesV1631;
+    window.applyAllMultiTypeTablesV1631 = function() {
+      var res = _origApplyV1632.apply(this, arguments);
+      renderTopBannerPaceBarV1632();
+      return res;
+    };
+    window.applyAllMultiTypeTablesV1631._v1632 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1632) {
+    var _origRenderAppV1632 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRenderAppV1632.apply(this, arguments);
+      renderTopBannerPaceBarV1632();
+      return res;
+    };
+    window.renderApp._v1632 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    renderTopBannerPaceBarV1632();
+  }
+
+})();
+</script>
 </body>
 </html>
