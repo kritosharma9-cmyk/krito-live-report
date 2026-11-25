@@ -9083,5 +9083,151 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL ADDON ONLY: STRICT RIGHTS SYNC FOR MANAGER SUMMARY & REPORTS (v16.36)
+     - NO need to delete old code — paste right after v16.35 & before </body> in live.html
+     - Shows ONLY the allowed Data Type buttons (Tertiary / Stock / Sell Out / etc.)
+       in Manager-Wise Summary bar & Full-Screen Unit Modal matching the Link's Rights
+     - Shows "Sell Thru" & "KPI's" buttons ONLY if allowed (Default ON for main/existing links)
+     ============================================================================ -->
+<script>
+(function enforceManagerSummaryAndReportRightsV1636() {
+
+  if (window._kritoManagerSummaryRightsV1636Installed) return;
+  window._kritoManagerSummaryRightsV1636Installed = true;
+
+  function getActiveLinkRightsInfoV1636() {
+    var lnk = (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK) ? ACTIVE_LINK : null;
+    var allowedTypes = (lnk && Array.isArray(lnk.dataTypes) && lnk.dataTypes.length > 0)
+      ? lnk.dataTypes
+      : ['TERTIARY'];
+    var r = (lnk && lnk.rights) ? lnk.rights : {};
+    return {
+      allowedSet: new Set(allowedTypes),
+      allowSellThru: (r.showSellThru !== false),
+      allowKpis: (r.showKpis !== false)
+    };
+  }
+
+  function applyRightsToManagerButtonsAndModalsV1636() {
+    var info = getActiveLinkRightsInfoV1636();
+
+    var st = window._kritoMultiTypeStateV1631;
+    var stateChanged = false;
+    if (st) {
+      if (Array.isArray(st.selectedTypes)) {
+        var cleanTypes = st.selectedTypes.filter(function(k) { return info.allowedSet.has(k); });
+        if (cleanTypes.length === 0) cleanTypes = [info.allowedSet.has('TERTIARY') ? 'TERTIARY' : Array.from(info.allowedSet)[0]];
+        if (cleanTypes.length !== st.selectedTypes.length) {
+          st.selectedTypes = cleanTypes;
+          stateChanged = true;
+        }
+      }
+      if (st.activeReport === 'SELL_THRU' && !info.allowSellThru) {
+        st.activeReport = '';
+        stateChanged = true;
+      }
+      if (st.activeReport === 'KPIS' && !info.allowKpis) {
+        st.activeReport = '';
+        stateChanged = true;
+      }
+    }
+
+    var bar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (bar) {
+      var typeBtns = bar.querySelectorAll('[data-mtype-key-v1631]');
+      for (var i = 0; i < typeBtns.length; i++) {
+        var tk = typeBtns[i].getAttribute('data-mtype-key-v1631');
+        if (!info.allowedSet.has(tk)) {
+          typeBtns[i].remove();
+        }
+      }
+
+      var stBtn = bar.querySelector('[data-mtype-report-v1631="SELL_THRU"]');
+      if (stBtn && !info.allowSellThru) stBtn.remove();
+
+      var kpBtn = bar.querySelector('[data-mtype-report-v1631="KPIS"]');
+      if (kpBtn && !info.allowKpis) kpBtn.remove();
+    }
+
+    if (!info.allowSellThru || !info.allowKpis) {
+      var repCard = document.getElementById('kritoReportsPanelV1631');
+      if (repCard && st && !st.activeReport) repCard.remove();
+    }
+
+    var uModal = document.getElementById('kritoUnitFsModalRootV1634');
+    if (uModal) {
+      var uBtns = uModal.querySelectorAll('[data-ufm-type-v1634]');
+      for (var j = 0; j < uBtns.length; j++) {
+        var uk = uBtns[j].getAttribute('data-ufm-type-v1634');
+        if (!info.allowedSet.has(uk)) {
+          uBtns[j].remove();
+        }
+      }
+    }
+
+    if (stateChanged && typeof window.applyAllMultiTypeTablesV1631 === 'function' && !applyRightsToManagerButtonsAndModalsV1636._reenter) {
+      applyRightsToManagerButtonsAndModalsV1636._reenter = true;
+      try { window.applyAllMultiTypeTablesV1631(); } finally { applyRightsToManagerButtonsAndModalsV1636._reenter = false; }
+    }
+  }
+
+  if (typeof window.applyAllMultiTypeTablesV1631 === 'function' && !window.applyAllMultiTypeTablesV1631._v1636) {
+    var _origApply36 = window.applyAllMultiTypeTablesV1631;
+    window.applyAllMultiTypeTablesV1631 = function() {
+      var res = _origApply36.apply(this, arguments);
+      applyRightsToManagerButtonsAndModalsV1636();
+      return res;
+    };
+    window.applyAllMultiTypeTablesV1631._v1636 = true;
+  }
+
+  if (typeof window.renderKritoReportsPanelV1631 === 'function' && !window.renderKritoReportsPanelV1631._v1636) {
+    var _origRep36 = window.renderKritoReportsPanelV1631;
+    window.renderKritoReportsPanelV1631 = function() {
+      var res = _origRep36.apply(this, arguments);
+      applyRightsToManagerButtonsAndModalsV1636();
+      return res;
+    };
+    window.renderKritoReportsPanelV1631._v1636 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1636) {
+    var _origRender36 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRender36.apply(this, arguments);
+      applyRightsToManagerButtonsAndModalsV1636();
+      return res;
+    };
+    window.renderApp._v1636 = true;
+  }
+
+  document.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+    if (
+      t.closest('[data-mtype-key-v1631]') ||
+      t.closest('[data-mtype-report-v1631]') ||
+      t.closest('#kritoMultiUnitBtnV1634') ||
+      t.closest('[data-toggle-sub-unit-v1633]') ||
+      t.closest('[data-ufm-type-v1634]')
+    ) {
+      setTimeout(applyRightsToManagerButtonsAndModalsV1636, 0);
+      setTimeout(applyRightsToManagerButtonsAndModalsV1636, 40);
+    }
+  }, true);
+
+  var uRoot = document.getElementById('kritoUnitFsModalRootV1634');
+  if (uRoot && typeof MutationObserver === 'function') {
+    var obs = new MutationObserver(function() { applyRightsToManagerButtonsAndModalsV1636(); });
+    obs.observe(uRoot, { childList: true });
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    applyRightsToManagerButtonsAndModalsV1636();
+  }
+
+})();
+</script>
 </body>
 </html>
