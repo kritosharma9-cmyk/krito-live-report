@@ -11054,5 +11054,1438 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK FIXES ONLY (v16.38 — live.html ONLY)
+     - NO need to delete old code — paste right after v16.37B & before </body>
+     - FIX 1: Unit-exact Date Wise + per-date Unit/Location (+N) breakdown ready
+     - FIX 2: Fixes KPI's & Sell Thru disappearing headers/Unit/DateWise/FullScreen
+              on Cluster <-> Party switch + adds "Link Default <-> Show All" toggle
+     - FIX 3: Connected Multi-Month Stock Selector in Manager-Wise Summary &
+              Individual Store Data (view previous/multiple Stock months in current view)
+     ============================================================================ -->
+<script>
+(function installKritoLiveFixesV1638() {
+
+  if (window._kritoLiveFixesV1638Installed) return;
+  window._kritoLiveFixesV1638Installed = true;
+
+  var css = [
+    /* 1. Header Data Mode Toggle Button */
+    '.krito-hdrmode-btn-v1638{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:5px 11px;border-radius:8px;border:1.5px solid #0f766e;background:#f0fdfa;color:#115e59;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;vertical-align:middle;}',
+    '.krito-hdrmode-btn-v1638:hover{background:#ccfbf1;}',
+    '.krito-hdrmode-btn-v1638.is-all{background:#0f766e;color:#ffffff;border-color:#0d9488;box-shadow:0 2px 6px rgba(15,118,110,0.28);}',
+    '.krito-hdrmode-tag-v1638{font-size:9.5px;padding:1px 6px;border-radius:99px;background:rgba(15,118,110,0.14);color:#115e59;font-weight:800;}',
+    '.krito-hdrmode-btn-v1638.is-all .krito-hdrmode-tag-v1638{background:rgba(255,255,255,0.22);color:#ffffff;}',
+
+    /* 2. Connected Stock Multi-Month Picker (Manager Summary + Store Data) */
+    '.krito-stkmon-wrap-v1638{position:relative;display:inline-flex;align-items:center;vertical-align:middle;}',
+    '.krito-stkmon-btn-v1638{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:7px;border:1.5px solid #0284c7;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;line-height:1.25;}',
+    '.krito-stkmon-btn-v1638:hover{background:#bae6fd;}',
+    '.krito-stkmon-btn-v1638.is-custom{background:#0284c7;color:#ffffff;border-color:#0369a1;box-shadow:0 2px 6px rgba(2,132,199,0.28);}',
+    '.krito-stkmon-menu-v1638{position:absolute;top:calc(100% + 6px);left:0;min-width:230px;max-width:290px;max-height:300px;overflow-y:auto;background:#ffffff;border:1.5px solid #38bdf8;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,0.2);padding:8px;z-index:100025;display:none;}',
+    '.krito-stkmon-menu-v1638.is-open{display:block;}',
+    '.krito-stkmon-head-v1638{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:800;color:#0f172a;}',
+    '.krito-stkmon-head-v1638 button{background:#0284c7;color:#ffffff;border:none;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer;}',
+    '.krito-stkmon-item-v1638{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px;border-radius:6px;font-size:11.5px;font-weight:700;color:#334155;cursor:pointer;user-select:none;}',
+    '.krito-stkmon-item-v1638:hover{background:#f0f9ff;}',
+    '.krito-stkmon-item-v1638 input{margin:0;width:14px;height:14px;cursor:pointer;}',
+    '.krito-stkmon-qty-v1638{font-size:10px;color:#0284c7;font-weight:800;background:#e0f2fe;padding:1px 6px;border-radius:99px;}',
+
+    /* 3. Date-Wise Unit Breakdown Inline Sub-Table */
+    'tr.krito-dw-unit-subrow-v1638 > td{background:#f0f9ff !important;padding:8px 14px !important;white-space:normal !important;border-bottom:1.5px solid #7dd3fc !important;}',
+    '.krito-dw-unit-box-v1638{background:#ffffff;border:1px solid #93c5fd;border-radius:9px;overflow:hidden;}',
+    '.krito-dw-unit-head-v1638{background:#eff6ff;color:#1e40af;padding:6px 10px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #bfdbfe;}',
+    '.krito-dw-unit-tbl-v1638{width:100%;border-collapse:collapse;font-size:11px;}',
+    '.krito-dw-unit-tbl-v1638 th{background:#f8fafc;color:#334155;padding:5px 8px;border-bottom:1px solid #cbd5e1;text-align:left;font-weight:800;}',
+    '.krito-dw-unit-tbl-v1638 td{padding:5px 8px;border-bottom:1px solid #f1f5f9;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoLiveFixesCssV1638';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  var HEADER_DATA_MODE = 'DEFAULT';
+  var ORIG_ALLOWED_HDR_VALS_MAP = {};
+
+  var STOCK_MONTHS_STATE = { brand: '', customMonths: [], openMenuId: '' };
+  window._kritoStockMonthsStateV1638 = STOCK_MONTHS_STATE;
+
+  var DW_MODAL = {
+    open: false, mode: 'STANDARD', typeKey: 'TERTIARY', scope: 'PARTY',
+    party: '', unit: '', cluster: '', search: '', openDateIso: ''
+  };
+
+  var dwModalRoot = document.getElementById('kritoDateWiseDrillModalRootV1637');
+  if (!dwModalRoot) {
+    dwModalRoot = document.createElement('div');
+    dwModalRoot.id = 'kritoDateWiseDrillModalRootV1637';
+    document.body.appendChild(dwModalRoot);
+  }
+
+  function esc38(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ38(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI38(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtDec38(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(2) : '0.00';
+  }
+
+  function growthHtml38(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly) return cur > 0 ? '<span style="color:#0284c7;font-weight:800;">★ NEW</span>' : '0.0%';
+    var p = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    var col = Number(p) >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (Number(p) >= 0 ? '+' : '') + p + '%</span>';
+  }
+
+  function sellThruBadge38(tert, base) {
+    if (!base || base <= 0) return '<span style="color:#94a3b8;font-weight:700;">-</span>';
+    var pct = (tert / base) * 100;
+    var cls = pct >= 60 ? 'krito-st-hi' : (pct >= 30 ? 'krito-st-mid' : 'krito-st-lo');
+    return '<span class="krito-st-pct-v1631 ' + cls + '">' + pct.toFixed(1) + '%</span>';
+  }
+
+  function getCaseEntry38(mapObj, key) {
+    if (!mapObj || !key) return null;
+    if (mapObj[key]) return mapObj[key];
+    var up = String(key).trim().toUpperCase();
+    var ks = Object.keys(mapObj);
+    for (var i = 0; i < ks.length; i++) {
+      if (String(ks[i]).trim().toUpperCase() === up) return mapObj[ks[i]];
+    }
+    return null;
+  }
+
+  function getRawPeriodObj38(typeKey, periodOpt) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return null;
+      var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var pk = periodOpt || (typeof ACTIVE_MONTH !== 'undefined' ? ACTIVE_MONTH : '');
+      var ds = LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey];
+      if (ds && ds[br] && ds[br][pk]) return ds[br][pk];
+      if (typeKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[br] && LIVE_PAYLOAD.brands[br][pk]) {
+        return LIVE_PAYLOAD.brands[br][pk];
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function getPinnedHeaders38() {
+    var out = [];
+    var tb = document.getElementById('liveStoreTbody');
+    var tbl = tb ? tb.closest('table') : null;
+    var tr = tbl ? tbl.querySelector('thead tr') : null;
+    if (tr) {
+      for (var i = 0; i < tr.children.length; i++) {
+        var th = tr.children[i];
+        var txt = th.textContent || '';
+        var raw = (th.getAttribute('data-orig-title-v1624') || txt).replace(/📌|❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+        if (txt.indexOf('📌') !== -1 || raw.indexOf('Master_') === 0) out.push(raw);
+      }
+    }
+    return out;
+  }
+
+  // =========================================================================
+  // FEATURE 2B: HEADER DATA MODE ('DEFAULT' = LINK CREATED RIGHTS | 'ALL' = ALL DATA)
+  // =========================================================================
+  function snapshotOriginalLinkAllowedHeaderVals38() {
+    try {
+      if (typeof ACTIVE_LINK === 'undefined' || !ACTIVE_LINK || !ACTIVE_LINK.id) return;
+      var lid = ACTIVE_LINK.id;
+      if (!(lid in ORIG_ALLOWED_HDR_VALS_MAP)) {
+        ORIG_ALLOWED_HDR_VALS_MAP[lid] = ACTIVE_LINK.allowedHeaderValues
+          ? JSON.parse(JSON.stringify(ACTIVE_LINK.allowedHeaderValues))
+          : {};
+      }
+    } catch (e) {}
+  }
+
+  function getEffectiveHeaderAllowedSet38(headerName) {
+    if (HEADER_DATA_MODE === 'ALL') return null;
+    snapshotOriginalLinkAllowedHeaderVals38();
+    try {
+      if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && SELECTED_ATTR_SUBVALS[headerName] instanceof Set && SELECTED_ATTR_SUBVALS[headerName].size > 0) {
+        return SELECTED_ATTR_SUBVALS[headerName];
+      }
+      if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.id) {
+        var origMap = ORIG_ALLOWED_HDR_VALS_MAP[ACTIVE_LINK.id];
+        if (origMap && Array.isArray(origMap[headerName]) && origMap[headerName].length > 0) {
+          return new Set(origMap[headerName]);
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function sumAttrMapWithMode38(valMap, headerName) {
+    if (!valMap || typeof valMap !== 'object') return { qty: 0, count: 0, entries: [] };
+    var allowSet = getEffectiveHeaderAllowedSet38(headerName);
+    var sum = 0, entries = [];
+    var ks = Object.keys(valMap);
+    for (var i = 0; i < ks.length; i++) {
+      var v = ks[i];
+      if (allowSet && !allowSet.has(v)) continue;
+      var q = Number(valMap[v]) || 0;
+      if (q === 0) continue;
+      sum += q;
+      entries.push({ val: v, qty: q });
+    }
+    entries.sort(function(a, b) { return b.qty - a.qty; });
+    return { qty: sum, count: entries.length, entries: entries };
+  }
+
+  function toggleHeaderDataMode38() {
+    snapshotOriginalLinkAllowedHeaderVals38();
+    HEADER_DATA_MODE = (HEADER_DATA_MODE === 'ALL') ? 'DEFAULT' : 'ALL';
+
+    try {
+      var lid = (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK && ACTIVE_LINK.id) ? ACTIVE_LINK.id : '';
+      var origMap = lid ? (ORIG_ALLOWED_HDR_VALS_MAP[lid] || {}) : {};
+      var mData = getRawPeriodObj38(typeof ACTIVE_DATA_TYPE !== 'undefined' ? ACTIVE_DATA_TYPE : 'TERTIARY');
+
+      if (HEADER_DATA_MODE === 'ALL') {
+        if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK) ACTIVE_LINK.allowedHeaderValues = {};
+        if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && mData && mData.attributes) {
+          Object.keys(mData.attributes).forEach(function(h) {
+            var vals = Array.isArray(mData.attributes[h].values) ? mData.attributes[h].values : Object.keys(mData.attributes[h].totals || {});
+            SELECTED_ATTR_SUBVALS[h] = new Set(vals);
+          });
+        }
+      } else {
+        if (typeof ACTIVE_LINK !== 'undefined' && ACTIVE_LINK) ACTIVE_LINK.allowedHeaderValues = JSON.parse(JSON.stringify(origMap));
+        if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && mData && mData.attributes) {
+          Object.keys(mData.attributes).forEach(function(h) {
+            if (Array.isArray(origMap[h]) && origMap[h].length > 0) {
+              SELECTED_ATTR_SUBVALS[h] = new Set(origMap[h]);
+            } else {
+              var vals = Array.isArray(mData.attributes[h].values) ? mData.attributes[h].values : Object.keys(mData.attributes[h].totals || {});
+              SELECTED_ATTR_SUBVALS[h] = new Set(vals);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (typeof window.renderApp === 'function') window.renderApp();
+    else runAllV1638();
+  }
+
+  function makeHeaderModeBtnHtml38() {
+    var isAll = (HEADER_DATA_MODE === 'ALL');
+    return isAll
+      ? '<span>🌐 All Header Data</span><span class="krito-hdrmode-tag-v1638">⇄ Link Default</span>'
+      : '<span>🔒 Link Default Data</span><span class="krito-hdrmode-tag-v1638">⇄ Show All</span>';
+  }
+
+  function mountHeaderDataModeToggleBtn38() {
+    snapshotOriginalLinkAllowedHeaderVals38();
+    var attrBar = document.querySelector('.attr-bar');
+    if (attrBar) {
+      var anchor = document.getElementById('kritoHeaderLayoutToggleBtnV1624') || attrBar.querySelector('select');
+      if (anchor) {
+        var btn = document.getElementById('kritoHeaderDataModeBtnV1638');
+        if (!btn) {
+          btn = document.createElement('button');
+          btn.id = 'kritoHeaderDataModeBtnV1638';
+          btn.type = 'button';
+          btn.className = 'krito-hdrmode-btn-v1638';
+          btn.onclick = function(ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            toggleHeaderDataMode38();
+          };
+        }
+        btn.classList.toggle('is-all', HEADER_DATA_MODE === 'ALL');
+        btn.innerHTML = makeHeaderModeBtnHtml38();
+        btn.title = HEADER_DATA_MODE === 'ALL'
+          ? 'Showing ALL Header Data (Click to restore Link Creation Default)'
+          : 'Showing Link Creation Default Header Data (Click to show ALL Header Data)';
+        if (btn.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', btn);
+      }
+    }
+  }
+
+  // =========================================================================
+  // FEATURE 3: CONNECTED MULTI-MONTH STOCK SELECTOR (MANAGER SUMMARY + STORE DATA)
+  // =========================================================================
+  function getAvailableStockMonthsForBrand38() {
+    var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var ds = (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD && LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets.STOCK)
+      ? LIVE_PAYLOAD.datasets.STOCK[br] : null;
+    if (!ds) return [];
+    return Object.keys(ds).filter(function(pk) {
+      return /^[A-Z]{3}-\d{4}$/.test(pk);
+    }).sort(function(a, b) {
+      var ma = a.match(/^([A-Z]{3})-(\d{4})$/);
+      var mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+      var ka = ma ? (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0)) : 0;
+      var kb = mb ? (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) : 0;
+      return kb - ka;
+    });
+  }
+
+  function getActiveStockMonthsList38() {
+    var curBrand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    if (STOCK_MONTHS_STATE.brand !== curBrand) {
+      STOCK_MONTHS_STATE.brand = curBrand;
+      STOCK_MONTHS_STATE.customMonths = [];
+    }
+    var avail = getAvailableStockMonthsForBrand38();
+    var validCustom = STOCK_MONTHS_STATE.customMonths.filter(function(m) { return avail.indexOf(m) !== -1; });
+    STOCK_MONTHS_STATE.customMonths = validCustom;
+    if (validCustom.length > 0) return validCustom;
+    var curM = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    return curM ? [curM] : avail.slice(0, 1);
+  }
+
+  function isCustomStockMonthActive38() {
+    var list = getActiveStockMonthsList38();
+    var curM = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    return list.length > 1 || (list.length === 1 && list[0] !== curM);
+  }
+
+  function getStockMonthsShortTag38() {
+    var list = getActiveStockMonthsList38();
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    return list.length + ' Months';
+  }
+
+  function getAggregatedStockPeriodData38(periodListOpt) {
+    var months = periodListOpt || getActiveStockMonthsList38();
+    if (!months || months.length === 0) return null;
+    if (months.length === 1) return getRawPeriodObj38('STOCK', months[0]);
+
+    var mgrMap = {}, mgrStoresSet = {}, storeMap = {}, attrMap = {};
+    var dailyRows = [], dailyPDict = [], dailyPIdx = {}, dailyCDict = [], dailyCIdx = {};
+    var uDailyRows = [], uDailyUDict = [], uDailyUIdx = {};
+
+    for (var mi = 0; mi < months.length; mi++) {
+      var pObj = getRawPeriodObj38('STOCK', months[mi]);
+      if (!pObj) continue;
+
+      if (Array.isArray(pObj.stores)) {
+        for (var si = 0; si < pObj.stores.length; si++) {
+          var st = pObj.stores[si];
+          if (!st || !st.party) continue;
+          var pUp = String(st.party).trim().toUpperCase();
+          var mName = st.manager || 'Unassigned';
+          var mUp = mName.trim().toUpperCase();
+
+          if (!mgrMap[mUp]) { mgrMap[mUp] = { manager: mName, stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 }; mgrStoresSet[mUp] = new Set(); }
+          mgrStoresSet[mUp].add(pUp);
+          mgrMap[mUp].qty += Number(st.qty) || 0; mgrMap[mUp].net += Number(st.net) || 0;
+          mgrMap[mUp].mrp += Number(st.mrp) || 0; mgrMap[mUp].disc += Number(st.disc) || 0;
+
+          if (!storeMap[pUp]) {
+            storeMap[pUp] = {
+              party: st.party, manager: mName, qty: 0, net: 0, mrp: 0, disc: 0,
+              lastUpd: st.lastUpd || '', lastUpdTs: Number(st.lastUpdTs) || 0, _subMap: {}
+            };
+          }
+          var dst = storeMap[pUp];
+          dst.qty += Number(st.qty) || 0; dst.net += Number(st.net) || 0;
+          dst.mrp += Number(st.mrp) || 0; dst.disc += Number(st.disc) || 0;
+          if ((Number(st.lastUpdTs) || 0) >= dst.lastUpdTs && st.lastUpd) {
+            dst.lastUpd = st.lastUpd; dst.lastUpdTs = Number(st.lastUpdTs) || 0;
+          }
+
+          var subs = (Array.isArray(st.subStores) && st.subStores.length > 0)
+            ? st.subStores
+            : [{ store: st.party, manager: mName, qty: st.qty || 0, net: st.net || 0, mrp: st.mrp || 0, disc: st.disc || 0, attrs: null }];
+          for (var ui = 0; ui < subs.length; ui++) {
+            var su = subs[ui];
+            var uUp = String(su.store || st.party).trim().toUpperCase();
+            if (!dst._subMap[uUp]) dst._subMap[uUp] = { store: su.store || st.party, manager: su.manager || mName, qty: 0, net: 0, mrp: 0, disc: 0, attrs: {} };
+            var du = dst._subMap[uUp];
+            du.qty += Number(su.qty) || 0; du.net += Number(su.net) || 0;
+            du.mrp += Number(su.mrp) || 0; du.disc += Number(su.disc) || 0;
+            if (su.attrs && typeof su.attrs === 'object') {
+              Object.keys(su.attrs).forEach(function(hName) {
+                if (!du.attrs[hName]) du.attrs[hName] = {};
+                Object.keys(su.attrs[hName] || {}).forEach(function(v) {
+                  du.attrs[hName][v] = (du.attrs[hName][v] || 0) + (Number(su.attrs[hName][v]) || 0);
+                });
+              });
+            }
+          }
+        }
+      }
+
+      if (pObj.attributes && typeof pObj.attributes === 'object') {
+        Object.keys(pObj.attributes).forEach(function(hName) {
+          var srcA = pObj.attributes[hName];
+          if (!srcA) return;
+          if (!attrMap[hName]) attrMap[hName] = { values: [], _valSet: new Set(), totals: {}, byManager: {}, byStore: {} };
+          var dstA = attrMap[hName];
+          Object.keys(srcA.totals || {}).forEach(function(v) {
+            dstA._valSet.add(v);
+            dstA.totals[v] = (dstA.totals[v] || 0) + (Number(srcA.totals[v]) || 0);
+          });
+          Object.keys(srcA.byManager || {}).forEach(function(mk) {
+            if (!dstA.byManager[mk]) dstA.byManager[mk] = {};
+            Object.keys(srcA.byManager[mk] || {}).forEach(function(v) {
+              dstA.byManager[mk][v] = (dstA.byManager[mk][v] || 0) + (Number(srcA.byManager[mk][v]) || 0);
+            });
+          });
+          Object.keys(srcA.byStore || {}).forEach(function(sk) {
+            if (!dstA.byStore[sk]) dstA.byStore[sk] = {};
+            Object.keys(srcA.byStore[sk] || {}).forEach(function(v) {
+              dstA.byStore[sk][v] = (dstA.byStore[sk][v] || 0) + (Number(srcA.byStore[sk][v]) || 0);
+            });
+          });
+        });
+      }
+
+      if (pObj.daily && Array.isArray(pObj.daily.r)) {
+        var sp = pObj.daily.p || [], sc = pObj.daily.c || [];
+        for (var di = 0; di < pObj.daily.r.length; di++) {
+          var dr = pObj.daily.r[di];
+          var remapped = (Array.isArray(dr[6]) ? dr[6] : []).map(function(pe) {
+            var pn = sp[pe[0]] || 'UNKNOWN', cn = sc[pe[1]] || 'UNASSIGNED';
+            var pi = dailyPIdx[pn]; if (pi === undefined) { pi = dailyPDict.length; dailyPDict.push(pn); dailyPIdx[pn] = pi; }
+            var ci = dailyCIdx[cn]; if (ci === undefined) { ci = dailyCDict.length; dailyCDict.push(cn); dailyCIdx[cn] = ci; }
+            return [pi, ci, pe[2], pe[3], pe[4], pe[5]];
+          });
+          dailyRows.push([dr[0], dr[1], dr[2], dr[3], dr[4], dr[5], remapped]);
+        }
+      }
+
+      if (pObj.unitDaily && Array.isArray(pObj.unitDaily.r)) {
+        var suL = pObj.unitDaily.u || [];
+        for (var udi = 0; udi < pObj.unitDaily.r.length; udi++) {
+          var udr = pObj.unitDaily.r[udi];
+          var uRemap = (Array.isArray(udr[2]) ? udr[2] : []).map(function(ue) {
+            var un = suL[ue[0]] || '';
+            var ni = uDailyUIdx[un]; if (ni === undefined) { ni = uDailyUDict.length; uDailyUDict.push(un); uDailyUIdx[un] = ni; }
+            return [ni, ue[1], ue[2], ue[3], ue[4], ue[5] || 0];
+          });
+          uDailyRows.push([udr[0], udr[1], uRemap]);
+        }
+      }
+    }
+
+    var managersArr = Object.keys(mgrMap).map(function(mk) {
+      var m = mgrMap[mk];
+      m.stores = mgrStoresSet[mk] ? mgrStoresSet[mk].size : 0;
+      m.discPct = m.mrp > 0 ? Number(((m.disc / m.mrp) * 100).toFixed(2)) : 0;
+      return m;
+    });
+
+    var storesArr = Object.values(storeMap).map(function(st) {
+      st.discPct = st.mrp > 0 ? Number(((st.disc / st.mrp) * 100).toFixed(2)) : 0;
+      st.subStores = Object.values(st._subMap).sort(function(a, b) { return (b.net || b.qty) - (a.net || a.qty); });
+      delete st._subMap;
+      return st;
+    });
+
+    Object.keys(attrMap).forEach(function(h) {
+      attrMap[h].values = Array.from(attrMap[h]._valSet);
+      delete attrMap[h]._valSet;
+    });
+
+    dailyRows.sort(function(a, b) { return String(a[0]).localeCompare(String(b[0])); });
+    uDailyRows.sort(function(a, b) { return String(a[0]).localeCompare(String(b[0])); });
+
+    return {
+      managers: managersArr, stores: storesArr, attributes: attrMap,
+      daily: { mode: 'DATE', p: dailyPDict, c: dailyCDict, r: dailyRows },
+      unitDaily: uDailyRows.length > 0 ? { u: uDailyUDict, r: uDailyRows } : null
+    };
+  }
+
+  function getStockLyPeriodData38() {
+    var months = getActiveStockMonthsList38();
+    if (!months || months.length === 0) return null;
+    var lyMonths = months.map(function(m) {
+      if (typeof getLastYearPeriodKey === 'function') return getLastYearPeriodKey(m);
+      var mm = String(m).match(/^([A-Z]{3})-(\d{4})$/);
+      return mm ? (mm[1] + '-' + (parseInt(mm[2], 10) - 1)) : '';
+    }).filter(Boolean);
+    return lyMonths.length > 0 ? getAggregatedStockPeriodData38(lyMonths) : null;
+  }
+
+  function isStockTypeSelectedInManagerBar38() {
+    var st = window._kritoMultiTypeStateV1631;
+    var isTert = (typeof ACTIVE_DATA_TYPE === 'undefined' || ACTIVE_DATA_TYPE === 'TERTIARY');
+    return isTert && st && Array.isArray(st.selectedTypes) && st.selectedTypes.indexOf('STOCK') !== -1;
+  }
+
+  function buildStockMonthPickerHtml38(menuId) {
+    var avail = getAvailableStockMonthsForBrand38();
+    var activeList = getActiveStockMonthsList38();
+    var activeSet = new Set(activeList);
+    var isCustom = isCustomStockMonthActive38();
+    var isOpen = (STOCK_MONTHS_STATE.openMenuId === menuId);
+    var lbl = isCustom
+      ? ('📦 Stock: ' + (activeList.length === 1 ? activeList[0] : (activeList.length + ' Months')) + ' ▼')
+      : ('📦 Stock Month: ' + (activeList[0] || '-') + ' ▼');
+
+    var itemsHtml = avail.map(function(m) {
+      var pObj = getRawPeriodObj38('STOCK', m);
+      var q = (pObj && pObj.grandTotal) ? (Number(pObj.grandTotal.qty) || 0) : 0;
+      var chk = activeSet.has(m);
+      return '<label class="krito-stkmon-item-v1638">' +
+        '<span style="display:inline-flex;align-items:center;gap:6px;"><input type="checkbox" data-stkmon-chk-v1638="' + esc38(m) + '"' + (chk ? ' checked' : '') + '><span>' + esc38(m) + '</span></span>' +
+        '<span class="krito-stkmon-qty-v1638">' + fmtQ38(q) + ' Qty</span>' +
+      '</label>';
+    }).join('') || '<div style="padding:6px;font-size:11px;color:#64748b;">No Stock months uploaded yet.</div>';
+
+    return '<button type="button" class="krito-stkmon-btn-v1638' + (isCustom ? ' is-custom' : '') + '" data-stkmon-toggle-v1638="' + menuId + '" title="Select 1 or Multiple Months for Stock Data (Synced across Manager Summary &amp; Individual Store Data)">' + esc38(lbl) + '</button>' +
+      '<div class="krito-stkmon-menu-v1638' + (isOpen ? ' is-open' : '') + '">' +
+        '<div class="krito-stkmon-head-v1638">' +
+          '<span>Select Stock Month(s)</span>' +
+          '<button type="button" data-stkmon-reset-v1638="1">Current</button>' +
+        '</div>' +
+        itemsHtml +
+      '</div>';
+  }
+
+  function mountConnectedStockMonthPickers38() {
+    var showPicker = isStockTypeSelectedInManagerBar38() && getAvailableStockMonthsForBrand38().length > 0;
+
+    // 1. Inside Manager-Wise Summary button bar (right next to ☑️ Stock)
+    var mgrWrap = document.getElementById('kritoStkMonWrapMgrV1638');
+    var bar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    var stkBtn = bar ? bar.querySelector('[data-mtype-key-v1631="STOCK"]') : null;
+
+    if (!showPicker || !stkBtn) {
+      if (mgrWrap) mgrWrap.remove();
+    } else {
+      if (!mgrWrap) {
+        mgrWrap = document.createElement('span');
+        mgrWrap.id = 'kritoStkMonWrapMgrV1638';
+        mgrWrap.className = 'krito-stkmon-wrap-v1638';
+      }
+      mgrWrap.innerHTML = buildStockMonthPickerHtml38('MGR');
+      if (mgrWrap.previousElementSibling !== stkBtn) stkBtn.insertAdjacentElement('afterend', mgrWrap);
+    }
+
+    // 2. Synced Mirror inside Individual Store Data toolbar (100% Connected)
+    var storeWrap = document.getElementById('kritoStkMonWrapStoreV1638');
+    var anchor = document.getElementById('kritoMultiUnitBtnV1634') || document.getElementById('kritoHideColWrapV1626') || document.getElementById('kritoStoreExpandFsBtnV1624');
+
+    if (!showPicker || !anchor || !anchor.parentElement) {
+      if (storeWrap) storeWrap.remove();
+    } else {
+      if (!storeWrap) {
+        storeWrap = document.createElement('span');
+        storeWrap.id = 'kritoStkMonWrapStoreV1638';
+        storeWrap.className = 'krito-stkmon-wrap-v1638';
+        storeWrap.style.marginLeft = '8px';
+      }
+      storeWrap.innerHTML = buildStockMonthPickerHtml38('STORE');
+      if (storeWrap.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', storeWrap);
+    }
+  }
+
+  function updateStockSubRowsInManagerAndStoreTables38() {
+    if (!isStockTypeSelectedInManagerBar38()) return;
+    var isCustom = isCustomStockMonthActive38();
+    var pData = getAggregatedStockPeriodData38();
+    var lyData = getStockLyPeriodData38();
+    var badgeSuffix = isCustom ? (' • ' + getStockMonthsShortTag38()) : '';
+
+    var mgrMap = {}, mgrTot = { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 };
+    var lyMgrMap = {}, lyMgrTot = { qty: 0, net: 0 };
+    var storeMap = {}, storeTot = { qty: 0, net: 0, mrp: 0, disc: 0 };
+    var lyStoreMap = {}, lyStoreTot = { qty: 0, net: 0 };
+
+    if (pData && Array.isArray(pData.managers)) {
+      pData.managers.forEach(function(m) {
+        var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+        mgrMap[mk] = m;
+        mgrTot.stores += Number(m.stores) || 0; mgrTot.qty += Number(m.qty) || 0;
+        mgrTot.net += Number(m.net) || 0; mgrTot.mrp += Number(m.mrp) || 0; mgrTot.disc += Number(m.disc) || 0;
+      });
+    }
+    if (lyData && Array.isArray(lyData.managers)) {
+      lyData.managers.forEach(function(m) {
+        var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+        lyMgrMap[mk] = m; lyMgrTot.qty += Number(m.qty) || 0; lyMgrTot.net += Number(m.net) || 0;
+      });
+    }
+    if (pData && Array.isArray(pData.stores)) {
+      pData.stores.forEach(function(s) {
+        var sk = String(s.party || '').trim().toUpperCase();
+        storeMap[sk] = s;
+        storeTot.qty += Number(s.qty) || 0; storeTot.net += Number(s.net) || 0;
+        storeTot.mrp += Number(s.mrp) || 0; storeTot.disc += Number(s.disc) || 0;
+      });
+    }
+    if (lyData && Array.isArray(lyData.stores)) {
+      lyData.stores.forEach(function(s) {
+        var sk = String(s.party || '').trim().toUpperCase();
+        lyStoreMap[sk] = s; lyStoreTot.qty += Number(s.qty) || 0; lyStoreTot.net += Number(s.net) || 0;
+      });
+    }
+
+    function updateTableStockRows(table, isStoreTable) {
+      if (!table) return;
+      var theadRow = table.querySelector('thead tr');
+      var tbody = table.querySelector('tbody');
+      if (!theadRow || !tbody) return;
+
+      var cols = Array.from(theadRow.children).map(function(th, idx) {
+        var raw = (th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '')
+          .replace(/❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+        var cleanHdr = raw.replace(/📌/g, '').trim();
+        var u = cleanHdr.toUpperCase();
+        var kind = 'OTHER';
+        if (th.classList.contains('krito-th-type-v1631') || u === 'TYPE') kind = 'TYPE';
+        else if (u.indexOf('PARTY / STORE') !== -1) kind = 'PARTY';
+        else if (u === 'MANAGER') kind = 'MANAGER';
+        else if (u === 'STORES') kind = 'STORES';
+        else if (u.indexOf('UNIT / LOCATION') !== -1) kind = 'UNIT';
+        else if (u === 'DATE WISE') kind = 'DATE_WISE';
+        else if (u.indexOf('LAST REPORT DATE') !== -1) kind = 'LAST_UPD';
+        else if (u.indexOf('LY QTY') === 0) kind = 'LY_QTY';
+        else if (u.indexOf('QTY GROWTH') !== -1) kind = 'QTY_GR';
+        else if (u.indexOf('LY ') === 0) kind = 'LY_VAL';
+        else if (u.indexOf('VAL GROWTH') !== -1) kind = 'VAL_GR';
+        else if (u === 'QTY') kind = 'QTY';
+        else if (u === 'MRP') kind = 'MRP';
+        else if (u.indexOf('DIS %') !== -1) kind = 'DIS_PCT';
+        else if (u.indexOf('NET VALUE') !== -1 || u.indexOf('VALUE') !== -1) kind = 'VALUE';
+        else if ((th.textContent || '').indexOf('📌') !== -1 || cleanHdr.indexOf('Master_') === 0) kind = 'PINNED';
+        return { idx: idx, kind: kind, hdrName: cleanHdr };
+      });
+
+      var partyCol = cols.find(function(c) { return c.kind === 'PARTY'; });
+      var rows = Array.from(tbody.children);
+      var lastEntity = '';
+
+      for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        if (!tr || tr.tagName !== 'TR') continue;
+        var isSub = tr.classList.contains('krito-type-subrow-v1631');
+        var isTot = tr.classList.contains('total-row') || tr.classList.contains('is-total-sub');
+
+        if (!isSub && !isTot) {
+          if (isStoreTable && partyCol && tr.children[partyCol.idx]) {
+            var b = tr.children[partyCol.idx].querySelector('b');
+            lastEntity = (b ? b.textContent : tr.children[partyCol.idx].textContent || '').trim();
+          } else if (!isStoreTable && tr.children[0]) {
+            lastEntity = String(tr.children[0].textContent || '').trim();
+          }
+          continue;
+        }
+
+        if (!isSub) continue;
+        var pill = tr.querySelector('.krito-tp-STOCK');
+        if (!pill) continue;
+
+        pill.textContent = 'STOCK' + badgeSuffix;
+        var entUp = lastEntity.toUpperCase();
+        var rec = isTot
+          ? (isStoreTable ? storeTot : mgrTot)
+          : (isStoreTable ? (storeMap[entUp] || { qty: 0, net: 0, mrp: 0, disc: 0 }) : (mgrMap[entUp] || { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 }));
+        var lyRec = isTot
+          ? (isStoreTable ? lyStoreTot : lyMgrTot)
+          : (isStoreTable ? (lyStoreMap[entUp] || { qty: 0, net: 0 }) : (lyMgrMap[entUp] || { qty: 0, net: 0 }));
+
+        for (var c = 0; c < cols.length; c++) {
+          var cs = cols[c];
+          var td = tr.children[cs.idx];
+          if (!td) continue;
+
+          if (cs.kind === 'STORES' && !isStoreTable) {
+            td.innerHTML = String(rec.stores || 0);
+          } else if (cs.kind === 'UNIT' && isStoreTable && !isTot) {
+            if (storeMap[entUp]) {
+              var uCnt = (Array.isArray(rec.subStores) && rec.subStores.length > 0) ? rec.subStores.length : 1;
+              td.innerHTML = '<button type="button" class="krito-sub-unit-btn-v1633" data-toggle-sub-unit-v1633="1" data-type="STOCK" data-party="' + esc38(lastEntity) + '">+ ' + uCnt + '</button>';
+            } else {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            }
+          } else if (cs.kind === 'DATE_WISE' && isStoreTable && !isTot) {
+            if (storeMap[entUp]) {
+              td.innerHTML = '<button type="button" class="krito-dw-btn-v1637" data-open-dw-v1637="1" data-mode="STANDARD" data-scope="PARTY" data-party="' + esc38(lastEntity) + '" data-type="STOCK"><span class="krito-dw-ico-v1637">+</span></button>';
+            } else {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            }
+          } else if (cs.kind === 'LAST_UPD' && isStoreTable && !isTot) {
+            td.innerHTML = (rec && rec.lastUpd)
+              ? ('<span class="party-upd-badge-v1617" style="margin-left:0;">🕒 ' + esc38(rec.lastUpd) + '</span>')
+              : '<span style="color:#94a3b8;">-</span>';
+          } else if (cs.kind === 'MANAGER' && isStoreTable && !isTot) {
+            td.innerHTML = (rec && rec.manager) ? esc38(rec.manager) : '<span style="color:#94a3b8;">-</span>';
+          } else if (cs.kind === 'QTY') {
+            td.innerHTML = '<b>' + fmtQ38(rec.qty) + '</b>';
+          } else if (cs.kind === 'VALUE') {
+            td.innerHTML = '<b>' + fmtI38(rec.net) + '</b>';
+          } else if (cs.kind === 'LY_QTY') {
+            td.innerHTML = fmtQ38(lyRec.qty);
+          } else if (cs.kind === 'QTY_GR') {
+            td.innerHTML = growthHtml38(rec.qty, lyRec.qty);
+          } else if (cs.kind === 'LY_VAL') {
+            td.innerHTML = fmtI38(lyRec.net);
+          } else if (cs.kind === 'VAL_GR') {
+            td.innerHTML = growthHtml38(rec.net, lyRec.net);
+          } else if (cs.kind === 'MRP') {
+            td.innerHTML = fmtI38(rec.mrp);
+          } else if (cs.kind === 'DIS_PCT') {
+            var dp = (Number(rec.mrp) || 0) > 0 ? (((Number(rec.disc) || 0) / Number(rec.mrp)) * 100).toFixed(2) : '0.00';
+            td.innerHTML = dp + '%';
+          } else if (cs.kind === 'PINNED') {
+            var attrObj = (pData && pData.attributes) ? getCaseEntry38(pData.attributes, cs.hdrName) : null;
+            if (!attrObj) {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            } else if (isTot) {
+              var ts = sumAttrMapWithMode38(attrObj.totals, cs.hdrName);
+              td.innerHTML = ts.count > 0 ? ('<b>' + fmtQ38(ts.qty) + ' Qty</b>') : '<span style="color:#94a3b8;">-</span>';
+            } else {
+              var sMap = isStoreTable ? getCaseEntry38(attrObj.byStore, lastEntity) : getCaseEntry38(attrObj.byManager, lastEntity);
+              var sm = sumAttrMapWithMode38(sMap, cs.hdrName);
+              td.innerHTML = sm.count > 0
+                ? ('<button type="button" class="krito-sub-attr-btn-v1633" data-open-sub-attr-v1633="1" data-type="STOCK" data-scope="' + (isStoreTable ? 'STORE' : 'MANAGER') + '" data-entity="' + esc38(lastEntity) + '" data-hdr="' + esc38(cs.hdrName) + '"><span class="krito-sub-attr-ico-v1633">+</span><span>' + fmtQ38(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button>')
+                : '<span style="color:#94a3b8;">-</span>';
+            }
+          }
+        }
+      }
+    }
+
+    var bar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (bar) {
+      var mCard = bar.parentElement;
+      while (mCard && mCard.parentElement && !mCard.querySelector('table')) mCard = mCard.parentElement;
+      if (mCard) updateTableStockRows(mCard.querySelector('table'), false);
+    }
+    var sTb = document.getElementById('liveStoreTbody');
+    if (sTb) updateTableStockRows(sTb.closest('table'), true);
+  }
+
+  // =========================================================================
+  // FEATURE 2A: BULLETPROOF ENHANCER FOR KPI'S & SELL THRU PANEL
+  // =========================================================================
+  var reportsObserverV1638 = null;
+
+  function ensureReportsPanelEnhancedV1638() {
+    var card = document.getElementById('kritoReportsPanelV1631');
+    if (!card) return;
+
+    var controls = card.querySelector('.krito-rep-controls-v1631');
+    if (controls) {
+      var mBtn = controls.querySelector('#kritoRepHdrModeBtnV1638');
+      if (!mBtn) {
+        mBtn = document.createElement('button');
+        mBtn.id = 'kritoRepHdrModeBtnV1638';
+        mBtn.type = 'button';
+        mBtn.className = 'krito-hdrmode-btn-v1638';
+        mBtn.style.marginLeft = '0';
+        mBtn.onclick = function(ev) {
+          ev.preventDefault(); ev.stopPropagation();
+          toggleHeaderDataMode38();
+        };
+        var fsB = controls.querySelector('#kritoRepFsBtnV1637') || controls.querySelector('[data-close-rep-v1631]');
+        if (fsB) controls.insertBefore(mBtn, fsB);
+        else controls.appendChild(mBtn);
+      }
+      mBtn.classList.toggle('is-all', HEADER_DATA_MODE === 'ALL');
+      mBtn.innerHTML = makeHeaderModeBtnHtml38();
+
+      if (!controls.querySelector('#kritoRepFsBtnV1637')) {
+        var fsBtn = document.createElement('button');
+        fsBtn.id = 'kritoRepFsBtnV1637';
+        fsBtn.type = 'button';
+        var isFsNow = card.classList.contains('krito-rep-fullscreen-v1637');
+        fsBtn.className = 'krito-expand-fs-btn-v1624' + (isFsNow ? ' is-expanded' : '');
+        fsBtn.style.marginLeft = '0';
+        fsBtn.textContent = isFsNow ? '✖ Exit Full Screen' : '⛶ Full Screen';
+        fsBtn.onclick = function(ev) {
+          ev.preventDefault(); ev.stopPropagation();
+          var nextFs = !card.classList.contains('krito-rep-fullscreen-v1637');
+          card.classList.toggle('krito-rep-fullscreen-v1637', nextFs);
+          document.body.style.overflow = nextFs ? 'hidden' : '';
+          fsBtn.classList.toggle('is-expanded', nextFs);
+          fsBtn.textContent = nextFs ? '✖ Exit Full Screen' : '⛶ Full Screen';
+        };
+        var closeB = controls.querySelector('[data-close-rep-v1631]');
+        if (closeB) controls.insertBefore(fsBtn, closeB);
+        else controls.appendChild(fsBtn);
+      }
+    }
+
+    var table = card.querySelector('table.krito-rep-tbl-v1631');
+    if (!table) return;
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody || theadRow.children.length < 2) return;
+
+    var entityTh = theadRow.children[1];
+    var isPartyView = (entityTh.textContent || '').toUpperCase().indexOf('PARTY') !== -1;
+    var pinnedHeaders = getPinnedHeaders38();
+    var tData = getRawPeriodObj38('TERTIARY');
+    var repKind = (window._kritoMultiTypeStateV1631 && window._kritoMultiTypeStateV1631.activeReport) || 'SELL_THRU';
+
+    if (table.getAttribute('data-enhanced-v1637') !== '1') {
+      table.setAttribute('data-enhanced-v1637', '1');
+      var anchorTh = entityTh;
+
+      if (isPartyView && !theadRow.querySelector('.krito-th-unit-v1623')) {
+        var thU = document.createElement('th');
+        thU.className = 'krito-th-unit-v1623';
+        thU.textContent = 'Unit / Location';
+        anchorTh.insertAdjacentElement('afterend', thU);
+        anchorTh = thU;
+      }
+      if (!theadRow.querySelector('.krito-th-dw-v1637')) {
+        var thD = document.createElement('th');
+        thD.className = 'krito-th-dw-v1637';
+        thD.textContent = 'Date Wise';
+        anchorTh.insertAdjacentElement('afterend', thD);
+        anchorTh = thD;
+      }
+
+      var hdrAnchorTh = isPartyView ? (anchorTh.nextElementSibling || anchorTh) : anchorTh;
+      pinnedHeaders.forEach(function(hName) {
+        var thH = document.createElement('th');
+        thH.setAttribute('data-rep-hdr-v1638', hName);
+        thH.style.background = '#f3e8ff';
+        thH.style.color = '#6d28d9';
+        thH.style.textAlign = 'center';
+        thH.textContent = '📌 ' + hName;
+        hdrAnchorTh.insertAdjacentElement('afterend', thH);
+        hdrAnchorTh = thH;
+      });
+
+      var gf = window._kritoGlobalFilterV1637 || {};
+      var gfClusterUp = (gf.cluster || '').trim().toUpperCase();
+      var gfPartyLow = (gf.party || '').trim().toLowerCase();
+
+      var rows = Array.from(tbody.children);
+      for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        if (!tr || tr.tagName !== 'TR' || tr.children.length < 2) continue;
+        var isTot = tr.classList.contains('total-row');
+        var entTd = tr.children[1];
+        var entName = String(entTd.textContent || '').trim();
+        var anchorTd = entTd;
+
+        if (isPartyView) {
+          var uTd = document.createElement('td');
+          uTd.className = 'krito-td-unit-v1623';
+          if (isTot) uTd.textContent = '-';
+          else {
+            var stObj = (tData && Array.isArray(tData.stores))
+              ? tData.stores.find(function(s) { return s && String(s.party || '').trim().toUpperCase() === entName.toUpperCase(); })
+              : null;
+            var uCnt = (stObj && Array.isArray(stObj.subStores) && stObj.subStores.length > 0) ? stObj.subStores.length : 1;
+            uTd.innerHTML = '<button type="button" class="krito-sub-unit-btn-v1633" data-open-urep-v1637="' + repKind + '" data-party="' + esc38(entName) + '">+ ' + uCnt + '</button>';
+          }
+          anchorTd.insertAdjacentElement('afterend', uTd);
+          anchorTd = uTd;
+        }
+
+        var dwTd = document.createElement('td');
+        dwTd.className = 'krito-td-dw-v1637';
+        if (isTot) dwTd.textContent = '-';
+        else {
+          dwTd.innerHTML = '<button type="button" class="krito-dw-btn-v1637" data-open-dw-v1637="1" data-mode="' + repKind + '" data-scope="' + (isPartyView ? 'PARTY' : 'CLUSTER') + '" data-party="' + esc38(isPartyView ? entName : '') + '" data-cluster="' + esc38(isPartyView ? '' : entName) + '" data-type="TERTIARY"><span class="krito-dw-ico-v1637">+</span></button>';
+        }
+        anchorTd.insertAdjacentElement('afterend', dwTd);
+        anchorTd = dwTd;
+
+        var hAnchorTd = isPartyView ? (anchorTd.nextElementSibling || anchorTd) : anchorTd;
+        pinnedHeaders.forEach(function(hName) {
+          var aTd = document.createElement('td');
+          aTd.setAttribute('data-rep-hdr-cell-v1638', hName);
+          aTd.style.textAlign = 'center';
+          hAnchorTd.insertAdjacentElement('afterend', aTd);
+          hAnchorTd = aTd;
+        });
+
+        if (!isTot && (gfClusterUp || gfPartyLow)) {
+          var hideRow = false;
+          if (isPartyView) {
+            var clTxt = tr.children[4] ? String(tr.children[4].textContent || '').trim().toUpperCase() : '';
+            if (gfClusterUp && clTxt !== gfClusterUp) hideRow = true;
+            if (gfPartyLow && entName.toLowerCase().indexOf(gfPartyLow) === -1) hideRow = true;
+          } else {
+            if (gfClusterUp && entName.toUpperCase() !== gfClusterUp) hideRow = true;
+          }
+          tr.classList.toggle('krito-gfilt-hidden-v1637', hideRow);
+        }
+      }
+    }
+
+    var thList = Array.from(theadRow.children);
+    var hdrColIndices = [];
+    for (var hc = 0; hc < thList.length; hc++) {
+      var ht = (thList[hc].textContent || '').trim();
+      if (ht.indexOf('📌') !== -1) hdrColIndices.push({ idx: hc, hName: ht.replace(/📌/g, '').trim() });
+    }
+
+    var bodyRows = Array.from(tbody.children);
+    for (var br = 0; br < bodyRows.length; br++) {
+      var rEl = bodyRows[br];
+      if (!rEl || rEl.tagName !== 'TR' || rEl.classList.contains('krito-inline-attr-drawer-v1634')) continue;
+      var isTotR = rEl.classList.contains('total-row');
+      var entNm = rEl.children[1] ? String(rEl.children[1].textContent || '').trim() : '';
+
+      for (var hi = 0; hi < hdrColIndices.length; hi++) {
+        var hInfo = hdrColIndices[hi];
+        var cell = rEl.children[hInfo.idx];
+        if (!cell) continue;
+        var attrObj = (tData && tData.attributes) ? getCaseEntry38(tData.attributes, hInfo.hName) : null;
+        if (!attrObj) {
+          cell.innerHTML = '<span style="color:#94a3b8;">-</span>';
+        } else if (isTotR) {
+          var tSum = sumAttrMapWithMode38(attrObj.totals, hInfo.hName);
+          cell.innerHTML = tSum.count > 0 ? ('<b>' + fmtQ38(tSum.qty) + ' Qty</b>') : '-';
+        } else {
+          var srcM = isPartyView ? getCaseEntry38(attrObj.byStore, entNm) : getCaseEntry38(attrObj.byManager, entNm);
+          var sm = sumAttrMapWithMode38(srcM, hInfo.hName);
+          cell.innerHTML = sm.count > 0
+            ? ('<button type="button" class="krito-sub-attr-btn-v1633" data-open-sub-attr-v1633="1" data-type="TERTIARY" data-scope="' + (isPartyView ? 'STORE' : 'MANAGER') + '" data-entity="' + esc38(entNm) + '" data-hdr="' + esc38(hInfo.hName) + '"><span class="krito-sub-attr-ico-v1633">+</span><span>' + fmtQ38(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button>')
+            : '<span style="color:#94a3b8;">-</span>';
+        }
+      }
+    }
+  }
+
+  function observeReportsPanelV1638() {
+    var card = document.getElementById('kritoReportsPanelV1631');
+    if (!card || card._observedV1638) return;
+    card._observedV1638 = true;
+    if (typeof MutationObserver === 'function') {
+      reportsObserverV1638 = new MutationObserver(function() {
+        ensureReportsPanelEnhancedV1638();
+      });
+      reportsObserverV1638.observe(card, { childList: true });
+    }
+  }
+
+  // =========================================================================
+  // FEATURE 1: UPGRADED DATE-WISE DRILLDOWN (UNIT-EXACT + PER-DATE UNIT BREAKDOWN)
+  // =========================================================================
+  function getActiveDataForType38(typeKey) {
+    if (typeKey === 'STOCK' && isStockTypeSelectedInManagerBar38()) {
+      return getAggregatedStockPeriodData38();
+    }
+    return getRawPeriodObj38(typeKey);
+  }
+
+  function getUnitDailyEntriesByDate38(pData, partyName) {
+    var byIso = {};
+    if (!pData || !pData.unitDaily || !Array.isArray(pData.unitDaily.r)) return null;
+    var uList = pData.unitDaily.u || [];
+    var prefixUp = String(partyName || '').trim().toUpperCase() + '||';
+
+    var matchingUIdx = {};
+    for (var i = 0; i < uList.length; i++) {
+      var uStr = String(uList[i] || '');
+      if (uStr.toUpperCase().indexOf(prefixUp) === 0) {
+        matchingUIdx[i] = uStr.slice(prefixUp.length);
+      }
+    }
+
+    for (var r = 0; r < pData.unitDaily.r.length; r++) {
+      var dr = pData.unitDaily.r[r];
+      var iso = dr[0];
+      var ents = Array.isArray(dr[2]) ? dr[2] : [];
+      var hitUnits = [];
+      for (var e = 0; e < ents.length; e++) {
+        var uName = matchingUIdx[ents[e][0]];
+        if (uName !== undefined) {
+          hitUnits.push({
+            unit: uName, qty: Number(ents[e][1]) || 0, net: Number(ents[e][2]) || 0,
+            mrp: Number(ents[e][3]) || 0, disc: Number(ents[e][4]) || 0, bills: Number(ents[e][5]) || 0
+          });
+        }
+      }
+      if (hitUnits.length > 0) {
+        hitUnits.sort(function(a, b) { return (b.net - a.net) || (b.qty - a.qty); });
+        byIso[iso] = hitUnits;
+      }
+    }
+    return byIso;
+  }
+
+  function extractExactDailyRows38(pData, partyName, clusterName, unitName) {
+    var out = { rows: [], hasUnitExact: false, usedFallback: false, unitsByIso: null };
+    if (!pData) return out;
+
+    if (unitName && pData.unitDaily && Array.isArray(pData.unitDaily.r)) {
+      var uList = pData.unitDaily.u || [];
+      var targetKey = (String(partyName || '').trim() + '||' + String(unitName || '').trim()).toUpperCase();
+      var targetIdx = -1;
+      for (var i = 0; i < uList.length; i++) {
+        if (String(uList[i] || '').trim().toUpperCase() === targetKey) { targetIdx = i; break; }
+      }
+      if (targetIdx >= 0) {
+        out.hasUnitExact = true;
+        for (var r = 0; r < pData.unitDaily.r.length; r++) {
+          var dr = pData.unitDaily.r[r];
+          var ents = Array.isArray(dr[2]) ? dr[2] : [];
+          for (var e = 0; e < ents.length; e++) {
+            if (ents[e][0] === targetIdx) {
+              out.rows.push({
+                iso: dr[0], label: dr[1],
+                qty: Number(ents[e][1]) || 0, net: Number(ents[e][2]) || 0,
+                mrp: Number(ents[e][3]) || 0, disc: Number(ents[e][4]) || 0,
+                bills: Number(ents[e][5]) || 0
+              });
+              break;
+            }
+          }
+        }
+        return out;
+      }
+    }
+
+    if (!unitName && partyName) out.unitsByIso = getUnitDailyEntriesByDate38(pData, partyName);
+    if (unitName) out.usedFallback = true;
+    if (!pData.daily || !Array.isArray(pData.daily.r)) return out;
+
+    var pDict = pData.daily.p || [], cDict = pData.daily.c || [];
+    var pUp = String(partyName || '').trim().toUpperCase();
+    var cUp = String(clusterName || '').trim().toUpperCase();
+
+    for (var ri = 0; ri < pData.daily.r.length; ri++) {
+      var row = pData.daily.r[ri];
+      var entries = Array.isArray(row[6]) ? row[6] : [];
+      var q = 0, n = 0, m = 0, d = 0, b = 0, hit = false;
+      for (var j = 0; j < entries.length; j++) {
+        var pe = entries[j];
+        var ok = pUp
+          ? (String(pDict[pe[0]] || '').trim().toUpperCase() === pUp)
+          : (cUp && String(cDict[pe[1]] || '').trim().toUpperCase() === cUp);
+        if (ok) {
+          hit = true;
+          q += Number(pe[2]) || 0; n += Number(pe[3]) || 0;
+          m += Number(pe[4]) || 0; d += Number(pe[5]) || 0;
+          if (pe.length > 6) b += Number(pe[6]) || 0;
+        }
+      }
+      if (hit) {
+        if (b === 0 && pData.dailyBills && pData.dailyBills[row[0]]) {
+          var dbMap = pUp ? pData.dailyBills[row[0]].byStore : pData.dailyBills[row[0]].byMgr;
+          b = Number(getCaseEntry38(dbMap, pUp || cUp)) || 0;
+        }
+        out.rows.push({ iso: row[0], label: row[1], qty: q, net: n, mrp: m, disc: d, bills: b });
+      }
+    }
+    return out;
+  }
+
+  window.closeDateDrillModalV1638 = function() {
+    DW_MODAL.open = false;
+    DW_MODAL.openDateIso = '';
+    dwModalRoot.innerHTML = '';
+  };
+
+  function openDateDrillModalV1638(opts) {
+    DW_MODAL = {
+      open: true, mode: opts.mode || 'STANDARD', typeKey: opts.typeKey || 'TERTIARY',
+      scope: opts.scope || 'PARTY', party: opts.party || '', unit: opts.unit || '',
+      cluster: opts.cluster || '', search: '', openDateIso: ''
+    };
+    renderDateDrillModalV1638();
+  }
+
+  function renderDateDrillModalV1638() {
+    if (!DW_MODAL.open) { dwModalRoot.innerHTML = ''; return; }
+    var st = DW_MODAL;
+    var activeFocus = (document.activeElement && document.activeElement.id === 'kritoDwSearchV1638') ? (document.activeElement.selectionStart || 0) : -1;
+    var q = (st.search || '').trim().toLowerCase();
+    var periodNice = (st.typeKey === 'STOCK' && isCustomStockMonthActive38())
+      ? getActiveStockMonthsList38().join(', ')
+      : ((typeof getPeriodDisplayLabel === 'function' && typeof ACTIVE_MONTH !== 'undefined') ? getPeriodDisplayLabel(ACTIVE_MONTH) : '');
+
+    var entityTitle = st.scope === 'UNIT' ? (st.unit + ' (' + st.party + ')') : (st.scope === 'CLUSTER' ? ('Cluster: ' + st.cluster) : st.party);
+    var pData = getActiveDataForType38(st.mode === 'STANDARD' ? st.typeKey : 'TERTIARY');
+    var res = extractExactDailyRows38(pData, st.party, st.cluster, st.scope === 'UNIT' ? st.unit : '');
+    var hasMultiUnitsPerDate = (st.scope === 'PARTY' && res.unitsByIso && Object.keys(res.unitsByIso).length > 0);
+
+    var noteBanner = '';
+    if (res.usedFallback) {
+      noteBanner = '<div style="background:#fef3c7;border:1.5px solid #f59e0b;color:#92400e;padding:8px 12px;border-radius:8px;font-size:11.5px;font-weight:700;">⚠️ Unit-level Date Wise data abhi <b>live_data.json</b> mein export nahi hai (abhi sirf Party-level daily data dikh raha hai). Exact Unit-wise per-date data ke liye software (index.html) mein Unit-Daily exporter add karke 1 baar Push karna hoga.</div>';
+    }
+
+    var theadHtml = '', bodyHtml = '', kpisHtml = '';
+
+    if (st.mode === 'SELL_THRU') {
+      var soData = getRawPeriodObj38('SELL_OUT');
+      var soRes = extractExactDailyRows38(soData, st.party, st.cluster, st.scope === 'UNIT' ? st.unit : '');
+      var byIso = {};
+      res.rows.forEach(function(r) {
+        if (!byIso[r.iso]) byIso[r.iso] = { iso: r.iso, label: r.label, tQ: 0, tV: 0, sQ: 0, sV: 0 };
+        byIso[r.iso].tQ += r.qty; byIso[r.iso].tV += r.net;
+      });
+      soRes.rows.forEach(function(r) {
+        if (!byIso[r.iso]) byIso[r.iso] = { iso: r.iso, label: r.label, tQ: 0, tV: 0, sQ: 0, sV: 0 };
+        byIso[r.iso].sQ += r.qty; byIso[r.iso].sV += r.net;
+      });
+      var list = Object.values(byIso).sort(function(a, b) { return a.iso.localeCompare(b.iso); });
+      if (q) list = list.filter(function(x) { return x.label.toLowerCase().indexOf(q) !== -1; });
+      var totTQ = 0, totTV = 0, totSQ = 0, totSV = 0;
+      list.forEach(function(x) { totTQ += x.tQ; totTV += x.tV; totSQ += x.sQ; totSV += x.sV; });
+
+      kpisHtml =
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (NET)</span><span class="kval" style="color:#c4b5fd;">' + fmtQ38(totSQ) + ' Qty</span><span class="ksub">' + fmtI38(totSV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TERTIARY SALE</span><span class="kval" style="color:#38bdf8;">' + fmtQ38(totTQ) + ' Qty</span><span class="ksub">' + fmtI38(totTV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU QTY %</span><span class="kval" style="color:#34d399;">' + (totSQ > 0 ? ((totTQ / totSQ) * 100).toFixed(1) + '%' : '-') + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU VAL %</span><span class="kval" style="color:#fbbf24;">' + (totSV > 0 ? ((totTV / totSV) * 100).toFixed(1) + '%' : '-') + '</span></div>';
+
+      var stCols = hasMultiUnitsPerDate ? 9 : 8;
+      theadHtml = '<tr><th>#</th><th>Date</th>' + (hasMultiUnitsPerDate ? '<th style="text-align:center;">Unit / Location</th>' : '') + '<th class="num">Sell Out Qty</th><th class="num">Sell Out Val</th><th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th><th class="num">Sell Thru Qty %</th><th class="num">Sell Thru Val %</th></tr>';
+      bodyHtml = list.map(function(x, idx) {
+        var uArr = hasMultiUnitsPerDate ? (res.unitsByIso[x.iso] || []) : [];
+        var isOp = (st.openDateIso === x.iso);
+        var uCell = hasMultiUnitsPerDate
+          ? ('<td style="text-align:center;">' + (uArr.length > 0 ? '<button type="button" class="krito-sub-unit-btn-v1633' + (isOp ? ' is-open' : '') + '" data-dw-expand-iso-v1638="' + esc38(x.iso) + '">' + (isOp ? '− ' : '+ ') + uArr.length + '</button>' : '-') + '</td>')
+          : '';
+        var rowH = '<tr><td>' + (idx + 1) + '</td><td><b>' + esc38(x.label) + '</b></td>' + uCell + '<td class="num">' + fmtQ38(x.sQ) + '</td><td class="num" style="color:#6d28d9;font-weight:700;">' + fmtI38(x.sV) + '</td><td class="num"><b>' + fmtQ38(x.tQ) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(x.tV) + '</td><td class="num">' + sellThruBadge38(x.tQ, x.sQ) + '</td><td class="num">' + sellThruBadge38(x.tV, x.sV) + '</td></tr>';
+        if (isOp && uArr.length > 0) {
+          rowH += '<tr class="krito-dw-unit-subrow-v1638"><td colspan="' + stCols + '"><div class="krito-dw-unit-box-v1638"><div class="krito-dw-unit-head-v1638"><span>📍 Units Billed on ' + esc38(x.label) + ' (' + uArr.length + ')</span></div><table class="krito-dw-unit-tbl-v1638"><thead><tr><th>#</th><th>Unit / Location</th><th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th><th class="num">MRP</th></tr></thead><tbody>' +
+            uArr.map(function(u, ui) { return '<tr><td>' + (ui + 1) + '</td><td><b>' + esc38(u.unit) + '</b></td><td class="num"><b>' + fmtQ38(u.qty) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(u.net) + '</td><td class="num">' + fmtI38(u.mrp) + '</td></tr>'; }).join('') +
+          '</tbody></table></div></td></tr>';
+        }
+        return rowH;
+      }).join('') || '<tr><td colspan="' + stCols + '" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">No Date-Wise Sell Thru records found.</td></tr>';
+      if (list.length > 0) {
+        bodyHtml += '<tr class="total-row"><td></td><td>TOTAL (' + list.length + ' Days)</td>' + (hasMultiUnitsPerDate ? '<td>-</td>' : '') + '<td class="num">' + fmtQ38(totSQ) + '</td><td class="num" style="color:#6d28d9;">' + fmtI38(totSV) + '</td><td class="num">' + fmtQ38(totTQ) + '</td><td class="num" style="color:#0369a1;">' + fmtI38(totTV) + '</td><td class="num">' + sellThruBadge38(totTQ, totSQ) + '</td><td class="num">' + sellThruBadge38(totTV, totSV) + '</td></tr>';
+      }
+    } else if (st.mode === 'KPIS') {
+      var kList = res.rows;
+      if (q) kList = kList.filter(function(x) { return x.label.toLowerCase().indexOf(q) !== -1; });
+      var kQ = 0, kN = 0, kM = 0, kD = 0, kB = 0;
+      kList.forEach(function(x) { kQ += x.qty; kN += x.net; kM += x.mrp; kD += x.disc; kB += x.bills; });
+      var totAsp = kQ > 0 ? (kN / kQ) : 0, totAbv = kB > 0 ? (kN / kB) : 0, totUpt = kB > 0 ? (kQ / kB) : 0;
+
+      kpisHtml =
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TOTAL QTY</span><span class="kval">' + fmtQ38(kQ) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">NET SALE</span><span class="kval" style="color:#38bdf8;">' + fmtI38(kN) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">ASP (NET SALE / QTY)</span><span class="kval" style="color:#34d399;">' + fmtI38(totAsp) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">BILLS / ABV / UPT</span><span class="kval" style="color:#fbbf24;">' + (kB > 0 ? (fmtQ38(kB) + ' | ' + fmtI38(totAbv)) : '-') + '</span>' + (kB > 0 ? '<span class="ksub">UPT: ' + fmtDec38(totUpt) + '</span>' : '') + '</div>';
+
+      var kCols = hasMultiUnitsPerDate ? 11 : 10;
+      theadHtml = '<tr><th>#</th><th>Date</th>' + (hasMultiUnitsPerDate ? '<th style="text-align:center;">Unit / Location</th>' : '') + '<th class="num">Bills</th><th class="num">Qty</th><th class="num">Net Sale</th><th class="num">ABV</th><th class="num">ASP</th><th class="num">UPT</th><th class="num">MRP</th><th class="num">Dis %</th></tr>';
+      bodyHtml = kList.map(function(x, idx) {
+        var asp = x.qty > 0 ? (x.net / x.qty) : 0, abv = x.bills > 0 ? (x.net / x.bills) : 0, upt = x.bills > 0 ? (x.qty / x.bills) : 0;
+        var dp = x.mrp > 0 ? ((x.disc / x.mrp) * 100).toFixed(2) : '0.00';
+        var uArr = hasMultiUnitsPerDate ? (res.unitsByIso[x.iso] || []) : [];
+        var isOp = (st.openDateIso === x.iso);
+        var uCell = hasMultiUnitsPerDate
+          ? ('<td style="text-align:center;">' + (uArr.length > 0 ? '<button type="button" class="krito-sub-unit-btn-v1633' + (isOp ? ' is-open' : '') + '" data-dw-expand-iso-v1638="' + esc38(x.iso) + '">' + (isOp ? '− ' : '+ ') + uArr.length + '</button>' : '-') + '</td>')
+          : '';
+        var rowH = '<tr><td>' + (idx + 1) + '</td><td><b>' + esc38(x.label) + '</b></td>' + uCell + '<td class="num">' + (x.bills > 0 ? fmtQ38(x.bills) : '-') + '</td><td class="num"><b>' + fmtQ38(x.qty) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(x.net) + '</td><td class="num" style="color:#0f766e;font-weight:800;">' + (x.bills > 0 ? fmtI38(abv) : '-') + '</td><td class="num" style="color:#4338ca;font-weight:800;">' + fmtI38(asp) + '</td><td class="num" style="color:#b45309;font-weight:800;">' + (x.bills > 0 ? fmtDec38(upt) : '-') + '</td><td class="num">' + fmtI38(x.mrp) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + dp + '%</td></tr>';
+        if (isOp && uArr.length > 0) {
+          rowH += '<tr class="krito-dw-unit-subrow-v1638"><td colspan="' + kCols + '"><div class="krito-dw-unit-box-v1638"><div class="krito-dw-unit-head-v1638"><span>📍 Unit-Wise KPIs on ' + esc38(x.label) + ' (' + uArr.length + ')</span></div><table class="krito-dw-unit-tbl-v1638"><thead><tr><th>#</th><th>Unit / Location</th><th class="num">Bills</th><th class="num">Qty</th><th class="num">Net Sale</th><th class="num">ABV</th><th class="num">ASP</th><th class="num">UPT</th></tr></thead><tbody>' +
+            uArr.map(function(u, ui) {
+              var uAsp = u.qty > 0 ? (u.net / u.qty) : 0, uAbv = u.bills > 0 ? (u.net / u.bills) : 0, uUpt = u.bills > 0 ? (u.qty / u.bills) : 0;
+              return '<tr><td>' + (ui + 1) + '</td><td><b>' + esc38(u.unit) + '</b></td><td class="num">' + (u.bills > 0 ? fmtQ38(u.bills) : '-') + '</td><td class="num"><b>' + fmtQ38(u.qty) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(u.net) + '</td><td class="num">' + (u.bills > 0 ? fmtI38(uAbv) : '-') + '</td><td class="num">' + fmtI38(uAsp) + '</td><td class="num">' + (u.bills > 0 ? fmtDec38(uUpt) : '-') + '</td></tr>';
+            }).join('') +
+          '</tbody></table></div></td></tr>';
+        }
+        return rowH;
+      }).join('') || '<tr><td colspan="' + kCols + '" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">No Date-Wise KPI records found.</td></tr>';
+      if (kList.length > 0) {
+        var kDp = kM > 0 ? ((kD / kM) * 100).toFixed(2) : '0.00';
+        bodyHtml += '<tr class="total-row"><td></td><td>TOTAL (' + kList.length + ' Days)</td>' + (hasMultiUnitsPerDate ? '<td>-</td>' : '') + '<td class="num">' + (kB > 0 ? fmtQ38(kB) : '-') + '</td><td class="num">' + fmtQ38(kQ) + '</td><td class="num" style="color:#0369a1;">' + fmtI38(kN) + '</td><td class="num">' + (kB > 0 ? fmtI38(totAbv) : '-') + '</td><td class="num">' + fmtI38(totAsp) + '</td><td class="num">' + (kB > 0 ? fmtDec38(totUpt) : '-') + '</td><td class="num">' + fmtI38(kM) + '</td><td class="num" style="color:#dc2626;">' + kDp + '%</td></tr>';
+      }
+    } else {
+      var rows = res.rows;
+      if (q) rows = rows.filter(function(x) { return x.label.toLowerCase().indexOf(q) !== -1; });
+      var sQ = 0, sN = 0, sM = 0, sD = 0;
+      rows.forEach(function(x) { sQ += x.qty; sN += x.net; sM += x.mrp; sD += x.disc; });
+      var sDp = sM > 0 ? ((sD / sM) * 100).toFixed(2) : '0.00';
+
+      kpisHtml =
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TOTAL QTY</span><span class="kval">' + fmtQ38(sQ) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">NET VALUE</span><span class="kval" style="color:#38bdf8;">' + fmtI38(sN) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TOTAL MRP</span><span class="kval" style="color:#fbbf24;">' + fmtI38(sM) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">DISCOUNT</span><span class="kval" style="color:#fb7185;">' + fmtI38(sD) + ' <span style="font-size:12px;">(' + sDp + '%)</span></span></div>';
+
+      var stdCols = hasMultiUnitsPerDate ? 8 : 7;
+      theadHtml = '<tr><th>#</th><th>Date</th>' + (hasMultiUnitsPerDate ? '<th style="text-align:center;">Unit / Location</th>' : '') + '<th class="num">Qty</th><th class="num">Net Value</th><th class="num">Share %</th><th class="num">MRP</th><th class="num">Dis %</th></tr>';
+      bodyHtml = rows.map(function(x, idx) {
+        var share = sN > 0 ? ((x.net / sN) * 100).toFixed(1) : (sQ > 0 ? ((x.qty / sQ) * 100).toFixed(1) : '0.0');
+        var dp = x.mrp > 0 ? ((x.disc / x.mrp) * 100).toFixed(2) : '0.00';
+        var uArr = hasMultiUnitsPerDate ? (res.unitsByIso[x.iso] || []) : [];
+        var isOp = (st.openDateIso === x.iso);
+        var uCell = hasMultiUnitsPerDate
+          ? ('<td style="text-align:center;">' + (uArr.length > 0 ? '<button type="button" class="krito-sub-unit-btn-v1633' + (isOp ? ' is-open' : '') + '" data-dw-expand-iso-v1638="' + esc38(x.iso) + '">' + (isOp ? '− ' : '+ ') + uArr.length + '</button>' : '-') + '</td>')
+          : '';
+        var rowH = '<tr><td>' + (idx + 1) + '</td><td><b>' + esc38(x.label) + '</b></td>' + uCell + '<td class="num"><b>' + fmtQ38(x.qty) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(x.net) + '</td><td class="num" style="color:#6d28d9;font-weight:700;">' + share + '%</td><td class="num">' + fmtI38(x.mrp) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + dp + '%</td></tr>';
+        if (isOp && uArr.length > 0) {
+          rowH += '<tr class="krito-dw-unit-subrow-v1638"><td colspan="' + stdCols + '"><div class="krito-dw-unit-box-v1638"><div class="krito-dw-unit-head-v1638"><span>📍 Unit / Location Breakdown on ' + esc38(x.label) + ' (' + uArr.length + ' Units)</span></div><table class="krito-dw-unit-tbl-v1638"><thead><tr><th>#</th><th>Unit / Location</th><th class="num">Qty</th><th class="num">Net Value</th><th class="num">Share %</th><th class="num">MRP</th><th class="num">Dis %</th></tr></thead><tbody>' +
+            uArr.map(function(u, ui) {
+              var ush = x.net > 0 ? ((u.net / x.net) * 100).toFixed(1) : '0.0';
+              var udp = u.mrp > 0 ? ((u.disc / u.mrp) * 100).toFixed(2) : '0.00';
+              return '<tr><td>' + (ui + 1) + '</td><td><b>' + esc38(u.unit) + '</b></td><td class="num"><b>' + fmtQ38(u.qty) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI38(u.net) + '</td><td class="num" style="color:#6d28d9;">' + ush + '%</td><td class="num">' + fmtI38(u.mrp) + '</td><td class="num" style="color:#dc2626;">' + udp + '%</td></tr>';
+            }).join('') +
+          '</tbody></table></div></td></tr>';
+        }
+        return rowH;
+      }).join('') || '<tr><td colspan="' + stdCols + '" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">No Date-Wise records found.</td></tr>';
+      if (rows.length > 0) {
+        bodyHtml += '<tr class="total-row"><td></td><td>TOTAL (' + rows.length + ' Days)</td>' + (hasMultiUnitsPerDate ? '<td>-</td>' : '') + '<td class="num">' + fmtQ38(sQ) + '</td><td class="num" style="color:#0369a1;">' + fmtI38(sN) + '</td><td class="num">100.0%</td><td class="num">' + fmtI38(sM) + '</td><td class="num" style="color:#dc2626;">' + sDp + '%</td></tr>';
+      }
+    }
+
+    var modeLabel = st.mode === 'SELL_THRU' ? 'Sell Thru' : (st.mode === 'KPIS' ? 'KPI\'s' : st.typeKey.replace('_', ' '));
+    dwModalRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeDateDrillModalV1638();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:18px;font-weight:900;color:#ffffff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<span>📅 Date Wise Report — ' + esc38(entityTitle) + '</span>' +
+                '<span style="background:#10b981;color:#fff;padding:2px 9px;border-radius:99px;font-size:11px;">' + esc38(modeLabel) + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">Brand: <b style="color:#fff;">' + esc38(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') + '</b> | Period: <b style="color:#6ee7b7;">' + esc38(periodNice) + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;align-items:center;">' +
+              '<input type="text" id="kritoDwSearchV1638" value="' + esc38(st.search) + '" placeholder="🔍 Search Date..." style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:210px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeDateDrillModalV1638()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            noteBanner +
+            '<div class="krito-rep-kpis-v1631" style="margin-bottom:0;">' + kpisHtml + '</div>' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table><thead>' + theadHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (activeFocus >= 0) {
+      var sEl = document.getElementById('kritoDwSearchV1638');
+      if (sEl) { sEl.focus(); try { sEl.setSelectionRange(activeFocus, activeFocus); } catch (e) {} }
+    }
+  }
+
+  function openCustomHeaderInlineDrawerV1638(btn) {
+    var subTr = btn.closest('tr');
+    if (!subTr) return;
+    var typeKey = btn.getAttribute('data-type') || '';
+    var scope   = btn.getAttribute('data-scope') || 'STORE';
+    var entity  = btn.getAttribute('data-entity') || '';
+    var hdrName = btn.getAttribute('data-hdr') || '';
+    var dKey = typeKey + '|' + scope + '|' + entity + '|' + hdrName;
+
+    var nextTr = subTr.nextElementSibling;
+    var wasSame = (nextTr && nextTr.classList.contains('krito-inline-attr-drawer-v1634') && nextTr.getAttribute('data-iad-key') === dKey);
+    if (nextTr && nextTr.classList.contains('krito-inline-attr-drawer-v1634')) nextTr.remove();
+    var rowBtns = subTr.querySelectorAll('.krito-sub-attr-btn-v1633.is-open-v1634');
+    for (var rb = 0; rb < rowBtns.length; rb++) {
+      rowBtns[rb].classList.remove('is-open-v1634');
+      var ic = rowBtns[rb].querySelector('.krito-sub-attr-ico-v1633');
+      if (ic) ic.textContent = '+';
+    }
+    if (wasSame) return;
+
+    var pData = getActiveDataForType38(typeKey);
+    var attrObj = (pData && pData.attributes) ? getCaseEntry38(pData.attributes, hdrName) : null;
+    if (!attrObj) return;
+    var srcMap = (scope === 'MANAGER') ? getCaseEntry38(attrObj.byManager, entity) : getCaseEntry38(attrObj.byStore, entity);
+    var sumObj = sumAttrMapWithMode38(srcMap, hdrName);
+
+    var tbl = subTr.closest('table');
+    var theadRow = tbl ? tbl.querySelector('thead tr') : null;
+    var visCols = theadRow ? (Array.from(theadRow.children).filter(function(th) { return !th.classList.contains('krito-col-hidden-v1626'); }).length || theadRow.children.length) : 8;
+
+    var pillsHtml = sumObj.entries.map(function(e) {
+      var pct = sumObj.qty ? ((e.qty / sumObj.qty) * 100).toFixed(1) : '0.0';
+      return '<div class="krito-iad-pill-v1634"><span>' + esc38(e.val) + '</span><span class="krito-iad-pill-qty-v1634">' + fmtQ38(e.qty) + '</span><span class="krito-iad-pill-pct-v1634">(' + pct + '%)</span></div>';
+    }).join('') || '<span style="font-size:11.5px;color:#64748b;font-weight:700;">No values in current filter.</span>';
+
+    var typeLbl = typeKey.replace('_', ' ') + (typeKey === 'STOCK' && isCustomStockMonthActive38() ? (' • ' + getStockMonthsShortTag38()) : '');
+    var drawerTr = document.createElement('tr');
+    drawerTr.className = 'krito-inline-attr-drawer-v1634';
+    drawerTr.setAttribute('data-iad-key', dKey);
+    drawerTr.innerHTML = '<td colspan="' + visCols + '"><div class="krito-iad-card-v1634">' +
+      '<div class="krito-iad-head-v1634">' +
+        '<div class="krito-iad-meta-v1634">' +
+          '<span>' + (scope === 'MANAGER' ? '👤 Manager: ' : '🏪 Party: ') + esc38(entity) + '</span>' +
+          '<span class="krito-iad-hdr-pill-v1634">📌 ' + esc38(hdrName) + '</span>' +
+          '<span class="krito-iad-tot-pill-v1634">Total Qty: ' + fmtQ38(sumObj.qty) + '</span>' +
+          '<span class="krito-type-pill-v1631 krito-tp-' + esc38(typeKey) + '">' + esc38(typeLbl) + '</span>' +
+        '</div>' +
+        '<button type="button" class="krito-iad-hide-btn-v1634" data-close-iad-v1634="ROW_DRAWER">− Hide</button>' +
+      '</div>' +
+      '<div class="krito-iad-grid-v1634">' + pillsHtml + '</div>' +
+    '</div></td>';
+
+    subTr.insertAdjacentElement('afterend', drawerTr);
+    btn.classList.add('is-open-v1634');
+    var curIco = btn.querySelector('.krito-sub-attr-ico-v1633');
+    if (curIco) curIco.textContent = '−';
+  }
+
+  document.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var dwBtn = t.closest('[data-open-dw-v1637]');
+    if (dwBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      openDateDrillModalV1638({
+        mode: dwBtn.getAttribute('data-mode') || 'STANDARD',
+        typeKey: dwBtn.getAttribute('data-type') || 'TERTIARY',
+        scope: dwBtn.getAttribute('data-scope') || 'PARTY',
+        party: dwBtn.getAttribute('data-party') || '',
+        unit: dwBtn.getAttribute('data-unit') || '',
+        cluster: dwBtn.getAttribute('data-cluster') || ''
+      });
+      return;
+    }
+
+    var dwExpBtn = t.closest('[data-dw-expand-iso-v1638]');
+    if (dwExpBtn) {
+      ev.preventDefault(); ev.stopPropagation();
+      var iso = dwExpBtn.getAttribute('data-dw-expand-iso-v1638') || '';
+      DW_MODAL.openDateIso = (DW_MODAL.openDateIso === iso) ? '' : iso;
+      renderDateDrillModalV1638();
+      return;
+    }
+
+    var subAttrBtn = t.closest('[data-open-sub-attr-v1633]');
+    if (subAttrBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      openCustomHeaderInlineDrawerV1638(subAttrBtn);
+      return;
+    }
+
+    var stkTog = t.closest('[data-stkmon-toggle-v1638]');
+    if (stkTog) {
+      ev.preventDefault(); ev.stopPropagation();
+      var mid = stkTog.getAttribute('data-stkmon-toggle-v1638');
+      STOCK_MONTHS_STATE.openMenuId = (STOCK_MONTHS_STATE.openMenuId === mid) ? '' : mid;
+      mountConnectedStockMonthPickers38();
+      return;
+    }
+
+    var stkReset = t.closest('[data-stkmon-reset-v1638]');
+    if (stkReset) {
+      ev.preventDefault(); ev.stopPropagation();
+      STOCK_MONTHS_STATE.customMonths = [];
+      STOCK_MONTHS_STATE.openMenuId = '';
+      mountConnectedStockMonthPickers38();
+      updateStockSubRowsInManagerAndStoreTables38();
+      return;
+    }
+
+    if (STOCK_MONTHS_STATE.openMenuId && !t.closest('.krito-stkmon-wrap-v1638')) {
+      STOCK_MONTHS_STATE.openMenuId = '';
+      mountConnectedStockMonthPickers38();
+    }
+
+    if (t.closest('[data-mtype-key-v1631]') || t.closest('[data-mtype-report-v1631]') || t.closest('[data-kpi-view-v1631]') || t.closest('[data-st-view-v1631]') || t.closest('[data-st-mode-v1631]') || t.closest('[data-st-preset-v1631]') || t.closest('[data-kpi-preset-v1631]')) {
+      setTimeout(runAllV1638, 10);
+      setTimeout(runAllV1638, 70);
+    }
+  }, true);
+
+  document.addEventListener('change', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+    var sm = el.getAttribute('data-stkmon-chk-v1638');
+    if (sm) {
+      ev.stopPropagation();
+      var cur = new Set(STOCK_MONTHS_STATE.customMonths.length > 0 ? STOCK_MONTHS_STATE.customMonths : getActiveStockMonthsList38());
+      if (el.checked) cur.add(sm);
+      else if (cur.size > 1) cur.delete(sm);
+      STOCK_MONTHS_STATE.customMonths = Array.from(cur);
+      mountConnectedStockMonthPickers38();
+      updateStockSubRowsInManagerAndStoreTables38();
+    }
+    if (el.getAttribute('data-st-month-v1631') || el.getAttribute('data-kpi-month-v1631')) {
+      setTimeout(ensureReportsPanelEnhancedV1638, 15);
+    }
+  }, true);
+
+  document.addEventListener('input', function(ev) {
+    if (!ev.target) return;
+    if (ev.target.id === 'kritoDwSearchV1638') {
+      DW_MODAL.search = ev.target.value || '';
+      renderDateDrillModalV1638();
+    } else if (ev.target.id === 'kritoStSearchV1631' || ev.target.id === 'kritoKpiSearchV1631') {
+      setTimeout(ensureReportsPanelEnhancedV1638, 15);
+    }
+  });
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Escape' && DW_MODAL.open) {
+      ev.stopPropagation();
+      window.closeDateDrillModalV1638();
+    }
+  }, true);
+
+  function runAllV1638() {
+    mountHeaderDataModeToggleBtn38();
+    mountConnectedStockMonthPickers38();
+    updateStockSubRowsInManagerAndStoreTables38();
+    observeReportsPanelV1638();
+    ensureReportsPanelEnhancedV1638();
+  }
+
+  if (typeof window.applyAllMultiTypeTablesV1631 === 'function' && !window.applyAllMultiTypeTablesV1631._v1638) {
+    var _origApply38 = window.applyAllMultiTypeTablesV1631;
+    window.applyAllMultiTypeTablesV1631 = function() {
+      var res = _origApply38.apply(this, arguments);
+      runAllV1638();
+      return res;
+    };
+    window.applyAllMultiTypeTablesV1631._v1638 = true;
+  }
+
+  if (typeof window.renderKritoReportsPanelV1631 === 'function' && !window.renderKritoReportsPanelV1631._v1638) {
+    var _origRep38 = window.renderKritoReportsPanelV1631;
+    window.renderKritoReportsPanelV1631 = function() {
+      var res = _origRep38.apply(this, arguments);
+      observeReportsPanelV1638();
+      ensureReportsPanelEnhancedV1638();
+      return res;
+    };
+    window.renderKritoReportsPanelV1631._v1638 = true;
+  }
+
+  if (typeof window.updateStoreTableBodyOnly === 'function' && !window.updateStoreTableBodyOnly._v1638) {
+    var _origUpd38 = window.updateStoreTableBodyOnly;
+    window.updateStoreTableBodyOnly = function() {
+      var res = _origUpd38.apply(this, arguments);
+      mountConnectedStockMonthPickers38();
+      updateStockSubRowsInManagerAndStoreTables38();
+      return res;
+    };
+    window.updateStoreTableBodyOnly._v1638 = true;
+  }
+
+  if (typeof window.renderApp === 'function' && !window.renderApp._v1638) {
+    var _origRen38 = window.renderApp;
+    window.renderApp = function() {
+      var res = _origRen38.apply(this, arguments);
+      runAllV1638();
+      return res;
+    };
+    window.renderApp._v1638 = true;
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    runAllV1638();
+  }
+
+})();
+</script>
 </body>
 </html>
