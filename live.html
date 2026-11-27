@@ -13031,5 +13031,2825 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDON — PART 1 OF 2 (v16.40A — live.html ONLY)
+     - NO need to delete old code — paste right after v16.39 & before </body>
+     - POINT 1: Fixes '+' click on Stock/Sell Out/Target header pills & adds
+                connected Multi-Month Picker ONLY for Stock, Sell Out & Target Sheet
+     - POINT 4: True Excel-grade Freeze Panes fix (Top Total + Headers + Left Frozen)
+     - POINT 5: Flattens Sell Out wrapper ("SELL OUT - ARROW") into real Party Names
+                everywhere in live.html & hides Unit/Location column on Sell Out tab
+     ============================================================================ -->
+<script>
+(function installSellOutFlattenMultiMonthPickersAndExcelFreezeV1640A() {
+
+  if (window._kritoV1640AInstalled) return;
+  window._kritoV1640AInstalled = true;
+
+  var css = [
+    /* Multi-Type Connected Month Picker (Stock / Sell Out / Target Sheet ONLY) */
+    '.krito-mtmon-wrap-v1640{position:relative;display:inline-flex;align-items:center;vertical-align:middle;}',
+    '.krito-mtmon-btn-v1640{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:7px;border:1.5px solid #0284c7;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;line-height:1.25;}',
+    '.krito-mtmon-btn-v1640:hover{filter:brightness(0.96);}',
+    '.krito-mtmon-btn-v1640.is-custom{background:#0284c7;color:#ffffff;border-color:#0369a1;box-shadow:0 2px 6px rgba(2,132,199,0.28);}',
+    '.krito-mtmon-btn-v1640.tp-SELL_OUT{border-color:#9333ea;background:#f3e8ff;color:#6b21a8;}',
+    '.krito-mtmon-btn-v1640.tp-SELL_OUT.is-custom{background:#7e22ce;color:#ffffff;border-color:#6b21a8;}',
+    '.krito-mtmon-btn-v1640.tp-TARGET_SHEET{border-color:#ea580c;background:#ffedd5;color:#9a3412;}',
+    '.krito-mtmon-btn-v1640.tp-TARGET_SHEET.is-custom{background:#c2410c;color:#ffffff;border-color:#9a3412;}',
+    '.krito-mtmon-menu-v1640{position:absolute;top:calc(100% + 6px);left:0;min-width:230px;max-width:290px;max-height:300px;overflow-y:auto;background:#ffffff;border:1.5px solid #38bdf8;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,0.22);padding:8px;z-index:100028;display:none;}',
+    '.krito-mtmon-menu-v1640.is-open{display:block;}',
+
+    /* Hide legacy v16.38 stock-only pickers cleanly so zero duplicate buttons appear */
+    '#kritoStkMonWrapMgrV1638, #kritoStkMonWrapStoreV1638{display:none !important;}',
+
+    /* TRUE EXCEL FREEZE PANES — STRICT 6-LAYER Z-INDEX HIERARCHY */
+    'table.krito-has-top-total-v1639{border-collapse:separate !important;border-spacing:0 !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639{display:table-header-group !important;}',
+    'table.krito-has-top-total-v1639 > thead{display:table-row-group !important;}',
+
+    /* Layer 2: Frozen Body TD */
+    'table td.krito-xfrz-body-v1640{position:sticky !important;z-index:15 !important;background-color:#ffffff !important;}',
+    'table tr:nth-child(even) > td.krito-xfrz-body-v1640{background-color:#f8fafc !important;}',
+    'table tr.krito-type-subrow-v1631 > td.krito-xfrz-body-v1640{background-color:#f8fafc !important;}',
+
+    /* Layer 3: Non-Frozen Column Header TH */
+    'table.krito-has-top-total-v1639 > thead th{position:sticky !important;z-index:25 !important;}',
+
+    /* Layer 4: Non-Frozen Top Total TD */
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639 > td{position:sticky !important;z-index:28 !important;}',
+
+    /* Layer 5: Frozen CORNER Column Header TH (Top + Left Sticky) */
+    'table.krito-has-top-total-v1639 > thead th.krito-xfrz-hdr-v1640{position:sticky !important;z-index:45 !important;background-color:#f1f5f9 !important;}',
+
+    /* Layer 6: Frozen CORNER Top Total TD (Top + Left Sticky) */
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639 > td.krito-xfrz-tot-v1640{position:sticky !important;z-index:48 !important;background-color:#eef2ff !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639.is-sub-tot-v1639 > td.krito-xfrz-tot-v1640{background-color:#f0f9ff !important;}',
+
+    /* Crisp Excel Freeze Divider Line on Rightmost Frozen Column */
+    '.krito-xfrz-edge-v1640{border-right:2px solid #0284c7 !important;box-shadow:3px 0 6px -2px rgba(2,132,199,0.24) !important;}',
+
+    /* Sell Out Tab: Hide Unit / Location Column Completely */
+    '.krito-sellout-hide-unit-v1640{display:none !important;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoV1640ACss';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  // Strictly ONLY these 3 types get Multi-Month Picker
+  var PICKER_TYPES = [
+    { key: 'STOCK',        label: 'Stock',    icon: '📦' },
+    { key: 'SELL_OUT',     label: 'Sell Out', icon: '🛍️' },
+    { key: 'TARGET_SHEET', label: 'Target',   icon: '🎯' }
+  ];
+  var PICKER_KEYS_SET = new Set(['STOCK', 'SELL_OUT', 'TARGET_SHEET']);
+
+  var MULTI_MONTH_STATE = {
+    brand: '',
+    byType: { STOCK: [], SELL_OUT: [], TARGET_SHEET: [] },
+    openMenuKey: ''
+  };
+  window._kritoMultiTypeMonthStateV1640 = MULTI_MONTH_STATE;
+
+  function esc40(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ40(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI40(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function growthHtml40(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly) return cur > 0 ? '<span style="color:#0284c7;font-weight:800;">★ NEW</span>' : '0.0%';
+    var p = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    var col = Number(p) >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (Number(p) >= 0 ? '+' : '') + p + '%</span>';
+  }
+
+  function getCaseEntry40(mapObj, key) {
+    if (!mapObj || !key) return null;
+    if (mapObj[key]) return mapObj[key];
+    var up = String(key).trim().toUpperCase();
+    var ks = Object.keys(mapObj);
+    for (var i = 0; i < ks.length; i++) {
+      if (String(ks[i]).trim().toUpperCase() === up) return mapObj[ks[i]];
+    }
+    return null;
+  }
+
+  function getRawPeriod40(typeKey, periodOpt) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return null;
+      var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var pk = periodOpt || (typeof ACTIVE_MONTH !== 'undefined' ? ACTIVE_MONTH : '');
+      var ds = LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey];
+      if (ds && ds[br] && ds[br][pk]) return ds[br][pk];
+      if (typeKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[br] && LIVE_PAYLOAD.brands[br][pk]) {
+        return LIVE_PAYLOAD.brands[br][pk];
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  // =========================================================================
+  // POINT 5: FLATTEN SELL_OUT DATA IN LIVE_PAYLOAD (live.html ONLY)
+  // =========================================================================
+  function buildTertiaryUnitToPartyLookup40(brand) {
+    var map = {};
+    try {
+      var tertBr = LIVE_PAYLOAD && LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets.TERTIARY && LIVE_PAYLOAD.datasets.TERTIARY[brand];
+      if (!tertBr) return map;
+      Object.keys(tertBr).forEach(function(pk) {
+        var pObj = tertBr[pk];
+        if (!pObj || !Array.isArray(pObj.stores)) return;
+        for (var i = 0; i < pObj.stores.length; i++) {
+          var st = pObj.stores[i];
+          if (!st || !st.party) continue;
+          var pUp = String(st.party).trim().toUpperCase();
+          if (!map[pUp]) map[pUp] = { parentParty: st.party, manager: st.manager || 'Unassigned' };
+          if (Array.isArray(st.subStores)) {
+            for (var j = 0; j < st.subStores.length; j++) {
+              var su = st.subStores[j];
+              if (!su || !su.store) continue;
+              var uUp = String(su.store).trim().toUpperCase();
+              if (!map[uUp]) map[uUp] = { parentParty: st.party, manager: su.manager || st.manager || 'Unassigned' };
+            }
+          }
+        }
+      });
+    } catch (e) {}
+    return map;
+  }
+
+  function normalizeSellOutDatasetInPlaceV1640() {
+    if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD || !LIVE_PAYLOAD.datasets || !LIVE_PAYLOAD.datasets.SELL_OUT) return;
+    if (LIVE_PAYLOAD._sellOutFlattenedV1640) return;
+
+    var soRoot = LIVE_PAYLOAD.datasets.SELL_OUT;
+    Object.keys(soRoot).forEach(function(brand) {
+      var tertLookup = buildTertiaryUnitToPartyLookup40(brand);
+      var bPeriods = soRoot[brand] || {};
+
+      Object.keys(bPeriods).forEach(function(pk) {
+        var pObj = bPeriods[pk];
+        if (!pObj || !Array.isArray(pObj.stores) || pObj.stores.length === 0) return;
+
+        var needsFlatten = pObj.stores.some(function(st) {
+          if (!st) return false;
+          var pUp = String(st.party || '').trim().toUpperCase();
+          return (Array.isArray(st.subStores) && st.subStores.length > 0) || pUp.indexOf('SELL OUT') !== -1 || pUp.indexOf('SELLOUT') !== -1;
+        });
+        if (!needsFlatten) return;
+
+        var flatStoreMap = {};
+        var rebuiltAttrByStore = {};
+        var rebuiltAttrByMgr = {};
+        var rebuiltAttrTotals = {};
+        var splitByStore = {};
+        var splitByMgr = {};
+        var hadSubAttrs = false;
+
+        function addPromotedUnit(unitName, mgrName, qty, net, mrp, disc, rowsCnt, lastUpd, lastUpdTs, attrsObj) {
+          var cleanName = String(unitName || '').trim();
+          if (!cleanName) return;
+          var uUp = cleanName.toUpperCase();
+          var tInfo = tertLookup[uUp];
+          var finalMgr = String(mgrName || '').trim();
+          if ((!finalMgr || finalMgr === 'Unassigned') && tInfo && tInfo.manager) finalMgr = tInfo.manager;
+          if (!finalMgr) finalMgr = 'Unassigned';
+
+          if (!flatStoreMap[uUp]) {
+            flatStoreMap[uUp] = {
+              party: cleanName, manager: finalMgr,
+              qty: 0, net: 0, mrp: 0, disc: 0, discPct: 0, rows: 0,
+              lastUpd: lastUpd || '', lastUpdTs: Number(lastUpdTs) || 0
+            };
+          }
+          var dst = flatStoreMap[uUp];
+          dst.qty += Number(qty) || 0;
+          dst.net += Number(net) || 0;
+          dst.mrp += Number(mrp) || 0;
+          dst.disc += Number(disc) || 0;
+          dst.rows += Number(rowsCnt) || 0;
+          if ((Number(lastUpdTs) || 0) >= dst.lastUpdTs && lastUpd) {
+            dst.lastUpd = lastUpd; dst.lastUpdTs = Number(lastUpdTs) || 0;
+          }
+
+          if (!splitByStore[uUp]) splitByStore[uUp] = [0, 0, 0, 0];
+          if (!splitByMgr[finalMgr]) splitByMgr[finalMgr] = [0, 0, 0, 0];
+          var qN = Number(qty) || 0, vN = Number(net) || 0;
+          if (qN < 0 || (qN === 0 && vN < 0)) {
+            splitByStore[uUp][2] += qN; splitByStore[uUp][3] += vN;
+            splitByMgr[finalMgr][2] += qN; splitByMgr[finalMgr][3] += vN;
+          } else {
+            splitByStore[uUp][0] += qN; splitByStore[uUp][1] += vN;
+            splitByMgr[finalMgr][0] += qN; splitByMgr[finalMgr][1] += vN;
+          }
+
+          if (attrsObj && typeof attrsObj === 'object') {
+            hadSubAttrs = true;
+            Object.keys(attrsObj).forEach(function(hName) {
+              if (!rebuiltAttrByStore[hName]) rebuiltAttrByStore[hName] = {};
+              if (!rebuiltAttrByMgr[hName]) rebuiltAttrByMgr[hName] = {};
+              if (!rebuiltAttrTotals[hName]) rebuiltAttrTotals[hName] = {};
+              if (!rebuiltAttrByStore[hName][cleanName]) rebuiltAttrByStore[hName][cleanName] = {};
+              if (!rebuiltAttrByMgr[hName][finalMgr]) rebuiltAttrByMgr[hName][finalMgr] = {};
+              var subMap = attrsObj[hName] || {};
+              Object.keys(subMap).forEach(function(v) {
+                var qv = Number(subMap[v]) || 0;
+                if (qv === 0) return;
+                rebuiltAttrByStore[hName][cleanName][v] = (rebuiltAttrByStore[hName][cleanName][v] || 0) + qv;
+                rebuiltAttrByMgr[hName][finalMgr][v] = (rebuiltAttrByMgr[hName][finalMgr][v] || 0) + qv;
+                rebuiltAttrTotals[hName][v] = (rebuiltAttrTotals[hName][v] || 0) + qv;
+              });
+            });
+          }
+        }
+
+        for (var i = 0; i < pObj.stores.length; i++) {
+          var st = pObj.stores[i];
+          if (!st) continue;
+          if (Array.isArray(st.subStores) && st.subStores.length > 0) {
+            for (var j = 0; j < st.subStores.length; j++) {
+              var sub = st.subStores[j];
+              if (!sub) continue;
+              addPromotedUnit(
+                sub.store || st.party, sub.manager || st.manager,
+                sub.qty, sub.net, sub.mrp, sub.disc, sub.rows,
+                st.lastUpd, st.lastUpdTs, sub.attrs
+              );
+            }
+          } else {
+            var rawAttrs = {};
+            if (pObj.attributes) {
+              Object.keys(pObj.attributes).forEach(function(h) {
+                var sm = pObj.attributes[h] && getCaseEntry40(pObj.attributes[h].byStore, st.party);
+                if (sm) rawAttrs[h] = sm;
+              });
+            }
+            addPromotedUnit(
+              st.party, st.manager, st.qty, st.net, st.mrp, st.disc, st.rows,
+              st.lastUpd, st.lastUpdTs, rawAttrs
+            );
+          }
+        }
+
+        var newStores = Object.values(flatStoreMap).map(function(s) {
+          s.qty = Math.round(s.qty); s.net = Math.round(s.net);
+          s.mrp = Math.round(s.mrp); s.disc = Math.round(s.disc);
+          s.discPct = s.mrp > 0 ? Number(((s.disc / s.mrp) * 100).toFixed(2)) : 0;
+          return s;
+        }).sort(function(a, b) { return (b.net || b.mrp) - (a.net || a.mrp); });
+
+        var mgrAgg = {};
+        newStores.forEach(function(s) {
+          var mk = s.manager || 'Unassigned';
+          if (!mgrAgg[mk]) mgrAgg[mk] = { manager: mk, stores: 0, qty: 0, mrp: 0, net: 0, disc: 0 };
+          mgrAgg[mk].stores += 1; mgrAgg[mk].qty += s.qty;
+          mgrAgg[mk].mrp += s.mrp; mgrAgg[mk].net += s.net; mgrAgg[mk].disc += s.disc;
+        });
+        var newManagers = Object.values(mgrAgg).map(function(m) {
+          m.discPct = m.mrp > 0 ? Number(((m.disc / m.mrp) * 100).toFixed(2)) : 0;
+          return m;
+        }).sort(function(a, b) { return (b.net || b.mrp) - (a.net || a.mrp); });
+
+        pObj.stores = newStores;
+        pObj.managers = newManagers;
+        if (pObj.grandTotal) pObj.grandTotal.stores = newStores.length;
+
+        if (hadSubAttrs && pObj.attributes) {
+          Object.keys(pObj.attributes).forEach(function(hName) {
+            if (rebuiltAttrByStore[hName]) {
+              pObj.attributes[hName].byStore = rebuiltAttrByStore[hName];
+              pObj.attributes[hName].byManager = rebuiltAttrByMgr[hName];
+            }
+          });
+        }
+
+        var outSplitStore = {}, outSplitMgr = {};
+        var bQ = 0, bV = 0, rQ = 0, rV = 0;
+        Object.keys(splitByStore).forEach(function(k) {
+          var a = splitByStore[k];
+          var disp = flatStoreMap[k] ? flatStoreMap[k].party : k;
+          outSplitStore[disp] = [Math.round(a[0]), Math.round(a[1]), Math.round(a[2]), Math.round(a[3])];
+          bQ += a[0]; bV += a[1]; rQ += a[2]; rV += a[3];
+        });
+        Object.keys(splitByMgr).forEach(function(m) {
+          var a = splitByMgr[m];
+          outSplitMgr[m] = [Math.round(a[0]), Math.round(a[1]), Math.round(a[2]), Math.round(a[3])];
+        });
+        if (!pObj.sellOutSplit) {
+          pObj.sellOutSplit = {
+            bQ: Math.round(bQ), bV: Math.round(bV), rQ: Math.round(rQ), rV: Math.round(rV),
+            nQ: Math.round(bQ + rQ), nV: Math.round(bV + rV),
+            byMgr: outSplitMgr, byStore: outSplitStore
+          };
+        } else {
+          var oldKeys = Object.keys(pObj.sellOutSplit.byStore || {});
+          var isWrapperSplit = oldKeys.some(function(k) { return k.toUpperCase().indexOf('SELL OUT') !== -1 || k.toUpperCase().indexOf('SELLOUT') !== -1; });
+          if (isWrapperSplit || oldKeys.length <= 2) {
+            pObj.sellOutSplit.byStore = outSplitStore;
+            pObj.sellOutSplit.byMgr = outSplitMgr;
+          }
+        }
+
+        if (pObj.unitDaily && Array.isArray(pObj.unitDaily.r) && Array.isArray(pObj.unitDaily.u)) {
+          var uList = pObj.unitDaily.u;
+          var newPList = [], newPMap = {}, newCList = [], newCMap = {}, newDailyR = [];
+          for (var dr = 0; dr < pObj.unitDaily.r.length; dr++) {
+            var dRow = pObj.unitDaily.r[dr];
+            var iso = dRow[0], lbl = dRow[1], uEnts = Array.isArray(dRow[2]) ? dRow[2] : [];
+            var dQ = 0, dN = 0, dM = 0, dD = 0, pEnts = [];
+            for (var ue = 0; ue < uEnts.length; ue++) {
+              var ent = uEnts[ue];
+              var rawU = String(uList[ent[0]] || '');
+              var parts = rawU.split('||');
+              var realParty = (parts.length > 1 ? parts[1] : parts[0]).trim().toUpperCase();
+              if (!realParty) continue;
+              var stInfo = flatStoreMap[realParty];
+              var realMgr = (stInfo && stInfo.manager) ? stInfo.manager.toUpperCase() : 'UNASSIGNED';
+              var pi = newPMap[realParty]; if (pi === undefined) { pi = newPList.length; newPList.push(realParty); newPMap[realParty] = pi; }
+              var ci = newCMap[realMgr]; if (ci === undefined) { ci = newCList.length; newCList.push(realMgr); newCMap[realMgr] = ci; }
+              var eq = Number(ent[1]) || 0, en = Number(ent[2]) || 0, em = Number(ent[3]) || 0, ed = Number(ent[4]) || 0;
+              dQ += eq; dN += en; dM += em; dD += ed;
+              pEnts.push([pi, ci, eq, en, em, ed]);
+            }
+            newDailyR.push([iso, lbl, Math.round(dQ), Math.round(dN), Math.round(dM), Math.round(dD), pEnts]);
+          }
+          if (newDailyR.length > 0) {
+            pObj.daily = { mode: (pObj.daily && pObj.daily.mode) || 'DATE', p: newPList, c: newCList, r: newDailyR };
+          }
+        }
+      });
+    });
+
+    LIVE_PAYLOAD._sellOutFlattenedV1640 = true;
+  }
+  window.normalizeSellOutDatasetInPlaceV1640 = normalizeSellOutDatasetInPlaceV1640;
+
+  function hideUnitColumnOnSellOutTabV1640() {
+    var isSellOutTab = (typeof ACTIVE_DATA_TYPE !== 'undefined' && ACTIVE_DATA_TYPE === 'SELL_OUT');
+    var tb = document.getElementById('liveStoreTbody');
+    var tbl = tb ? tb.closest('table') : null;
+    if (!tbl) return;
+    var theadRow = tbl.querySelector('thead tr');
+    if (!theadRow) return;
+
+    var unitColIdx = -1;
+    for (var i = 0; i < theadRow.children.length; i++) {
+      var t = (theadRow.children[i].getAttribute('data-orig-title-v1624') || theadRow.children[i].textContent || '').replace(/❄️|Frozen|Freeze/g, '').trim().toUpperCase();
+      if (t.indexOf('UNIT / LOCATION') !== -1) { unitColIdx = i; break; }
+    }
+    if (unitColIdx < 0) return;
+
+    theadRow.children[unitColIdx].classList.toggle('krito-sellout-hide-unit-v1640', isSellOutTab);
+    var allTrs = tbl.querySelectorAll('tbody > tr, tfoot > tr');
+    for (var r = 0; r < allTrs.length; r++) {
+      var td = allTrs[r].children[unitColIdx];
+      if (td) td.classList.toggle('krito-sellout-hide-unit-v1640', isSellOutTab);
+    }
+    var multiBtn = document.getElementById('kritoMultiUnitBtnV1634');
+    if (multiBtn) multiBtn.style.display = isSellOutTab ? 'none' : '';
+  }
+
+  // =========================================================================
+  // POINT 1: CONNECTED MULTI-MONTH PICKER (STOCK / SELL OUT / TARGET SHEET)
+  // =========================================================================
+  function getAvailableMonthsForType40(typeKey) {
+    var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var ds = (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD && LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey])
+      ? LIVE_PAYLOAD.datasets[typeKey][br] : null;
+    if (!ds) return [];
+    return Object.keys(ds).filter(function(pk) { return /^[A-Z]{3}-\d{4}$/.test(pk); }).sort(function(a, b) {
+      var ma = a.match(/^([A-Z]{3})-(\d{4})$/), mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+      var ka = ma ? (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0)) : 0;
+      var kb = mb ? (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) : 0;
+      return kb - ka;
+    });
+  }
+
+  function getActiveMonthsForType40(typeKey) {
+    var curBrand = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    if (MULTI_MONTH_STATE.brand !== curBrand) {
+      MULTI_MONTH_STATE.brand = curBrand;
+      MULTI_MONTH_STATE.byType = { STOCK: [], SELL_OUT: [], TARGET_SHEET: [] };
+    }
+    if (!PICKER_KEYS_SET.has(typeKey)) {
+      var m = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+      return m ? [m] : [];
+    }
+    var avail = getAvailableMonthsForType40(typeKey);
+    var saved = (MULTI_MONTH_STATE.byType[typeKey] || []).filter(function(x) { return avail.indexOf(x) !== -1; });
+    MULTI_MONTH_STATE.byType[typeKey] = saved;
+    if (saved.length > 0) return saved;
+    var curM = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    return curM ? [curM] : avail.slice(0, 1);
+  }
+
+  function isCustomMonthActiveForType40(typeKey) {
+    if (!PICKER_KEYS_SET.has(typeKey)) return false;
+    var list = getActiveMonthsForType40(typeKey);
+    var curM = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    return list.length > 1 || (list.length === 1 && list[0] !== curM);
+  }
+
+  function getShortTagForType40(typeKey) {
+    var list = getActiveMonthsForType40(typeKey);
+    if (list.length === 0) return '';
+    return list.length === 1 ? list[0] : (list.length + ' Months');
+  }
+
+  function getAggregatedDataForType40(typeKey, periodListOpt) {
+    var months = periodListOpt || getActiveMonthsForType40(typeKey);
+    if (!months || months.length === 0) return null;
+    if (months.length === 1) return getRawPeriod40(typeKey, months[0]);
+
+    var mgrMap = {}, mgrStoresSet = {}, storeMap = {}, attrMap = {};
+    var dailyRows = [], dailyPDict = [], dailyPIdx = {}, dailyCDict = [], dailyCIdx = {};
+    var uDailyRows = [], uDailyUDict = [], uDailyUIdx = {};
+
+    for (var mi = 0; mi < months.length; mi++) {
+      var pObj = getRawPeriod40(typeKey, months[mi]);
+      if (!pObj) continue;
+
+      if (Array.isArray(pObj.stores)) {
+        for (var si = 0; si < pObj.stores.length; si++) {
+          var st = pObj.stores[si];
+          if (!st || !st.party) continue;
+          var pUp = String(st.party).trim().toUpperCase();
+          var mName = st.manager || 'Unassigned';
+          var mUp = mName.trim().toUpperCase();
+
+          if (!mgrMap[mUp]) { mgrMap[mUp] = { manager: mName, stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 }; mgrStoresSet[mUp] = new Set(); }
+          mgrStoresSet[mUp].add(pUp);
+          mgrMap[mUp].qty += Number(st.qty) || 0; mgrMap[mUp].net += Number(st.net) || 0;
+          mgrMap[mUp].mrp += Number(st.mrp) || 0; mgrMap[mUp].disc += Number(st.disc) || 0;
+
+          if (!storeMap[pUp]) {
+            storeMap[pUp] = {
+              party: st.party, manager: mName, qty: 0, net: 0, mrp: 0, disc: 0,
+              lastUpd: st.lastUpd || '', lastUpdTs: Number(st.lastUpdTs) || 0, _subMap: {}
+            };
+          }
+          var dst = storeMap[pUp];
+          dst.qty += Number(st.qty) || 0; dst.net += Number(st.net) || 0;
+          dst.mrp += Number(st.mrp) || 0; dst.disc += Number(st.disc) || 0;
+          if ((Number(st.lastUpdTs) || 0) >= dst.lastUpdTs && st.lastUpd) { dst.lastUpd = st.lastUpd; dst.lastUpdTs = Number(st.lastUpdTs) || 0; }
+
+          if (Array.isArray(st.subStores) && st.subStores.length > 0) {
+            for (var ui = 0; ui < st.subStores.length; ui++) {
+              var su = st.subStores[ui];
+              var uUp = String(su.store || st.party).trim().toUpperCase();
+              if (!dst._subMap[uUp]) dst._subMap[uUp] = { store: su.store || st.party, manager: su.manager || mName, qty: 0, net: 0, mrp: 0, disc: 0, attrs: {} };
+              var du = dst._subMap[uUp];
+              du.qty += Number(su.qty) || 0; du.net += Number(su.net) || 0;
+              du.mrp += Number(su.mrp) || 0; du.disc += Number(su.disc) || 0;
+              if (su.attrs) {
+                Object.keys(su.attrs).forEach(function(hName) {
+                  if (!du.attrs[hName]) du.attrs[hName] = {};
+                  Object.keys(su.attrs[hName] || {}).forEach(function(v) {
+                    du.attrs[hName][v] = (du.attrs[hName][v] || 0) + (Number(su.attrs[hName][v]) || 0);
+                  });
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (pObj.attributes) {
+        Object.keys(pObj.attributes).forEach(function(hName) {
+          var srcA = pObj.attributes[hName];
+          if (!srcA) return;
+          if (!attrMap[hName]) attrMap[hName] = { values: [], _valSet: new Set(), totals: {}, byManager: {}, byStore: {} };
+          var dstA = attrMap[hName];
+          Object.keys(srcA.totals || {}).forEach(function(v) { dstA._valSet.add(v); dstA.totals[v] = (dstA.totals[v] || 0) + (Number(srcA.totals[v]) || 0); });
+          Object.keys(srcA.byManager || {}).forEach(function(mk) {
+            if (!dstA.byManager[mk]) dstA.byManager[mk] = {};
+            Object.keys(srcA.byManager[mk] || {}).forEach(function(v) { dstA.byManager[mk][v] = (dstA.byManager[mk][v] || 0) + (Number(srcA.byManager[mk][v]) || 0); });
+          });
+          Object.keys(srcA.byStore || {}).forEach(function(sk) {
+            if (!dstA.byStore[sk]) dstA.byStore[sk] = {};
+            Object.keys(srcA.byStore[sk] || {}).forEach(function(v) { dstA.byStore[sk][v] = (dstA.byStore[sk][v] || 0) + (Number(srcA.byStore[sk][v]) || 0); });
+          });
+        });
+      }
+
+      if (pObj.daily && Array.isArray(pObj.daily.r)) {
+        var sp = pObj.daily.p || [], sc = pObj.daily.c || [];
+        for (var di = 0; di < pObj.daily.r.length; di++) {
+          var dr = pObj.daily.r[di];
+          var remapped = (Array.isArray(dr[6]) ? dr[6] : []).map(function(pe) {
+            var pn = sp[pe[0]] || 'UNKNOWN', cn = sc[pe[1]] || 'UNASSIGNED';
+            var pi = dailyPIdx[pn]; if (pi === undefined) { pi = dailyPDict.length; dailyPDict.push(pn); dailyPIdx[pn] = pi; }
+            var ci = dailyCIdx[cn]; if (ci === undefined) { ci = dailyCDict.length; dailyCDict.push(cn); dailyCIdx[cn] = ci; }
+            return [pi, ci, pe[2], pe[3], pe[4], pe[5]];
+          });
+          dailyRows.push([dr[0], dr[1], dr[2], dr[3], dr[4], dr[5], remapped]);
+        }
+      }
+
+      if (pObj.unitDaily && Array.isArray(pObj.unitDaily.r)) {
+        var suL = pObj.unitDaily.u || [];
+        for (var udi = 0; udi < pObj.unitDaily.r.length; udi++) {
+          var udr = pObj.unitDaily.r[udi];
+          var uRemap = (Array.isArray(udr[2]) ? udr[2] : []).map(function(ue) {
+            var un = suL[ue[0]] || '';
+            var ni = uDailyUIdx[un]; if (ni === undefined) { ni = uDailyUDict.length; uDailyUDict.push(un); uDailyUIdx[un] = ni; }
+            return [ni, ue[1], ue[2], ue[3], ue[4], ue[5] || 0];
+          });
+          uDailyRows.push([udr[0], udr[1], uRemap]);
+        }
+      }
+    }
+
+    var managersArr = Object.keys(mgrMap).map(function(mk) {
+      var m = mgrMap[mk];
+      m.stores = mgrStoresSet[mk] ? mgrStoresSet[mk].size : 0;
+      m.discPct = m.mrp > 0 ? Number(((m.disc / m.mrp) * 100).toFixed(2)) : 0;
+      return m;
+    });
+    var storesArr = Object.values(storeMap).map(function(st) {
+      st.discPct = st.mrp > 0 ? Number(((st.disc / st.mrp) * 100).toFixed(2)) : 0;
+      var subVals = Object.values(st._subMap);
+      if (subVals.length > 0 && typeKey !== 'SELL_OUT') st.subStores = subVals.sort(function(a, b) { return (b.net || b.qty) - (a.net || a.qty); });
+      delete st._subMap;
+      return st;
+    });
+    Object.keys(attrMap).forEach(function(h) { attrMap[h].values = Array.from(attrMap[h]._valSet); delete attrMap[h]._valSet; });
+    dailyRows.sort(function(a, b) { return String(a[0]).localeCompare(String(b[0])); });
+    uDailyRows.sort(function(a, b) { return String(a[0]).localeCompare(String(b[0])); });
+
+    return {
+      managers: managersArr, stores: storesArr, attributes: attrMap,
+      daily: { mode: 'DATE', p: dailyPDict, c: dailyCDict, r: dailyRows },
+      unitDaily: uDailyRows.length > 0 ? { u: uDailyUDict, r: uDailyRows } : null
+    };
+  }
+  window.getAggregatedDataForTypeV1640 = getAggregatedDataForType40;
+
+  function getLyAggregatedDataForType40(typeKey) {
+    var months = getActiveMonthsForType40(typeKey);
+    var lyMonths = months.map(function(m) {
+      if (typeof getLastYearPeriodKey === 'function') return getLastYearPeriodKey(m);
+      var mm = String(m).match(/^([A-Z]{3})-(\d{4})$/);
+      return mm ? (mm[1] + '-' + (parseInt(mm[2], 10) - 1)) : '';
+    }).filter(Boolean);
+    return lyMonths.length > 0 ? getAggregatedDataForType40(typeKey, lyMonths) : null;
+  }
+
+  function isTypeSelectedInManagerBar40(typeKey) {
+    var st = window._kritoMultiTypeStateV1631;
+    var isTert = (typeof ACTIVE_DATA_TYPE === 'undefined' || ACTIVE_DATA_TYPE === 'TERTIARY');
+    return isTert && st && Array.isArray(st.selectedTypes) && st.selectedTypes.indexOf(typeKey) !== -1;
+  }
+
+  function buildTypeMonthPickerHtml40(scopeId, tMeta) {
+    var typeKey = tMeta.key;
+    var avail = getAvailableMonthsForType40(typeKey);
+    var activeList = getActiveMonthsForType40(typeKey);
+    var activeSet = new Set(activeList);
+    var isCustom = isCustomMonthActiveForType40(typeKey);
+    var menuKey = scopeId + ':' + typeKey;
+    var isOpen = (MULTI_MONTH_STATE.openMenuKey === menuKey);
+    var lbl = tMeta.icon + ' ' + tMeta.label + ': ' + (activeList.length === 1 ? activeList[0] : (activeList.length + ' Months')) + ' ▼';
+
+    var itemsHtml = avail.map(function(m) {
+      var pObj = getRawPeriod40(typeKey, m);
+      var q = (pObj && pObj.grandTotal) ? (Number(pObj.grandTotal.qty) || 0) : 0;
+      var chk = activeSet.has(m);
+      return '<label class="krito-stkmon-item-v1638">' +
+        '<span style="display:inline-flex;align-items:center;gap:6px;"><input type="checkbox" data-mtmon-chk-v1640="' + typeKey + '|' + esc40(m) + '"' + (chk ? ' checked' : '') + '><span>' + esc40(m) + '</span></span>' +
+        '<span class="krito-stkmon-qty-v1638">' + fmtQ40(q) + ' Qty</span>' +
+      '</label>';
+    }).join('') || '<div style="padding:6px;font-size:11px;color:#64748b;">No months uploaded yet.</div>';
+
+    return '<button type="button" class="krito-mtmon-btn-v1640 tp-' + typeKey + (isCustom ? ' is-custom' : '') + '" data-mtmon-toggle-v1640="' + menuKey + '" title="Select 1 or Multiple Months for ' + esc40(tMeta.label) + ' (Synced across Manager Summary &amp; Store Data)">' + esc40(lbl) + '</button>' +
+      '<div class="krito-mtmon-menu-v1640' + (isOpen ? ' is-open' : '') + '">' +
+        '<div class="krito-stkmon-head-v1638">' +
+          '<span>' + esc40(tMeta.label) + ' Month(s)</span>' +
+          '<button type="button" data-mtmon-reset-v1640="' + typeKey + '">Current</button>' +
+        '</div>' +
+        itemsHtml +
+      '</div>';
+  }
+
+  function mountAllConnectedTypeMonthPickers40() {
+    var bar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    var storeAnchor = document.getElementById('kritoMultiUnitBtnV1634') || document.getElementById('kritoHideColWrapV1626') || document.getElementById('kritoStoreExpandFsBtnV1624');
+    var lastStoreEl = storeAnchor;
+
+    PICKER_TYPES.forEach(function(tMeta) {
+      var tk = tMeta.key;
+      var show = isTypeSelectedInManagerBar40(tk) && getAvailableMonthsForType40(tk).length > 0;
+
+      var mgrId = 'kritoMtMonMgr_' + tk + '_V1640';
+      var mgrWrap = document.getElementById(mgrId);
+      var typeBtn = bar ? bar.querySelector('[data-mtype-key-v1631="' + tk + '"]') : null;
+      if (!show || !typeBtn) {
+        if (mgrWrap) mgrWrap.remove();
+      } else {
+        if (!mgrWrap) {
+          mgrWrap = document.createElement('span');
+          mgrWrap.id = mgrId;
+          mgrWrap.className = 'krito-mtmon-wrap-v1640';
+        }
+        mgrWrap.innerHTML = buildTypeMonthPickerHtml40('MGR', tMeta);
+        if (mgrWrap.previousElementSibling !== typeBtn) typeBtn.insertAdjacentElement('afterend', mgrWrap);
+      }
+
+      var stId = 'kritoMtMonStore_' + tk + '_V1640';
+      var stWrap = document.getElementById(stId);
+      if (!show || !lastStoreEl || !lastStoreEl.parentElement) {
+        if (stWrap) stWrap.remove();
+      } else {
+        if (!stWrap) {
+          stWrap = document.createElement('span');
+          stWrap.id = stId;
+          stWrap.className = 'krito-mtmon-wrap-v1640';
+          stWrap.style.marginLeft = '6px';
+        }
+        stWrap.innerHTML = buildTypeMonthPickerHtml40('STORE', tMeta);
+        if (stWrap.previousElementSibling !== lastStoreEl) lastStoreEl.insertAdjacentElement('afterend', stWrap);
+        lastStoreEl = stWrap;
+      }
+    });
+  }
+
+  function getHeaderAllowedSet40(headerName) {
+    try {
+      var btn = document.getElementById('kritoHeaderDataModeBtnV1638');
+      if (btn && btn.classList.contains('is-all')) return null;
+      if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && SELECTED_ATTR_SUBVALS[headerName] instanceof Set && SELECTED_ATTR_SUBVALS[headerName].size > 0) {
+        return SELECTED_ATTR_SUBVALS[headerName];
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function sumAttrMap40(valMap, headerName) {
+    if (!valMap || typeof valMap !== 'object') return { qty: 0, count: 0, entries: [] };
+    var allowSet = getHeaderAllowedSet40(headerName);
+    var sum = 0, entries = [];
+    Object.keys(valMap).forEach(function(v) {
+      if (allowSet && !allowSet.has(v)) return;
+      var q = Number(valMap[v]) || 0;
+      if (q === 0) return;
+      sum += q;
+      entries.push({ val: v, qty: q });
+    });
+    entries.sort(function(a, b) { return b.qty - a.qty; });
+    return { qty: sum, count: entries.length, entries: entries };
+  }
+
+  function updateSubRowsForPickerType40(typeKey, niceBaseLabel) {
+    if (!isTypeSelectedInManagerBar40(typeKey)) return;
+    var isCustom = isCustomMonthActiveForType40(typeKey);
+    var pData = getAggregatedDataForType40(typeKey);
+    var lyData = getLyAggregatedDataForType40(typeKey);
+    var badgeSuffix = isCustom ? (' • ' + getShortTagForType40(typeKey)) : '';
+
+    var mgrMap = {}, mgrTot = { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 };
+    var lyMgrMap = {}, lyMgrTot = { qty: 0, net: 0 };
+    var storeMap = {}, storeTot = { qty: 0, net: 0, mrp: 0, disc: 0 };
+    var lyStoreMap = {}, lyStoreTot = { qty: 0, net: 0 };
+
+    var tertUnitToParent = (typeKey === 'SELL_OUT') ? buildTertiaryUnitToPartyLookup40(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') : {};
+
+    if (pData && Array.isArray(pData.managers)) {
+      pData.managers.forEach(function(m) {
+        var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+        mgrMap[mk] = m;
+        mgrTot.stores += Number(m.stores) || 0; mgrTot.qty += Number(m.qty) || 0;
+        mgrTot.net += Number(m.net) || 0; mgrTot.mrp += Number(m.mrp) || 0; mgrTot.disc += Number(m.disc) || 0;
+      });
+    }
+    if (lyData && Array.isArray(lyData.managers)) {
+      lyData.managers.forEach(function(m) {
+        var mk = String(m.manager || 'Unassigned').trim().toUpperCase();
+        lyMgrMap[mk] = m; lyMgrTot.qty += Number(m.qty) || 0; lyMgrTot.net += Number(m.net) || 0;
+      });
+    }
+    if (pData && Array.isArray(pData.stores)) {
+      pData.stores.forEach(function(s) {
+        var sk = String(s.party || '').trim().toUpperCase();
+        storeMap[sk] = s;
+        var parentInfo = tertUnitToParent[sk];
+        if (parentInfo && parentInfo.parentParty) {
+          var parUp = String(parentInfo.parentParty).trim().toUpperCase();
+          if (parUp !== sk) {
+            if (!storeMap[parUp]) {
+              storeMap[parUp] = { party: parentInfo.parentParty, manager: s.manager, qty: 0, net: 0, mrp: 0, disc: 0, lastUpd: s.lastUpd || '', _rolledUpFromUnits: true };
+            }
+            if (storeMap[parUp]._rolledUpFromUnits) {
+              storeMap[parUp].qty += Number(s.qty) || 0; storeMap[parUp].net += Number(s.net) || 0;
+              storeMap[parUp].mrp += Number(s.mrp) || 0; storeMap[parUp].disc += Number(s.disc) || 0;
+            }
+          }
+        }
+        storeTot.qty += Number(s.qty) || 0; storeTot.net += Number(s.net) || 0;
+        storeTot.mrp += Number(s.mrp) || 0; storeTot.disc += Number(s.disc) || 0;
+      });
+    }
+    if (lyData && Array.isArray(lyData.stores)) {
+      lyData.stores.forEach(function(s) {
+        var sk = String(s.party || '').trim().toUpperCase();
+        lyStoreMap[sk] = s; lyStoreTot.qty += Number(s.qty) || 0; lyStoreTot.net += Number(s.net) || 0;
+      });
+    }
+
+    function patchTable(table, isStoreTable) {
+      if (!table) return;
+      var theadRow = table.querySelector('thead tr');
+      var tbody = table.querySelector('tbody');
+      if (!theadRow || !tbody) return;
+
+      var cols = Array.from(theadRow.children).map(function(th, idx) {
+        var raw = (th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '')
+          .replace(/❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+        var cleanHdr = raw.replace(/📌/g, '').trim();
+        var u = cleanHdr.toUpperCase();
+        var kind = 'OTHER';
+        if (th.classList.contains('krito-th-type-v1631') || u === 'TYPE') kind = 'TYPE';
+        else if (u.indexOf('PARTY / STORE') !== -1) kind = 'PARTY';
+        else if (u === 'MANAGER') kind = 'MANAGER';
+        else if (u === 'STORES') kind = 'STORES';
+        else if (u.indexOf('UNIT / LOCATION') !== -1) kind = 'UNIT';
+        else if (u === 'DATE WISE') kind = 'DATE_WISE';
+        else if (u.indexOf('LAST REPORT DATE') !== -1) kind = 'LAST_UPD';
+        else if (u.indexOf('LY QTY') === 0) kind = 'LY_QTY';
+        else if (u.indexOf('QTY GROWTH') !== -1) kind = 'QTY_GR';
+        else if (u.indexOf('LY ') === 0) kind = 'LY_VAL';
+        else if (u.indexOf('VAL GROWTH') !== -1) kind = 'VAL_GR';
+        else if (u === 'QTY') kind = 'QTY';
+        else if (u === 'MRP') kind = 'MRP';
+        else if (u.indexOf('DIS %') !== -1) kind = 'DIS_PCT';
+        else if (u.indexOf('NET VALUE') !== -1 || u.indexOf('VALUE') !== -1) kind = 'VALUE';
+        else if ((th.textContent || '').indexOf('📌') !== -1 || cleanHdr.indexOf('Master_') === 0) kind = 'PINNED';
+        return { idx: idx, kind: kind, hdrName: cleanHdr };
+      });
+
+      var partyCol = cols.find(function(c) { return c.kind === 'PARTY'; });
+      var rows = Array.from(tbody.children);
+      var lastEntity = '';
+
+      for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        if (!tr || tr.tagName !== 'TR') continue;
+        var isSub = tr.classList.contains('krito-type-subrow-v1631');
+        var isTot = tr.classList.contains('total-row') || tr.classList.contains('is-total-sub');
+
+        if (!isSub && !isTot) {
+          if (isStoreTable && partyCol && tr.children[partyCol.idx]) {
+            var b = tr.children[partyCol.idx].querySelector('b');
+            lastEntity = (b ? b.textContent : tr.children[partyCol.idx].textContent || '').trim();
+          } else if (!isStoreTable && tr.children[0]) {
+            lastEntity = String(tr.children[0].textContent || '').trim();
+          }
+          continue;
+        }
+        if (!isSub) continue;
+
+        var pill = tr.querySelector('.krito-tp-' + typeKey);
+        if (!pill) continue;
+
+        pill.textContent = niceBaseLabel + badgeSuffix;
+        var entUp = lastEntity.toUpperCase();
+        var rec = isTot
+          ? (isStoreTable ? storeTot : mgrTot)
+          : (isStoreTable ? (storeMap[entUp] || { qty: 0, net: 0, mrp: 0, disc: 0 }) : (mgrMap[entUp] || { stores: 0, qty: 0, net: 0, mrp: 0, disc: 0 }));
+        var lyRec = isTot
+          ? (isStoreTable ? lyStoreTot : lyMgrTot)
+          : (isStoreTable ? (lyStoreMap[entUp] || { qty: 0, net: 0 }) : (lyMgrMap[entUp] || { qty: 0, net: 0 }));
+
+        for (var c = 0; c < cols.length; c++) {
+          var cs = cols[c];
+          var td = tr.children[cs.idx];
+          if (!td) continue;
+
+          if (cs.kind === 'STORES' && !isStoreTable) {
+            td.innerHTML = String(rec.stores || 0);
+          } else if (cs.kind === 'UNIT' && isStoreTable && !isTot) {
+            if (typeKey === 'SELL_OUT') {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            } else if (storeMap[entUp]) {
+              var uCnt = (Array.isArray(rec.subStores) && rec.subStores.length > 0) ? rec.subStores.length : 1;
+              td.innerHTML = '<button type="button" class="krito-sub-unit-btn-v1633" data-toggle-sub-unit-v1633="1" data-type="' + typeKey + '" data-party="' + esc40(lastEntity) + '">+ ' + uCnt + '</button>';
+            } else {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            }
+          } else if (cs.kind === 'DATE_WISE' && isStoreTable && !isTot) {
+            if (storeMap[entUp]) {
+              td.innerHTML = '<button type="button" class="krito-dw-btn-v1637" data-open-dw-v1637="1" data-mode="STANDARD" data-scope="PARTY" data-party="' + esc40(lastEntity) + '" data-type="' + typeKey + '"><span class="krito-dw-ico-v1637">+</span></button>';
+            } else {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            }
+          } else if (cs.kind === 'LAST_UPD' && isStoreTable && !isTot) {
+            td.innerHTML = (rec && rec.lastUpd)
+              ? ('<span class="party-upd-badge-v1617" style="margin-left:0;">🕒 ' + esc40(rec.lastUpd) + '</span>')
+              : '<span style="color:#94a3b8;">-</span>';
+          } else if (cs.kind === 'MANAGER' && isStoreTable && !isTot) {
+            td.innerHTML = (rec && rec.manager) ? esc40(rec.manager) : '<span style="color:#94a3b8;">-</span>';
+          } else if (cs.kind === 'QTY') {
+            td.innerHTML = '<b>' + fmtQ40(rec.qty) + '</b>';
+          } else if (cs.kind === 'VALUE') {
+            td.innerHTML = '<b>' + fmtI40(rec.net) + '</b>';
+          } else if (cs.kind === 'LY_QTY') {
+            td.innerHTML = fmtQ40(lyRec.qty);
+          } else if (cs.kind === 'QTY_GR') {
+            td.innerHTML = growthHtml40(rec.qty, lyRec.qty);
+          } else if (cs.kind === 'LY_VAL') {
+            td.innerHTML = fmtI40(lyRec.net);
+          } else if (cs.kind === 'VAL_GR') {
+            td.innerHTML = growthHtml40(rec.net, lyRec.net);
+          } else if (cs.kind === 'MRP') {
+            td.innerHTML = fmtI40(rec.mrp);
+          } else if (cs.kind === 'DIS_PCT') {
+            var dp = (Number(rec.mrp) || 0) > 0 ? (((Number(rec.disc) || 0) / Number(rec.mrp)) * 100).toFixed(2) : '0.00';
+            td.innerHTML = dp + '%';
+          } else if (cs.kind === 'PINNED') {
+            var attrObj = (pData && pData.attributes) ? getCaseEntry40(pData.attributes, cs.hdrName) : null;
+            if (!attrObj) {
+              td.innerHTML = '<span style="color:#94a3b8;">-</span>';
+            } else if (isTot) {
+              var ts = sumAttrMap40(attrObj.totals, cs.hdrName);
+              td.innerHTML = ts.count > 0 ? ('<b>' + fmtQ40(ts.qty) + ' Qty</b>') : '<span style="color:#94a3b8;">-</span>';
+            } else {
+              var sMap = isStoreTable ? getCaseEntry40(attrObj.byStore, lastEntity) : getCaseEntry40(attrObj.byManager, lastEntity);
+              var sm = sumAttrMap40(sMap, cs.hdrName);
+              td.innerHTML = sm.count > 0
+                ? ('<button type="button" class="krito-sub-attr-btn-v1633" data-open-sub-attr-v1633="1" data-type="' + typeKey + '" data-scope="' + (isStoreTable ? 'STORE' : 'MANAGER') + '" data-entity="' + esc40(lastEntity) + '" data-hdr="' + esc40(cs.hdrName) + '"><span class="krito-sub-attr-ico-v1633">+</span><span>' + fmtQ40(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button>')
+                : '<span style="color:#94a3b8;">-</span>';
+            }
+          }
+        }
+      }
+    }
+
+    var bar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (bar) {
+      var mCard = bar.parentElement;
+      while (mCard && mCard.parentElement && !mCard.querySelector('table')) mCard = mCard.parentElement;
+      if (mCard) patchTable(mCard.querySelector('table'), false);
+    }
+    var sTb = document.getElementById('liveStoreTbody');
+    if (sTb) patchTable(sTb.closest('table'), true);
+  }
+
+  function updateAllPickerTypeSubRows40() {
+    updateSubRowsForPickerType40('STOCK', 'STOCK');
+    updateSubRowsForPickerType40('SELL_OUT', 'SELL OUT');
+    updateSubRowsForPickerType40('TARGET_SHEET', 'TARGET SHEET');
+  }
+
+  // INLINE SYMMETRICAL HEADER DRAWER (FIRES ON WINDOW CAPTURE — FIXES '+' CLICK!)
+  function toggleHeaderInlineDrawerV1640(btn) {
+    var subTr = btn.closest('tr');
+    if (!subTr) return;
+    var typeKey = btn.getAttribute('data-type') || 'TERTIARY';
+    var scope   = btn.getAttribute('data-scope') || 'STORE';
+    var entity  = btn.getAttribute('data-entity') || '';
+    var hdrName = btn.getAttribute('data-hdr') || '';
+    var dKey = typeKey + '|' + scope + '|' + entity + '|' + hdrName;
+
+    var nextTr = subTr.nextElementSibling;
+    var wasSame = (nextTr && nextTr.classList.contains('krito-inline-attr-drawer-v1634') && nextTr.getAttribute('data-iad-key') === dKey);
+    if (nextTr && nextTr.classList.contains('krito-inline-attr-drawer-v1634')) nextTr.remove();
+    var rowBtns = subTr.querySelectorAll('.krito-sub-attr-btn-v1633.is-open-v1634');
+    for (var rb = 0; rb < rowBtns.length; rb++) {
+      rowBtns[rb].classList.remove('is-open-v1634');
+      var ic = rowBtns[rb].querySelector('.krito-sub-attr-ico-v1633');
+      if (ic) ic.textContent = '+';
+    }
+    if (wasSame) return;
+
+    var pData = PICKER_KEYS_SET.has(typeKey) ? getAggregatedDataForType40(typeKey) : getRawPeriod40(typeKey);
+    var attrObj = (pData && pData.attributes) ? getCaseEntry40(pData.attributes, hdrName) : null;
+    if (!attrObj) return;
+
+    var srcMap = (scope === 'MANAGER') ? getCaseEntry40(attrObj.byManager, entity) : getCaseEntry40(attrObj.byStore, entity);
+    var sumObj = sumAttrMap40(srcMap, hdrName);
+
+    var tbl = subTr.closest('table');
+    var theadRow = tbl ? tbl.querySelector('thead tr') : null;
+    var visCols = theadRow ? (Array.from(theadRow.children).filter(function(th) { return !th.classList.contains('krito-col-hidden-v1626') && !th.classList.contains('krito-sellout-hide-unit-v1640'); }).length || theadRow.children.length) : 8;
+
+    var subInfo = '';
+    if (scope === 'MANAGER' && pData && Array.isArray(pData.managers)) {
+      var mObj = pData.managers.find(function(m) { return m && String(m.manager || '').trim().toUpperCase() === entity.trim().toUpperCase(); });
+      if (mObj) subInfo = 'Stores: ' + (mObj.stores || 0);
+    }
+
+    var pillsHtml = sumObj.entries.map(function(e) {
+      var pct = sumObj.qty ? ((e.qty / sumObj.qty) * 100).toFixed(1) : '0.0';
+      return '<div class="krito-iad-pill-v1634"><span>' + esc40(e.val) + '</span><span class="krito-iad-pill-qty-v1634">' + fmtQ40(e.qty) + '</span><span class="krito-iad-pill-pct-v1634">(' + pct + '%)</span></div>';
+    }).join('') || '<span style="font-size:11.5px;color:#64748b;font-weight:700;">No header breakdown data.</span>';
+
+    var typeLbl = typeKey.replace('_', ' ') + (isCustomMonthActiveForType40(typeKey) ? (' • ' + getShortTagForType40(typeKey)) : '');
+    var drawerTr = document.createElement('tr');
+    drawerTr.className = 'krito-inline-attr-drawer-v1634';
+    drawerTr.setAttribute('data-iad-key', dKey);
+    drawerTr.innerHTML = '<td colspan="' + visCols + '"><div class="krito-iad-card-v1634">' +
+      '<div class="krito-iad-head-v1634">' +
+        '<div class="krito-iad-meta-v1634">' +
+          '<span>' + (scope === 'MANAGER' ? '👤 Manager: ' : '🏪 Party: ') + esc40(entity) + '</span>' +
+          (subInfo ? '<span style="color:#64748b;font-weight:700;">| ' + esc40(subInfo) + '</span>' : '') +
+          '<span class="krito-iad-hdr-pill-v1634">📌 ' + esc40(hdrName) + '</span>' +
+          '<span class="krito-iad-tot-pill-v1634">Total Qty: ' + fmtQ40(sumObj.qty) + '</span>' +
+          '<span class="krito-type-pill-v1631 krito-tp-' + esc40(typeKey) + '">' + esc40(typeLbl) + '</span>' +
+        '</div>' +
+        '<button type="button" class="krito-iad-hide-btn-v1634" data-close-iad-v1634="ROW_DRAWER">− Hide</button>' +
+      '</div>' +
+      '<div class="krito-iad-grid-v1634">' + pillsHtml + '</div>' +
+    '</div></td>';
+
+    subTr.insertAdjacentElement('afterend', drawerTr);
+    btn.classList.add('is-open-v1634');
+    var curIco = btn.querySelector('.krito-sub-attr-ico-v1633');
+    if (curIco) curIco.textContent = '−';
+  }
+
+  // =========================================================================
+  // POINT 4: TRUE EXCEL FREEZE PANES FIX (VERTICAL + HORIZONTAL + CORNER LOCK)
+  // =========================================================================
+  function syncTrueExcelFreezeOnTable40(table) {
+    if (!table || table.tagName !== 'TABLE') return;
+    if (table.classList.contains('krito-dw-unit-tbl-v1638') || table.classList.contains('krito-sub-unit-tbl-v1633')) return;
+
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    var tfoot = table.querySelector('tfoot.krito-top-total-tfoot-v1639');
+    if (!theadRow || !tbody) return;
+
+    var ths = Array.from(theadRow.children);
+    var colCount = ths.length;
+    if (colCount < 2) return;
+
+    var lastFrozenIdx = -1;
+    for (var i = 0; i < colCount; i++) {
+      var th = ths[i];
+      if (th.classList.contains('krito-col-hidden-v1626') || th.classList.contains('krito-sellout-hide-unit-v1640')) continue;
+      var txt = (th.textContent || '');
+      var cs = window.getComputedStyle(th);
+      var hasLeft = (th.style.left !== '' && th.style.left !== 'auto') || (cs.position === 'sticky' && cs.left !== 'auto' && cs.left !== '');
+      var hasFrozenBadge = txt.indexOf('Frozen') !== -1 || /frz|freez|frozen/i.test(th.className || '');
+      if (hasFrozenBadge) {
+        lastFrozenIdx = i;
+      } else if (hasLeft && i <= lastFrozenIdx + 1) {
+        lastFrozenIdx = Math.max(lastFrozenIdx, i);
+      }
+    }
+
+    if (lastFrozenIdx < 0) {
+      var card = table.closest('.table-scroll') ? table.closest('.table-scroll').parentElement : null;
+      if (card && (card.textContent || '').indexOf('Unfreeze') !== -1) {
+        for (var j = 0; j < colCount; j++) {
+          if (ths[j].textContent && ths[j].textContent.indexOf('Frozen') !== -1) { lastFrozenIdx = j; break; }
+        }
+      }
+    }
+
+    var firstDataRow = Array.from(tbody.children).find(function(tr) {
+      return tr && tr.tagName === 'TR' && !tr.classList.contains('krito-bottom-tot-hidden-v1639') && tr.children.length === colCount;
+    });
+    if (lastFrozenIdx >= 0 && firstDataRow) {
+      var anyBodySticky = false;
+      for (var bCheck = 0; bCheck <= lastFrozenIdx; bCheck++) {
+        var bTd = firstDataRow.children[bCheck];
+        if (!bTd) continue;
+        var bCs = window.getComputedStyle(bTd);
+        if ((bCs.position === 'sticky' && bCs.left !== 'auto') || /frz|freez|frozen/i.test(bTd.className || '') || (ths[bCheck].textContent || '').indexOf('Frozen') !== -1) {
+          anyBodySticky = true; break;
+        }
+      }
+      if (!anyBodySticky) lastFrozenIdx = -1;
+    }
+
+    var leftOffsets = new Array(colCount).fill(-1);
+    var cumLeft = 0;
+    for (var c = 0; c <= lastFrozenIdx && c < colCount; c++) {
+      var thC = ths[c];
+      var isHidden = thC.classList.contains('krito-col-hidden-v1626') || thC.classList.contains('krito-sellout-hide-unit-v1640') || thC.style.display === 'none';
+      if (isHidden) continue;
+      leftOffsets[c] = cumLeft;
+      var w = thC.offsetWidth || Math.round(thC.getBoundingClientRect().width);
+      cumLeft += (w > 0 ? w : 0);
+    }
+
+    var cumTop = 0;
+    if (tfoot) {
+      var totRows = Array.from(tfoot.children);
+      for (var r = 0; r < totRows.length; r++) {
+        var tTr = totRows[r];
+        var rH = tTr.offsetHeight || Math.round(tTr.getBoundingClientRect().height) || 34;
+        for (var tc = 0; tc < colCount && tc < tTr.children.length; tc++) {
+          var tTd = tTr.children[tc];
+          var isColHid = ths[tc].classList.contains('krito-col-hidden-v1626') || ths[tc].classList.contains('krito-sellout-hide-unit-v1640');
+          tTd.classList.toggle('krito-col-hidden-v1626', ths[tc].classList.contains('krito-col-hidden-v1626'));
+          tTd.classList.toggle('krito-sellout-hide-unit-v1640', ths[tc].classList.contains('krito-sellout-hide-unit-v1640'));
+          tTd.style.setProperty('top', cumTop + 'px', 'important');
+
+          if (!isColHid && leftOffsets[tc] >= 0) {
+            tTd.classList.add('krito-xfrz-tot-v1640');
+            tTd.classList.toggle('krito-xfrz-edge-v1640', tc === lastFrozenIdx);
+            tTd.style.setProperty('left', leftOffsets[tc] + 'px', 'important');
+          } else {
+            tTd.classList.remove('krito-xfrz-tot-v1640', 'krito-xfrz-edge-v1640');
+            tTd.style.removeProperty('left');
+          }
+        }
+        cumTop += rH;
+      }
+      table.style.setProperty('--krito-top-tot-h-v1639', cumTop + 'px');
+    }
+
+    for (var hc = 0; hc < colCount; hc++) {
+      var hTh = ths[hc];
+      if (tfoot) hTh.style.setProperty('top', cumTop + 'px', 'important');
+      if (leftOffsets[hc] >= 0) {
+        hTh.classList.add('krito-xfrz-hdr-v1640');
+        hTh.classList.toggle('krito-xfrz-edge-v1640', hc === lastFrozenIdx);
+        hTh.style.setProperty('left', leftOffsets[hc] + 'px', 'important');
+      } else {
+        hTh.classList.remove('krito-xfrz-hdr-v1640', 'krito-xfrz-edge-v1640');
+      }
+    }
+
+    var bodyRows = Array.from(tbody.children);
+    for (var br = 0; br < bodyRows.length; br++) {
+      var bTr = bodyRows[br];
+      if (!bTr || bTr.tagName !== 'TR' || bTr.children.length < colCount) continue;
+      if (bTr.classList.contains('krito-bottom-tot-hidden-v1639')) continue;
+      for (var bc = 0; bc < colCount; bc++) {
+        var bCell = bTr.children[bc];
+        if (!bCell) continue;
+        if (leftOffsets[bc] >= 0) {
+          bCell.classList.add('krito-xfrz-body-v1640');
+          bCell.classList.toggle('krito-xfrz-edge-v1640', bc === lastFrozenIdx);
+          bCell.style.setProperty('left', leftOffsets[bc] + 'px', 'important');
+        } else {
+          bCell.classList.remove('krito-xfrz-body-v1640', 'krito-xfrz-edge-v1640');
+          bCell.style.removeProperty('left');
+        }
+      }
+    }
+  }
+
+  function syncExcelFreezeAllTables40() {
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) syncTrueExcelFreezeOnTable40(tables[i]);
+  }
+  window.syncExcelFreezeAllTablesV1640 = syncExcelFreezeAllTables40;
+
+  // =========================================================================
+  // WINDOW CAPTURE-PHASE LISTENERS (HIGHEST PRIORITY — FIXES '+' CLICK!)
+  // =========================================================================
+  window.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var subAttrBtn = t.closest('[data-open-sub-attr-v1633]');
+    if (subAttrBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      toggleHeaderInlineDrawerV1640(subAttrBtn);
+      return;
+    }
+
+    var togBtn = t.closest('[data-mtmon-toggle-v1640]');
+    if (togBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var mk = togBtn.getAttribute('data-mtmon-toggle-v1640') || '';
+      MULTI_MONTH_STATE.openMenuKey = (MULTI_MONTH_STATE.openMenuKey === mk) ? '' : mk;
+      mountAllConnectedTypeMonthPickers40();
+      return;
+    }
+
+    var rstBtn = t.closest('[data-mtmon-reset-v1640]');
+    if (rstBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var rType = rstBtn.getAttribute('data-mtmon-reset-v1640') || '';
+      if (PICKER_KEYS_SET.has(rType)) MULTI_MONTH_STATE.byType[rType] = [];
+      MULTI_MONTH_STATE.openMenuKey = '';
+      runAllV1640A();
+      return;
+    }
+
+    if (MULTI_MONTH_STATE.openMenuKey && !t.closest('.krito-mtmon-wrap-v1640')) {
+      MULTI_MONTH_STATE.openMenuKey = '';
+      mountAllConnectedTypeMonthPickers40();
+    }
+
+    setTimeout(runAllV1640A, 40);
+    setTimeout(syncExcelFreezeAllTables40, 160);
+  }, true);
+
+  window.addEventListener('change', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+    var chkAttr = el.getAttribute('data-mtmon-chk-v1640');
+    if (chkAttr) {
+      ev.stopPropagation();
+      var pts = chkAttr.split('|');
+      var tk = pts[0], mon = pts[1];
+      if (!PICKER_KEYS_SET.has(tk) || !mon) return;
+      var cur = new Set((MULTI_MONTH_STATE.byType[tk] && MULTI_MONTH_STATE.byType[tk].length > 0) ? MULTI_MONTH_STATE.byType[tk] : getActiveMonthsForType40(tk));
+      if (el.checked) cur.add(mon);
+      else if (cur.size > 1) cur.delete(mon);
+      MULTI_MONTH_STATE.byType[tk] = Array.from(cur);
+      runAllV1640A();
+    }
+  }, true);
+
+  window.addEventListener('resize', function() {
+    requestAnimationFrame(syncExcelFreezeAllTables40);
+  });
+
+  function runAllV1640A() {
+    normalizeSellOutDatasetInPlaceV1640();
+    hideUnitColumnOnSellOutTabV1640();
+    mountAllConnectedTypeMonthPickers40();
+    updateAllPickerTypeSubRows40();
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+    requestAnimationFrame(function() {
+      syncExcelFreezeAllTables40();
+      setTimeout(syncExcelFreezeAllTables40, 80);
+    });
+  }
+  window.runAllV1640A = runAllV1640A;
+
+  ['renderApp', 'updateStoreTableBodyOnly', 'applyAllMultiTypeTablesV1631', 'applyGlobalFilterEverywhereV1637'].forEach(function(fnName) {
+    if (typeof window[fnName] === 'function' && !window[fnName]._v1640A) {
+      var orig = window[fnName];
+      window[fnName] = function() {
+        normalizeSellOutDatasetInPlaceV1640();
+        var res = orig.apply(this, arguments);
+        runAllV1640A();
+        return res;
+      };
+      window[fnName]._v1640A = true;
+    }
+  });
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    normalizeSellOutDatasetInPlaceV1640();
+    if (typeof window.renderApp === 'function') window.renderApp();
+    else runAllV1640A();
+  }
+
+})();
+</script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDON — PART 2 OF 2 (v16.40B — live.html ONLY)
+     - NO need to delete old code — paste right after v16.40A & before </body>
+     - POINT 2 (Sell Thru) & POINT 3 (KPI's):
+       1. FY Selector + Month Multi-Selector + Calendar Date Range (From - To)
+       2. Compare LY Button (matches exact FY, Month(s), or Calendar Date Range)
+       3. Full-Screen Unit/Location & Date Wise Popups with 100% COMPLETE Data
+          matching the Main Sell Thru & KPI's sheets (+ Top Sticky Totals)
+     ============================================================================ -->
+<script>
+(function installSellThruAndKpisPeriodCompareAndFullModalsV1640B() {
+
+  if (window._kritoV1640BInstalled) return;
+  window._kritoV1640BInstalled = true;
+
+  var css = [
+    '.krito-rep40-bar{background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 11px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}',
+    '.krito-rep40-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}',
+    '.krito-rep40-grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}',
+    '.krito-rep40-sel{padding:4px 9px;border-radius:7px;border:1.5px solid #6366f1;background:#ffffff;color:#1e293b;font-size:11.5px;font-weight:800;cursor:pointer;outline:none;}',
+    '.krito-rep40-date{padding:3px 7px;border-radius:7px;border:1.5px solid #0284c7;background:#ffffff;color:#0f172a;font-size:11.5px;font-weight:700;outline:none;}',
+    '.krito-rep40-cmp-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1.5px solid #059669;background:#ecfdf5;color:#065f46;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:0.15s;}',
+    '.krito-rep40-cmp-btn.is-on{background:#059669;color:#ffffff;border-color:#047857;box-shadow:0 2px 6px rgba(5,150,105,0.28);}',
+    '.krito-rep40-tbl{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:12px;}',
+    '.krito-rep40-tbl th{padding:7px 9px;background:#f1f5f9;color:#1e293b;font-weight:800;white-space:nowrap;border-bottom:2px solid #cbd5e1;}',
+    '.krito-rep40-tbl td{padding:6px 9px;white-space:nowrap;border-bottom:1px solid #e2e8f0;}',
+    '.krito-rep40-tbl tr.total-row td{background:#f1f5f9;font-weight:900;border-top:2px solid #94a3b8;}',
+    '.krito-rep40-ly-th{background:#f0fdf4 !important;color:#166534 !important;}',
+    '.krito-rep40-ly-td{color:#64748b !important;}',
+    '#kritoRep40PopupRoot .fs-modal-backdrop{z-index:100035 !important;}',
+    '#kritoRep40DateRoot .fs-modal-backdrop{z-index:100050 !important;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoV1640BCss';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var unitPopupRoot = document.getElementById('kritoRep40PopupRoot');
+  if (!unitPopupRoot) {
+    unitPopupRoot = document.createElement('div');
+    unitPopupRoot.id = 'kritoRep40PopupRoot';
+    document.body.appendChild(unitPopupRoot);
+  }
+  var datePopupRoot = document.getElementById('kritoRep40DateRoot');
+  if (!datePopupRoot) {
+    datePopupRoot = document.createElement('div');
+    datePopupRoot.id = 'kritoRep40DateRoot';
+    document.body.appendChild(datePopupRoot);
+  }
+
+  var MON_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+  var RSTATE = {
+    SELL_THRU: {
+      view: 'CLUSTER',         // 'CLUSTER' | 'PARTY'
+      stMode: 'BOTH',          // 'BILLED' | 'NET' | 'BOTH'
+      fy: 'ALL',
+      periodMode: 'ACTIVE',    // 'ACTIVE' | 'FY_ALL' | 'CUSTOM_MONTHS' | 'DATE_RANGE'
+      months: [],
+      dateFrom: '',
+      dateTo: '',
+      compareLY: true,
+      search: '',
+      fullscreen: false
+    },
+    KPIS: {
+      view: 'CLUSTER',
+      fy: 'ALL',
+      periodMode: 'ACTIVE',
+      months: [],
+      dateFrom: '',
+      dateTo: '',
+      compareLY: true,
+      search: '',
+      fullscreen: false
+    }
+  };
+
+  var UNIT_MODAL = { open: false, kind: 'SELL_THRU', party: '', search: '', openAttrKey: '' };
+  var DATE_MODAL = { open: false, kind: 'SELL_THRU', scope: 'PARTY', party: '', unit: '', cluster: '', search: '', openIso: '' };
+
+  function esc40B(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ40B(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI40B(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtDec40B(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(2) : '0.00';
+  }
+
+  function growthHtml40B(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly || ly === 0) return cur > 0 ? '<span style="background:#e0f2fe;color:#0284c7;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:800;">★ NEW</span>' : '0.0%';
+    var p = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    var col = Number(p) >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (Number(p) >= 0 ? '+' : '') + p + '%</span>';
+  }
+
+  function stPctBadge40B(tert, base) {
+    if (!base || base <= 0) return '<span style="color:#94a3b8;font-weight:700;">-</span>';
+    var pct = (tert / base) * 100;
+    var cls = pct >= 60 ? 'krito-st-hi' : (pct >= 30 ? 'krito-st-mid' : 'krito-st-lo');
+    return '<span class="krito-st-pct-v1631 ' + cls + '">' + pct.toFixed(1) + '%</span>';
+  }
+
+  function stDiffBadge40B(curPct, lyPct) {
+    if (curPct === null || lyPct === null) return '<span style="color:#94a3b8;">-</span>';
+    var d = curPct - lyPct;
+    var col = d >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (d >= 0 ? '+' : '') + d.toFixed(1) + '%</span>';
+  }
+
+  function getCaseEntry40B(mapObj, key) {
+    if (!mapObj || !key) return null;
+    if (mapObj[key]) return mapObj[key];
+    var up = String(key).trim().toUpperCase();
+    var ks = Object.keys(mapObj);
+    for (var i = 0; i < ks.length; i++) {
+      if (String(ks[i]).trim().toUpperCase() === up) return mapObj[ks[i]];
+    }
+    return null;
+  }
+
+  function getPeriodObj40B(typeKey, periodKey) {
+    try {
+      if (typeof LIVE_PAYLOAD === 'undefined' || !LIVE_PAYLOAD) return null;
+      var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+      var ds = LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets[typeKey];
+      if (ds && ds[br] && ds[br][periodKey]) return ds[br][periodKey];
+      if (typeKey === 'TERTIARY' && LIVE_PAYLOAD.brands && LIVE_PAYLOAD.brands[br] && LIVE_PAYLOAD.brands[br][periodKey]) {
+        return LIVE_PAYLOAD.brands[br][periodKey];
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function monthToFy40B(mKey) {
+    var m = String(mKey || '').match(/^([A-Z]{3})-(\d{4})$/);
+    if (!m) return '';
+    var yr = parseInt(m[2], 10);
+    var sy = (m[1] === 'JAN' || m[1] === 'FEB' || m[1] === 'MAR') ? (yr - 1) : yr;
+    return sy + '-' + String((sy + 1) % 100).padStart(2, '0');
+  }
+
+  function getLyPeriodKey40B(pk) {
+    if (typeof getLastYearPeriodKey === 'function') return getLastYearPeriodKey(pk);
+    var m = String(pk || '').match(/^([A-Z]{3})-(\d{4})$/);
+    if (m) return m[1] + '-' + (parseInt(m[2], 10) - 1);
+    var fy = String(pk || '').match(/^FULL_FY::(\d{4})-(\d{2})$/);
+    if (fy) {
+      var y1 = parseInt(fy[1], 10) - 1;
+      return 'FULL_FY::' + y1 + '-' + String((y1 + 1) % 100).padStart(2, '0');
+    }
+    return '';
+  }
+
+  function shiftIsoYear40B(isoStr, deltaYears) {
+    var m = String(isoStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return '';
+    return (parseInt(m[1], 10) + deltaYears) + '-' + m[2] + '-' + m[3];
+  }
+
+  function getBrandMonthsAndFys40B() {
+    var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var mSet = new Set(), fySet = new Set();
+    if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD && LIVE_PAYLOAD.datasets) {
+      ['TERTIARY', 'SELL_OUT'].forEach(function(tk) {
+        var bObj = LIVE_PAYLOAD.datasets[tk] && LIVE_PAYLOAD.datasets[tk][br];
+        if (!bObj) return;
+        Object.keys(bObj).forEach(function(pk) {
+          if (/^[A-Z]{3}-\d{4}$/.test(pk)) {
+            mSet.add(pk);
+            var fy = monthToFy40B(pk);
+            if (fy) fySet.add(fy);
+          } else if (pk.indexOf('FULL_FY::') === 0) {
+            fySet.add(pk.replace('FULL_FY::', ''));
+          }
+        });
+      });
+    }
+    var months = Array.from(mSet).sort(function(a, b) {
+      var ma = a.match(/^([A-Z]{3})-(\d{4})$/), mb = b.match(/^([A-Z]{3})-(\d{4})$/);
+      var ka = ma ? (parseInt(ma[2], 10) * 100 + (MON_NUM[ma[1]] || 0)) : 0;
+      var kb = mb ? (parseInt(mb[2], 10) * 100 + (MON_NUM[mb[1]] || 0)) : 0;
+      return kb - ka;
+    });
+    var fys = Array.from(fySet).sort().reverse();
+    return { months: months, fys: fys };
+  }
+
+  function getPinnedHeaders40B() {
+    var out = [];
+    var tb = document.getElementById('liveStoreTbody');
+    var tbl = tb ? tb.closest('table') : null;
+    var tr = tbl ? tbl.querySelector('thead tr') : null;
+    if (tr) {
+      for (var i = 0; i < tr.children.length; i++) {
+        var th = tr.children[i];
+        var txt = th.textContent || '';
+        var raw = (th.getAttribute('data-orig-title-v1624') || txt).replace(/📌|❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+        if (txt.indexOf('📌') !== -1 || raw.indexOf('Master_') === 0) out.push(raw);
+      }
+    }
+    return out;
+  }
+
+  function getHeaderAllowedSet40B(hName) {
+    try {
+      var btn = document.getElementById('kritoHeaderDataModeBtnV1638');
+      if (btn && btn.classList.contains('is-all')) return null;
+      if (typeof SELECTED_ATTR_SUBVALS !== 'undefined' && SELECTED_ATTR_SUBVALS && SELECTED_ATTR_SUBVALS[hName] instanceof Set && SELECTED_ATTR_SUBVALS[hName].size > 0) {
+        return SELECTED_ATTR_SUBVALS[hName];
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function sumAttrMap40B(valMap, hName) {
+    if (!valMap || typeof valMap !== 'object') return { qty: 0, count: 0, entries: [] };
+    var allowSet = getHeaderAllowedSet40B(hName);
+    var sum = 0, entries = [];
+    Object.keys(valMap).forEach(function(v) {
+      if (allowSet && !allowSet.has(v)) return;
+      var q = Number(valMap[v]) || 0;
+      if (q === 0) return;
+      sum += q;
+      entries.push({ val: v, qty: q });
+    });
+    entries.sort(function(a, b) { return b.qty - a.qty; });
+    return { qty: sum, count: entries.length, entries: entries };
+  }
+
+  // =========================================================================
+  // UNIFIED PERIOD RESOLVER (FY + MONTH(S) + CALENDAR DATE RANGE + EXACT LY)
+  // =========================================================================
+  function resolvePeriodSpec40B(rs) {
+    var cat = getBrandMonthsAndFys40B();
+    var activeM = (typeof ACTIVE_MONTH !== 'undefined') ? ACTIVE_MONTH : '';
+    var fyFilteredMonths = (rs.fy && rs.fy !== 'ALL')
+      ? cat.months.filter(function(m) { return monthToFy40B(m) === rs.fy; })
+      : cat.months;
+
+    if (rs.periodMode === 'DATE_RANGE' && (rs.dateFrom || rs.dateTo)) {
+      var fIso = rs.dateFrom || rs.dateTo;
+      var tIso = rs.dateTo || rs.dateFrom;
+      if (fIso > tIso) { var tmp = fIso; fIso = tIso; tIso = tmp; }
+      var lyFrom = shiftIsoYear40B(fIso, -1);
+      var lyTo = shiftIsoYear40B(tIso, -1);
+
+      var curPeriods = cat.months.filter(function(m) {
+        var mm = m.match(/^([A-Z]{3})-(\d{4})$/);
+        if (!mm) return false;
+        var ym = mm[2] + '-' + String(MON_NUM[mm[1]]).padStart(2, '0');
+        return ym >= fIso.slice(0, 7) && ym <= tIso.slice(0, 7);
+      });
+      var lyPeriods = cat.months.filter(function(m) {
+        var mm = m.match(/^([A-Z]{3})-(\d{4})$/);
+        if (!mm) return false;
+        var ym = mm[2] + '-' + String(MON_NUM[mm[1]]).padStart(2, '0');
+        return ym >= lyFrom.slice(0, 7) && ym <= lyTo.slice(0, 7);
+      });
+
+      return {
+        isDateRange: true,
+        dateFrom: fIso, dateTo: tIso,
+        lyFrom: lyFrom, lyTo: lyTo,
+        curPeriods: curPeriods,
+        lyPeriods: lyPeriods,
+        label: '📆 ' + fIso + ' to ' + tIso,
+        lyLabel: lyFrom + ' to ' + lyTo
+      };
+    }
+
+    var curList = [];
+    var lbl = '';
+    if (rs.periodMode === 'CUSTOM_MONTHS' && rs.months.length > 0) {
+      curList = rs.months.filter(function(m) { return cat.months.indexOf(m) !== -1; });
+      if (curList.length > 0) {
+        lbl = curList.length === 1 ? curList[0] : (curList.length + ' Months (' + curList.slice(0, 3).join(', ') + (curList.length > 3 ? '...' : '') + ')');
+      }
+    } else if (rs.periodMode === 'FY_ALL' && rs.fy && rs.fy !== 'ALL') {
+      curList = fyFilteredMonths.slice();
+      lbl = 'Full FY ' + rs.fy + ' (' + curList.length + 'M)';
+    }
+
+    if (curList.length === 0) {
+      if (rs.fy && rs.fy !== 'ALL') {
+        curList = fyFilteredMonths.length > 0 ? fyFilteredMonths.slice() : (activeM ? [activeM] : []);
+        lbl = 'FY ' + rs.fy;
+      } else {
+        curList = activeM ? [activeM] : cat.months.slice(0, 1);
+        lbl = (typeof getPeriodDisplayLabel === 'function' && activeM) ? getPeriodDisplayLabel(activeM) : (curList[0] || '');
+      }
+    }
+
+    var lyList = curList.map(getLyPeriodKey40B).filter(Boolean);
+    return {
+      isDateRange: false,
+      curPeriods: curList,
+      lyPeriods: lyList,
+      label: lbl,
+      lyLabel: lyList.length === 1 ? lyList[0].replace('FULL_FY::', 'FY ') : 'LY'
+    };
+  }
+
+  function buildUnitParentMap40B() {
+    var map = {};
+    var br = (typeof ACTIVE_BRAND !== 'undefined') ? ACTIVE_BRAND : '';
+    var tertBr = (LIVE_PAYLOAD && LIVE_PAYLOAD.datasets && LIVE_PAYLOAD.datasets.TERTIARY && LIVE_PAYLOAD.datasets.TERTIARY[br]) || {};
+    Object.keys(tertBr).forEach(function(pk) {
+      var pObj = tertBr[pk];
+      if (!pObj || !Array.isArray(pObj.stores)) return;
+      for (var i = 0; i < pObj.stores.length; i++) {
+        var st = pObj.stores[i];
+        if (!st || !st.party) continue;
+        var pUp = String(st.party).trim().toUpperCase();
+        if (!map[pUp]) map[pUp] = { parentParty: st.party, manager: st.manager || 'Unassigned' };
+        if (Array.isArray(st.subStores)) {
+          for (var j = 0; j < st.subStores.length; j++) {
+            var u = st.subStores[j];
+            if (!u || !u.store) continue;
+            var uUp = String(u.store).trim().toUpperCase();
+            if (!map[uUp]) map[uUp] = { parentParty: st.party, manager: u.manager || st.manager || 'Unassigned' };
+          }
+        }
+      }
+    });
+    return map;
+  }
+
+  // =========================================================================
+  // CORE METRICS ENGINE (FY + MONTH(S) + CALENDAR DATE RANGE + EXACT LY)
+  // =========================================================================
+  function collectSnapshot40B(spec, isLy) {
+    var periods = isLy ? spec.lyPeriods : spec.curPeriods;
+    var fIso = isLy ? spec.lyFrom : spec.dateFrom;
+    var tIso = isLy ? spec.lyTo : spec.dateTo;
+    var unitParentMap = buildUnitParentMap40B();
+
+    var byMgr = {}, byParty = {}, byUnit = {}, byDate = {}, tertAttrs = {};
+    var hasBills = false, hasExactSoSplit = false;
+
+    function ensureM(mName) {
+      var m = String(mName || 'Unassigned').trim() || 'Unassigned';
+      var k = m.toUpperCase();
+      if (!byMgr[k]) byMgr[k] = { name: m, tQ:0, tV:0, tM:0, tD:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, dates: new Set() };
+      return byMgr[k];
+    }
+    function ensureP(pName, mgrName) {
+      var p = String(pName || '').trim();
+      var k = p.toUpperCase();
+      if (!byParty[k]) byParty[k] = { name: p, mgr: mgrName || 'Unassigned', tQ:0, tV:0, tM:0, tD:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, units: new Set(), dates: new Set() };
+      else if (mgrName && byParty[k].mgr === 'Unassigned') byParty[k].mgr = mgrName;
+      return byParty[k];
+    }
+    function ensureU(pName, uName, mgrName) {
+      var p = String(pName || '').trim(), u = String(uName || p).trim();
+      var k = (p + '||' + u).toUpperCase();
+      if (!byUnit[k]) byUnit[k] = { party: p, unit: u, mgr: mgrName || 'Unassigned', tQ:0, tV:0, tM:0, tD:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, attrs: {} };
+      else if (mgrName && byUnit[k].mgr === 'Unassigned') byUnit[k].mgr = mgrName;
+      ensureP(p, mgrName).units.add(u.toUpperCase());
+      return byUnit[k];
+    }
+    function ensureD(iso, label) {
+      if (!byDate[iso]) byDate[iso] = { iso: iso, label: label || iso, byMgr: {}, byParty: {}, byUnit: {} };
+      return byDate[iso];
+    }
+    function addDateRec(bucket, key, tQ, tV, tM, tD, bills, bQ, bV, rQ, rV) {
+      if (!bucket[key]) bucket[key] = { tQ:0, tV:0, tM:0, tD:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0 };
+      var d = bucket[key];
+      d.tQ += tQ; d.tV += tV; d.tM += tM; d.tD += tD; d.bills += bills;
+      d.bQ += bQ; d.bV += bV; d.rQ += rQ; d.rV += rV;
+      d.nQ += (bQ + rQ); d.nV += (bV + rV);
+    }
+
+    for (var pi = 0; pi < periods.length; pi++) {
+      var pk = periods[pi];
+
+      // --- 1. TERTIARY ---
+      var tObj = getPeriodObj40B('TERTIARY', pk);
+      if (tObj) {
+        if (tObj.bills) hasBills = true;
+
+        if (tObj.attributes) {
+          Object.keys(tObj.attributes).forEach(function(h) {
+            var src = tObj.attributes[h];
+            if (!src) return;
+            if (!tertAttrs[h]) tertAttrs[h] = { totals: {}, byMgr: {}, byStore: {} };
+            var dst = tertAttrs[h];
+            Object.keys(src.totals || {}).forEach(function(v) { dst.totals[v] = (dst.totals[v] || 0) + (Number(src.totals[v]) || 0); });
+            Object.keys(src.byManager || {}).forEach(function(mk) {
+              var mu = mk.trim().toUpperCase();
+              if (!dst.byMgr[mu]) dst.byMgr[mu] = {};
+              Object.keys(src.byManager[mk] || {}).forEach(function(v) { dst.byMgr[mu][v] = (dst.byMgr[mu][v] || 0) + (Number(src.byManager[mk][v]) || 0); });
+            });
+            Object.keys(src.byStore || {}).forEach(function(sk) {
+              var su = sk.trim().toUpperCase();
+              if (!dst.byStore[su]) dst.byStore[su] = {};
+              Object.keys(src.byStore[sk] || {}).forEach(function(v) { dst.byStore[su][v] = (dst.byStore[su][v] || 0) + (Number(src.byStore[sk][v]) || 0); });
+            });
+          });
+        }
+
+        if (Array.isArray(tObj.stores)) {
+          for (var si = 0; si < tObj.stores.length; si++) {
+            var st = tObj.stores[si];
+            if (!st || !st.party) continue;
+            var subs = (Array.isArray(st.subStores) && st.subStores.length > 0) ? st.subStores : [{ store: st.party, manager: st.manager, qty: st.qty, net: st.net, mrp: st.mrp, disc: st.disc, attrs: null }];
+            for (var ui = 0; ui < subs.length; ui++) {
+              var su = subs[ui];
+              var uRec = ensureU(st.party, su.store || st.party, su.manager || st.manager);
+              if (su.attrs) {
+                Object.keys(su.attrs).forEach(function(h) {
+                  if (!uRec.attrs[h]) uRec.attrs[h] = {};
+                  Object.keys(su.attrs[h] || {}).forEach(function(v) { uRec.attrs[h][v] = (uRec.attrs[h][v] || 0) + (Number(su.attrs[h][v]) || 0); });
+                });
+              }
+            }
+          }
+        }
+
+        if (tObj.unitDaily && Array.isArray(tObj.unitDaily.r)) {
+          var uL = tObj.unitDaily.u || [];
+          for (var dri = 0; dri < tObj.unitDaily.r.length; dri++) {
+            var dr = tObj.unitDaily.r[dri];
+            var iso = dr[0], lbl = dr[1], ents = Array.isArray(dr[2]) ? dr[2] : [];
+            if (spec.isDateRange && (iso < fIso || iso > tIso)) continue;
+            var dRow = ensureD(iso, lbl);
+            for (var ei = 0; ei < ents.length; ei++) {
+              var e = ents[ei];
+              var fullU = String(uL[e[0]] || '');
+              var pts = fullU.split('||');
+              var pNm = pts[0] || '', uNm = pts[1] || pNm;
+              if (!pNm) continue;
+              var pInfo = unitParentMap[uNm.toUpperCase()] || unitParentMap[pNm.toUpperCase()];
+              var mgrNm = (pInfo && pInfo.manager) || 'Unassigned';
+              var eq = Number(e[1]) || 0, en = Number(e[2]) || 0, em = Number(e[3]) || 0, ed = Number(e[4]) || 0, eb = Number(e[5]) || 0;
+              if (eb > 0) hasBills = true;
+
+              addDateRec(dRow.byUnit, (pNm + '||' + uNm).toUpperCase(), eq, en, em, ed, eb, 0, 0, 0, 0);
+              addDateRec(dRow.byParty, pNm.toUpperCase(), eq, en, em, ed, eb, 0, 0, 0, 0);
+              addDateRec(dRow.byMgr, mgrNm.toUpperCase(), eq, en, em, ed, eb, 0, 0, 0, 0);
+              ensureP(pNm, mgrNm).dates.add(iso);
+              ensureM(mgrNm).dates.add(iso);
+
+              if (spec.isDateRange) {
+                var ur = ensureU(pNm, uNm, mgrNm);
+                ur.tQ += eq; ur.tV += en; ur.tM += em; ur.tD += ed; ur.bills += eb;
+                var pr = ensureP(pNm, mgrNm);
+                pr.tQ += eq; pr.tV += en; pr.tM += em; pr.tD += ed; pr.bills += eb;
+                var mr = ensureM(mgrNm);
+                mr.tQ += eq; mr.tV += en; mr.tM += em; mr.tD += ed; mr.bills += eb;
+              }
+            }
+          }
+        } else if (tObj.daily && Array.isArray(tObj.daily.r)) {
+          var pL = tObj.daily.p || [], cL = tObj.daily.c || [];
+          for (var di = 0; di < tObj.daily.r.length; di++) {
+            var d = tObj.daily.r[di];
+            var iso2 = d[0], lbl2 = d[1], pEnts = Array.isArray(d[6]) ? d[6] : [];
+            if (spec.isDateRange && (iso2 < fIso || iso2 > tIso)) continue;
+            var dRow2 = ensureD(iso2, lbl2);
+            for (var ej = 0; ej < pEnts.length; ej++) {
+              var pe = pEnts[ej];
+              var pN = pL[pe[0]] || '', cN = cL[pe[1]] || 'Unassigned';
+              if (!pN) continue;
+              var q2 = Number(pe[2]) || 0, n2 = Number(pe[3]) || 0, m2 = Number(pe[4]) || 0, ds2 = Number(pe[5]) || 0;
+              var b2 = (tObj.dailyBills && tObj.dailyBills[iso2] && tObj.dailyBills[iso2].byStore) ? (Number(getCaseEntry40B(tObj.dailyBills[iso2].byStore, pN)) || 0) : 0;
+              addDateRec(dRow2.byParty, pN.toUpperCase(), q2, n2, m2, ds2, b2, 0, 0, 0, 0);
+              addDateRec(dRow2.byMgr, cN.toUpperCase(), q2, n2, m2, ds2, b2, 0, 0, 0, 0);
+              ensureP(pN, cN).dates.add(iso2);
+              ensureM(cN).dates.add(iso2);
+
+              if (spec.isDateRange) {
+                var pr2 = ensureP(pN, cN);
+                pr2.tQ += q2; pr2.tV += n2; pr2.tM += m2; pr2.tD += ds2; pr2.bills += b2;
+                var mr2 = ensureM(cN);
+                mr2.tQ += q2; mr2.tV += n2; mr2.tM += m2; mr2.tD += ds2; mr2.bills += b2;
+              }
+            }
+          }
+        }
+
+        if (!spec.isDateRange) {
+          var bByMgr = (tObj.bills && tObj.bills.byMgr) || {};
+          var bByStore = (tObj.bills && tObj.bills.byStore) || {};
+          var bByUnit = (tObj.bills && tObj.bills.byUnit) || {};
+
+          if (Array.isArray(tObj.managers)) {
+            for (var mi = 0; mi < tObj.managers.length; mi++) {
+              var mg = tObj.managers[mi];
+              var mRec = ensureM(mg.manager);
+              mRec.tQ += Number(mg.qty) || 0; mRec.tV += Number(mg.net) || 0;
+              mRec.tM += Number(mg.mrp) || 0; mRec.tD += Number(mg.disc) || 0;
+              mRec.bills += Number(getCaseEntry40B(bByMgr, mg.manager)) || 0;
+            }
+          }
+          if (Array.isArray(tObj.stores)) {
+            for (var sj = 0; sj < tObj.stores.length; sj++) {
+              var st2 = tObj.stores[sj];
+              if (!st2 || !st2.party) continue;
+              var pRec = ensureP(st2.party, st2.manager);
+              pRec.tQ += Number(st2.qty) || 0; pRec.tV += Number(st2.net) || 0;
+              pRec.tM += Number(st2.mrp) || 0; pRec.tD += Number(st2.disc) || 0;
+              pRec.bills += Number(getCaseEntry40B(bByStore, st2.party)) || 0;
+
+              var subs2 = (Array.isArray(st2.subStores) && st2.subStores.length > 0) ? st2.subStores : [{ store: st2.party, manager: st2.manager, qty: st2.qty, net: st2.net, mrp: st2.mrp, disc: st2.disc }];
+              for (var uk = 0; uk < subs2.length; uk++) {
+                var su2 = subs2[uk];
+                var uRec2 = ensureU(st2.party, su2.store || st2.party, su2.manager || st2.manager);
+                uRec2.tQ += Number(su2.qty) || 0; uRec2.tV += Number(su2.net) || 0;
+                uRec2.tM += Number(su2.mrp) || 0; uRec2.tD += Number(su2.disc) || 0;
+                var ub = Number(getCaseEntry40B(bByUnit, st2.party + '||' + (su2.store || st2.party))) || 0;
+                if (ub === 0 && subs2.length === 1) ub = Number(getCaseEntry40B(bByStore, st2.party)) || 0;
+                uRec2.bills += ub;
+              }
+            }
+          }
+        }
+      }
+
+      // --- 2. SELL OUT ---
+      var soObj = getPeriodObj40B('SELL_OUT', pk);
+      if (soObj) {
+        if (soObj.sellOutSplit) hasExactSoSplit = true;
+
+        if (soObj.daily && Array.isArray(soObj.daily.r)) {
+          var spL = soObj.daily.p || [], scL = soObj.daily.c || [];
+          for (var sdi = 0; sdi < soObj.daily.r.length; sdi++) {
+            var sd = soObj.daily.r[sdi];
+            var sIso = sd[0], sLbl = sd[1], sEnts = Array.isArray(sd[6]) ? sd[6] : [];
+            if (spec.isDateRange && (sIso < fIso || sIso > tIso)) continue;
+            var dBox = ensureD(sIso, sLbl);
+            for (var se = 0; se < sEnts.length; se++) {
+              var spe = sEnts[se];
+              var rawUnitOrParty = String(spL[spe[0]] || '').trim();
+              if (!rawUnitOrParty) continue;
+              var uUp = rawUnitOrParty.toUpperCase();
+              var pInfoS = unitParentMap[uUp];
+              var parentP = pInfoS ? pInfoS.parentParty : rawUnitOrParty;
+              var mgrS = (pInfoS && pInfoS.manager) || scL[spe[1]] || 'Unassigned';
+              var sq = Number(spe[2]) || 0, sv = Number(spe[3]) || 0;
+              var isRtv = (sq < 0 || (sq === 0 && sv < 0));
+              var bq = isRtv ? 0 : sq, bv = isRtv ? 0 : sv;
+              var rq = isRtv ? sq : 0, rv = isRtv ? sv : 0;
+
+              addDateRec(dBox.byUnit, (parentP + '||' + rawUnitOrParty).toUpperCase(), 0, 0, 0, 0, 0, bq, bv, rq, rv);
+              addDateRec(dBox.byParty, parentP.toUpperCase(), 0, 0, 0, 0, 0, bq, bv, rq, rv);
+              addDateRec(dBox.byMgr, mgrS.toUpperCase(), 0, 0, 0, 0, 0, bq, bv, rq, rv);
+              ensureP(parentP, mgrS).dates.add(sIso);
+              ensureM(mgrS).dates.add(sIso);
+
+              if (spec.isDateRange) {
+                var us = ensureU(parentP, rawUnitOrParty, mgrS);
+                us.bQ += bq; us.bV += bv; us.rQ += rq; us.rV += rv; us.nQ += sq; us.nV += sv;
+                var ps = ensureP(parentP, mgrS);
+                ps.bQ += bq; ps.bV += bv; ps.rQ += rq; ps.rV += rv; ps.nQ += sq; ps.nV += sv;
+                var ms = ensureM(mgrS);
+                ms.bQ += bq; ms.bV += bv; ms.rQ += rq; ms.rV += rv; ms.nQ += sq; ms.nV += sv;
+              }
+            }
+          }
+        }
+
+        if (!spec.isDateRange) {
+          var splitMap = (soObj.sellOutSplit && soObj.sellOutSplit.byStore) ? soObj.sellOutSplit.byStore : null;
+          if (Array.isArray(soObj.stores)) {
+            for (var sk = 0; sk < soObj.stores.length; sk++) {
+              var sst = soObj.stores[sk];
+              if (!sst || !sst.party) continue;
+              var rawNm = String(sst.party).trim();
+              var uUp2 = rawNm.toUpperCase();
+              var pInfo2 = unitParentMap[uUp2];
+              var parP2 = pInfo2 ? pInfo2.parentParty : rawNm;
+              var mgr2 = (pInfo2 && pInfo2.manager) || sst.manager || 'Unassigned';
+
+              var tup = splitMap ? getCaseEntry40B(splitMap, rawNm) : null;
+              var bq2, bv2, rq2, rv2;
+              if (tup) {
+                bq2 = Number(tup[0]) || 0; bv2 = Number(tup[1]) || 0;
+                rq2 = Number(tup[2]) || 0; rv2 = Number(tup[3]) || 0;
+              } else {
+                var q0 = Number(sst.qty) || 0, v0 = Number(sst.net) || 0;
+                var rtv0 = (q0 < 0 || (q0 === 0 && v0 < 0));
+                bq2 = rtv0 ? 0 : q0; bv2 = rtv0 ? 0 : v0;
+                rq2 = rtv0 ? q0 : 0; rv2 = rtv0 ? v0 : 0;
+              }
+              var nq2 = bq2 + rq2, nv2 = bv2 + rv2;
+
+              var us2 = ensureU(parP2, rawNm, mgr2);
+              us2.bQ += bq2; us2.bV += bv2; us2.rQ += rq2; us2.rV += rv2; us2.nQ += nq2; us2.nV += nv2;
+              var ps2 = ensureP(parP2, mgr2);
+              ps2.bQ += bq2; ps2.bV += bv2; ps2.rQ += rq2; ps2.rV += rv2; ps2.nQ += nq2; ps2.nV += nv2;
+              var ms2 = ensureM(mgr2);
+              ms2.bQ += bq2; ms2.bV += bv2; ms2.rQ += rq2; ms2.rV += rv2; ms2.nQ += nq2; ms2.nV += nv2;
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      byMgr: byMgr, byParty: byParty, byUnit: byUnit, byDate: byDate,
+      tertAttrs: tertAttrs, hasBills: hasBills, hasExactSoSplit: hasExactSoSplit
+    };
+  }
+
+  function calcKpiVals40B(net, qty, bills) {
+    return {
+      abv: bills > 0 ? (net / bills) : 0,
+      asp: qty > 0 ? (net / qty) : 0,
+      upt: bills > 0 ? (qty / bills) : 0
+    };
+  }
+
+  // =========================================================================
+  // PERIOD BAR HTML (1. FY + 🗓️ MONTHS + 2. CALENDAR DATE RANGE + 📊 COMPARE LY)
+  // =========================================================================
+  function buildPeriodControlsHtml40B(kind, rs, spec) {
+    var cat = getBrandMonthsAndFys40B();
+    var fyMonths = (rs.fy && rs.fy !== 'ALL')
+      ? cat.months.filter(function(m) { return monthToFy40B(m) === rs.fy; })
+      : cat.months;
+
+    var fyOpts = '<option value="ALL"' + (rs.fy === 'ALL' ? ' selected' : '') + '>All FY (' + cat.fys.length + ')</option>' +
+      cat.fys.map(function(f) { return '<option value="' + esc40B(f) + '"' + (rs.fy === f ? ' selected' : '') + '>FY ' + esc40B(f) + '</option>'; }).join('');
+
+    var monthPills = fyMonths.map(function(m) {
+      var chk = (rs.periodMode === 'CUSTOM_MONTHS' && rs.months.indexOf(m) !== -1) ||
+                (rs.periodMode === 'FY_ALL' && rs.fy !== 'ALL');
+      return '<label class="krito-rep-mchk-v1631' + (chk ? ' is-checked' : '') + '">' +
+        '<input type="checkbox" data-rep40-mchk="' + kind + '|' + esc40B(m) + '"' + (chk ? ' checked' : '') + '><span>' + esc40B(m) + '</span>' +
+      '</label>';
+    }).join('');
+
+    var hasDates = !!(rs.dateFrom || rs.dateTo);
+
+    return '<div class="krito-rep40-bar">' +
+      '<div class="krito-rep40-row">' +
+        '<div class="krito-rep40-grp">' +
+          '<span style="font-size:11px;font-weight:900;color:#334155;">1. FY:</span>' +
+          '<select class="krito-rep40-sel" data-rep40-fy="' + kind + '">' + fyOpts + '</select>' +
+          '<span style="font-size:11px;font-weight:900;color:#334155;margin-left:6px;">2. Calendar Date:</span>' +
+          '<input type="date" class="krito-rep40-date" data-rep40-dfrom="' + kind + '" value="' + esc40B(rs.dateFrom) + '" title="From Date">' +
+          '<span style="font-size:11px;font-weight:800;color:#64748b;">to</span>' +
+          '<input type="date" class="krito-rep40-date" data-rep40-dto="' + kind + '" value="' + esc40B(rs.dateTo) + '" title="To Date">' +
+          (hasDates ? '<button type="button" class="krito-rep-pill-v1631" data-rep40-act="' + kind + '|CLEAR_DATES" style="padding:3px 8px;font-size:10.5px;background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">✖ Clear Date</button>' : '') +
+        '</div>' +
+        '<div class="krito-rep40-grp">' +
+          '<button type="button" class="krito-rep40-cmp-btn' + (rs.compareLY ? ' is-on' : '') + '" data-rep40-act="' + kind + '|TOGGLE_LY">' + (rs.compareLY ? '☑️' : '⬜') + ' 📊 Compare LY (' + esc40B(spec.lyLabel) + ')</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (rs.periodMode === 'ACTIVE' ? ' is-on' : '') + '" data-rep40-act="' + kind + '|PRESET_ACTIVE" style="padding:4px 9px;font-size:10.5px;">Current Period</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (rs.periodMode === 'FY_ALL' ? ' is-on' : '') + '" data-rep40-act="' + kind + '|PRESET_ALL" style="padding:4px 9px;font-size:10.5px;">All Months (' + fyMonths.length + ')</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="krito-rep-months-wrap-v1631">' +
+        '<span style="font-size:11px;font-weight:800;color:#475569;margin-right:4px;">🗓️ Months:</span>' +
+        (monthPills || '<span style="font-size:11px;color:#94a3b8;">No months found.</span>') +
+      '</div>' +
+    '</div>';
+  }
+
+  // =========================================================================
+  // MAIN SELL THRU REPORT HTML (POINT 2)
+  // =========================================================================
+  function buildSellThruPanelHtml40B() {
+    var rs = RSTATE.SELL_THRU;
+    var spec = resolvePeriodSpec40B(rs);
+    var cur = collectSnapshot40B(spec, false);
+    var ly = rs.compareLY ? collectSnapshot40B(spec, true) : null;
+    var isCluster = (rs.view === 'CLUSTER');
+    var pinnedHeaders = getPinnedHeaders40B();
+    var showBilled = (rs.stMode === 'BILLED' || rs.stMode === 'BOTH');
+    var showNet = (rs.stMode === 'NET' || rs.stMode === 'BOTH');
+
+    var srcMap = isCluster ? cur.byMgr : cur.byParty;
+    var lyMap = ly ? (isCluster ? ly.byMgr : ly.byParty) : {};
+    var allKeys = Array.from(new Set(Object.keys(srcMap).concat(rs.compareLY ? Object.keys(lyMap) : [])));
+
+    var gf = window._kritoGlobalFilterV1637 || {};
+    var gfClusterUp = (gf.cluster || '').trim().toUpperCase();
+    var gfPartyLow = (gf.party || '').trim().toLowerCase();
+    var q = (rs.search || '').trim().toLowerCase();
+
+    var rowsData = [];
+    allKeys.forEach(function(k) {
+      var c = srcMap[k] || { name: (lyMap[k] ? lyMap[k].name : k), mgr: (lyMap[k] ? lyMap[k].mgr : '-'), tQ:0, tV:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, units: new Set(), dates: new Set() };
+      var l = lyMap[k] || { tQ:0, tV:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0 };
+      if (isCluster) {
+        if (gfClusterUp && k !== gfClusterUp) return;
+      } else {
+        if (gfClusterUp && String(c.mgr || '').trim().toUpperCase() !== gfClusterUp) return;
+        if (gfPartyLow && c.name.toLowerCase().indexOf(gfPartyLow) === -1) return;
+      }
+      if (q && c.name.toLowerCase().indexOf(q) === -1 && String(c.mgr || '').toLowerCase().indexOf(q) === -1) return;
+      rowsData.push({ key: k, c: c, l: l });
+    });
+
+    rowsData.sort(function(a, b) { return (b.c.tV - a.c.tV) || (b.c.nV - a.c.nV) || a.c.name.localeCompare(b.c.name); });
+
+    var tot = { bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, tQ:0, tV:0, lyNQ:0, lyNV:0, lyTQ:0, lyTV:0 };
+    rowsData.forEach(function(x) {
+      tot.bQ += x.c.bQ; tot.bV += x.c.bV; tot.rQ += x.c.rQ; tot.rV += x.c.rV;
+      tot.nQ += x.c.nQ; tot.nV += x.c.nV; tot.tQ += x.c.tQ; tot.tV += x.c.tV;
+      tot.lyNQ += x.l.nQ; tot.lyNV += x.l.nV; tot.lyTQ += x.l.tQ; tot.lyTV += x.l.tV;
+    });
+
+    var hdrModeBtn = document.getElementById('kritoHeaderDataModeBtnV1638');
+    var hdrIsAll = !!(hdrModeBtn && hdrModeBtn.classList.contains('is-all'));
+
+    var pinnedThs = pinnedHeaders.map(function(h) { return '<th style="background:#f3e8ff;color:#6d28d9;text-align:center;">📌 ' + esc40B(h) + '</th>'; }).join('');
+    var rowsHtml = rowsData.map(function(x, idx) {
+      var c = x.c, l = x.l;
+      var uCnt = Math.max(1, c.units ? c.units.size : 1);
+      var dCnt = c.dates ? c.dates.size : 0;
+
+      var pTds = pinnedHeaders.map(function(h) {
+        var aObj = cur.tertAttrs[h];
+        if (!aObj) return '<td style="text-align:center;color:#94a3b8;">-</td>';
+        var sMap = isCluster ? aObj.byMgr[x.key] : aObj.byStore[x.key];
+        var sm = sumAttrMap40B(sMap, h);
+        return '<td style="text-align:center;">' + (sm.count > 0
+          ? '<button type="button" class="krito-sub-attr-btn-v1633" data-open-sub-attr-v1633="1" data-type="TERTIARY" data-scope="' + (isCluster ? 'MANAGER' : 'STORE') + '" data-entity="' + esc40B(c.name) + '" data-hdr="' + esc40B(h) + '"><span class="krito-sub-attr-ico-v1633">+</span><span>' + fmtQ40B(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button>'
+          : '<span style="color:#94a3b8;">-</span>') + '</td>';
+      }).join('');
+
+      var curStNQ = c.nQ > 0 ? (c.tQ / c.nQ) * 100 : null, lyStNQ = l.nQ > 0 ? (l.tQ / l.nQ) * 100 : null;
+      var curStNV = c.nV > 0 ? (c.tV / c.nV) * 100 : null, lyStNV = l.nV > 0 ? (l.tV / l.nV) * 100 : null;
+
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + esc40B(c.name) + '</b></td>' +
+        (!isCluster ? '<td style="text-align:center;"><button type="button" class="krito-sub-unit-btn-v1633" data-rep40-unit="SELL_THRU|' + esc40B(c.name) + '">+ ' + uCnt + '</button></td>' : '') +
+        '<td class="krito-td-dw-v1637"><button type="button" class="krito-dw-btn-v1637" data-rep40-date="SELL_THRU|' + (isCluster ? 'CLUSTER' : 'PARTY') + '|' + esc40B(isCluster ? '' : c.name) + '||' + esc40B(isCluster ? c.name : '') + '"><span class="krito-dw-ico-v1637">+</span>' + (dCnt > 0 ? (' ' + dCnt) : '') + '</button></td>' +
+        (!isCluster ? '<td>' + esc40B(c.mgr || '-') + '</td>' : '') +
+        pTds +
+        '<td class="num">' + fmtQ40B(c.bQ) + '</td><td class="num">' + fmtI40B(c.bV) + '</td>' +
+        '<td class="num" style="color:#dc2626;font-weight:700;">' + fmtQ40B(c.rQ) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + fmtI40B(c.rV) + '</td>' +
+        '<td class="num" style="font-weight:800;">' + fmtQ40B(c.nQ) + '</td><td class="num" style="font-weight:800;color:#6d28d9;">' + fmtI40B(c.nV) + '</td>' +
+        '<td class="num" style="font-weight:800;">' + fmtQ40B(c.tQ) + '</td><td class="num" style="font-weight:800;color:#0284c7;">' + fmtI40B(c.tV) + '</td>' +
+        (showBilled ? '<td class="num">' + stPctBadge40B(c.tQ, c.bQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.bV) + '</td>' : '') +
+        (showNet ? '<td class="num">' + stPctBadge40B(c.tQ, c.nQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.nV) + '</td>' : '') +
+        (rs.compareLY ? (
+          '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.nQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.nV) + '</td>' +
+          '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.tQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.tV) + '</td>' +
+          '<td class="num">' + growthHtml40B(c.tV, l.tV) + '</td>' +
+          '<td class="num">' + stPctBadge40B(l.tQ, l.nQ) + '</td><td class="num">' + stDiffBadge40B(curStNQ, lyStNQ) + '</td>' +
+          '<td class="num">' + stPctBadge40B(l.tV, l.nV) + '</td><td class="num">' + stDiffBadge40B(curStNV, lyStNV) + '</td>'
+        ) : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="28" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">Selected period mein Sell Out / Tertiary data nahi mila.</td></tr>';
+
+    var pTotTds = pinnedHeaders.map(function(h) {
+      var aObj = cur.tertAttrs[h];
+      var sm = aObj ? sumAttrMap40B(aObj.totals, h) : { qty: 0, count: 0 };
+      return '<td style="text-align:center;"><b>' + (sm.count > 0 ? (fmtQ40B(sm.qty) + ' Qty') : '-') + '</b></td>';
+    }).join('');
+
+    var totCurStNQ = tot.nQ > 0 ? (tot.tQ / tot.nQ) * 100 : null, totLyStNQ = tot.lyNQ > 0 ? (tot.lyTQ / tot.lyNQ) * 100 : null;
+    var totCurStNV = tot.nV > 0 ? (tot.tV / tot.nV) * 100 : null, totLyStNV = tot.lyNV > 0 ? (tot.lyTV / tot.lyNV) * 100 : null;
+
+    var totalRowHtml = rowsData.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td><td>TOTAL (' + rowsData.length + ')</td>' +
+        (!isCluster ? '<td>-</td>' : '') + '<td>-</td>' + (!isCluster ? '<td>-</td>' : '') +
+        pTotTds +
+        '<td class="num">' + fmtQ40B(tot.bQ) + '</td><td class="num">' + fmtI40B(tot.bV) + '</td>' +
+        '<td class="num" style="color:#dc2626;">' + fmtQ40B(tot.rQ) + '</td><td class="num" style="color:#dc2626;">' + fmtI40B(tot.rV) + '</td>' +
+        '<td class="num">' + fmtQ40B(tot.nQ) + '</td><td class="num" style="color:#6d28d9;">' + fmtI40B(tot.nV) + '</td>' +
+        '<td class="num">' + fmtQ40B(tot.tQ) + '</td><td class="num" style="color:#0284c7;">' + fmtI40B(tot.tV) + '</td>' +
+        (showBilled ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.bQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.bV) + '</td>' : '') +
+        (showNet ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.nQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.nV) + '</td>' : '') +
+        (rs.compareLY ? (
+          '<td class="num">' + fmtQ40B(tot.lyNQ) + '</td><td class="num">' + fmtI40B(tot.lyNV) + '</td>' +
+          '<td class="num">' + fmtQ40B(tot.lyTQ) + '</td><td class="num">' + fmtI40B(tot.lyTV) + '</td>' +
+          '<td class="num">' + growthHtml40B(tot.tV, tot.lyTV) + '</td>' +
+          '<td class="num">' + stPctBadge40B(tot.lyTQ, tot.lyNQ) + '</td><td class="num">' + stDiffBadge40B(totCurStNQ, totLyStNQ) + '</td>' +
+          '<td class="num">' + stPctBadge40B(tot.lyTV, tot.lyNV) + '</td><td class="num">' + stDiffBadge40B(totCurStNV, totLyStNV) + '</td>'
+        ) : '') +
+      '</tr>'
+    ) : '';
+
+    return '' +
+      '<div class="krito-rep-head-v1631">' +
+        '<div class="krito-rep-title-v1631">' +
+          '<span>📊 SELL THRU REPORT</span>' +
+          '<span style="font-size:11px;background:#eef2ff;color:#4338ca;padding:2px 9px;border-radius:99px;">' + esc40B(spec.label) + (rs.compareLY ? (' vs ' + esc40B(spec.lyLabel)) : '') + '</span>' +
+        '</div>' +
+        '<div class="krito-rep-controls-v1631">' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (rs.view === 'CLUSTER' ? ' is-on' : '') + '" data-rep40-act="SELL_THRU|VIEW_CLUSTER">👨‍💼 Cluster Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (rs.view === 'PARTY' ? ' is-on' : '') + '" data-rep40-act="SELL_THRU|VIEW_PARTY">🏪 Party Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (rs.stMode === 'BILLED' ? ' is-on' : '') + '" data-rep40-act="SELL_THRU|MODE_BILLED">📦 On Billed</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (rs.stMode === 'NET' ? ' is-on' : '') + '" data-rep40-act="SELL_THRU|MODE_NET">📊 On Net</button>' +
+          '<button type="button" class="krito-rep-pill-v1631' + (rs.stMode === 'BOTH' ? ' is-on' : '') + '" data-rep40-act="SELL_THRU|MODE_BOTH">🔀 Both</button>' +
+          '<input type="text" class="krito-rep-search-v1631" id="kritoRep40Search" data-rep40-search="SELL_THRU" value="' + esc40B(rs.search) + '" placeholder="🔍 Search Cluster / Party...">' +
+          '<button type="button" class="krito-hdrmode-btn-v1638' + (hdrIsAll ? ' is-all' : '') + '" style="margin-left:0;" data-rep40-act="SELL_THRU|TOGGLE_HDR_MODE">' + (hdrIsAll ? '<span>🌐 All Header Data</span><span class="krito-hdrmode-tag-v1638">⇄ Default</span>' : '<span>🔒 Link Default</span><span class="krito-hdrmode-tag-v1638">⇄ Show All</span>') + '</button>' +
+          '<button type="button" class="krito-expand-fs-btn-v1624' + (rs.fullscreen ? ' is-expanded' : '') + '" style="margin-left:0;" data-rep40-act="SELL_THRU|TOGGLE_FS">' + (rs.fullscreen ? '✖ Exit Full Screen' : '⛶ Full Screen') + '</button>' +
+          '<button type="button" class="krito-rep-pill-v1631" data-rep40-act="SELL_THRU|CLOSE" style="background:#fee2e2;border-color:#fca5a5;color:#b91c1c;">✖ Close</button>' +
+        '</div>' +
+      '</div>' +
+      buildPeriodControlsHtml40B('SELL_THRU', rs, spec) +
+      '<div class="krito-rep-kpis-v1631">' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (BILLED)</span><span class="kval">' + fmtQ40B(tot.bQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.bV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">RTV (NEGATIVE)</span><span class="kval" style="color:#fb7185;">' + fmtQ40B(tot.rQ) + ' Qty</span><span class="ksub" style="color:#fda4af;">' + fmtI40B(tot.rV) + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (NET)</span><span class="kval" style="color:#c4b5fd;">' + fmtQ40B(tot.nQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.nV) + (rs.compareLY ? (' | LY: ' + fmtQ40B(tot.lyNQ)) : '') + '</span></div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TERTIARY SALE</span><span class="kval" style="color:#38bdf8;">' + fmtQ40B(tot.tQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.tV) + (rs.compareLY ? (' | ' + growthHtml40B(tot.tV, tot.lyTV)) : '') + '</span></div>' +
+        (showBilled ? '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (BILLED)</span><span class="kval" style="color:#34d399;">Qty: ' + (tot.bQ > 0 ? ((tot.tQ / tot.bQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.bV > 0 ? ((tot.tV / tot.bV) * 100).toFixed(1) + '%' : '-') + '</span></div>' : '') +
+        (showNet ? '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (NET)</span><span class="kval" style="color:#fbbf24;">Qty: ' + (tot.nQ > 0 ? ((tot.tQ / tot.nQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.nV > 0 ? ((tot.tV / tot.nV) * 100).toFixed(1) + '%' : '-') + (rs.compareLY && totLyStNV !== null ? (' | LY: ' + totLyStNV.toFixed(1) + '%') : '') + '</span></div>' : '') +
+      '</div>' +
+      '<div class="table-scroll" style="max-height:480px;overflow:auto;">' +
+        '<table class="krito-rep40-tbl"><thead><tr>' +
+          '<th>#</th>' +
+          '<th>' + (isCluster ? 'Cluster / Manager' : 'Party / Store Name') + '</th>' +
+          (!isCluster ? '<th style="text-align:center;">Unit / Location</th>' : '') +
+          '<th class="krito-th-dw-v1637">Date Wise</th>' +
+          (!isCluster ? '<th>Cluster</th>' : '') +
+          pinnedThs +
+          '<th class="num">Sell Out (Billed) Qty</th><th class="num">Sell Out (Billed) Val</th>' +
+          '<th class="num" style="color:#dc2626;">RTV Qty</th><th class="num" style="color:#dc2626;">RTV Val</th>' +
+          '<th class="num">Sell Out (Net) Qty</th><th class="num">Sell Out (Net) Val</th>' +
+          '<th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th>' +
+          (showBilled ? '<th class="num">Sell Thru Qty % (Billed)</th><th class="num">Sell Thru Val % (Billed)</th>' : '') +
+          (showNet ? '<th class="num">Sell Thru Qty % (Net)</th><th class="num">Sell Thru Val % (Net)</th>' : '') +
+          (rs.compareLY ? (
+            '<th class="num krito-rep40-ly-th">LY Sell Out Qty</th><th class="num krito-rep40-ly-th">LY Sell Out Val</th>' +
+            '<th class="num krito-rep40-ly-th">LY Tertiary Qty</th><th class="num krito-rep40-ly-th">LY Tertiary Val</th>' +
+            '<th class="num krito-rep40-ly-th">Tert Val Gr%</th>' +
+            '<th class="num krito-rep40-ly-th">LY ST Qty%</th><th class="num krito-rep40-ly-th">ST Qty +/-</th>' +
+            '<th class="num krito-rep40-ly-th">LY ST Val%</th><th class="num krito-rep40-ly-th">ST Val +/-</th>'
+          ) : '') +
+        '</tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+      '</div>';
+  }
+
+  // =========================================================================
+  // MAIN KPI'S REPORT HTML (POINT 3)
+  // =========================================================================
+  function buildKpisPanelHtml40B() {
+    var rs = RSTATE.KPIS;
+    var spec = resolvePeriodSpec40B(rs);
+    var cur = collectSnapshot40B(spec, false);
+    var ly = rs.compareLY ? collectSnapshot40B(spec, true) : null;
+    var isCluster = (rs.view === 'CLUSTER');
+    var pinnedHeaders = getPinnedHeaders40B();
+
+    var srcMap = isCluster ? cur.byMgr : cur.byParty;
+    var lyMap = ly ? (isCluster ? ly.byMgr : ly.byParty) : {};
+    var allKeys = Array.from(new Set(Object.keys(srcMap).concat(rs.compareLY ? Object.keys(lyMap) : [])));
+
+    var gf = window._kritoGlobalFilterV1637 || {};
+    var gfClusterUp = (gf.cluster || '').trim().toUpperCase();
+    var gfPartyLow = (gf.party || '').trim().toLowerCase();
+    var q = (rs.search || '').trim().toLowerCase();
+
+    var rowsData = [];
+    allKeys.forEach(function(k) {
+      var c = srcMap[k] || { name: (lyMap[k] ? lyMap[k].name : k), mgr: (lyMap[k] ? lyMap[k].mgr : '-'), tQ:0, tV:0, bills:0, units: new Set(), dates: new Set() };
+      var l = lyMap[k] || { tQ:0, tV:0, bills:0 };
+      if (isCluster) {
+        if (gfClusterUp && k !== gfClusterUp) return;
+      } else {
+        if (gfClusterUp && String(c.mgr || '').trim().toUpperCase() !== gfClusterUp) return;
+        if (gfPartyLow && c.name.toLowerCase().indexOf(gfPartyLow) === -1) return;
+      }
+      if (q && c.name.toLowerCase().indexOf(q) === -1 && String(c.mgr || '').toLowerCase().indexOf(q) === -1) return;
+      rowsData.push({ key: k, c: c, l: l });
+    });
+
+    rowsData.sort(function(a, b) { return (b.c.tV - a.c.tV) || (b.c.bills - a.c.bills) || a.c.name.localeCompare(b.c.name); });
+
+    var tot = { bills:0, qty:0, net:0, lyBills:0, lyQty:0, lyNet:0 };
+    rowsData.forEach(function(x) {
+      tot.bills += x.c.bills; tot.qty += x.c.tQ; tot.net += x.c.tV;
+      tot.lyBills += x.l.bills; tot.lyQty += x.l.tQ; tot.lyNet += x.l.tV;
+    });
+    var totCurK = calcKpiVals40B(tot.net, tot.qty, tot.bills);
+    var totLyK = calcKpiVals40B(tot.lyNet, tot.lyQty, tot.lyBills);
+
+    var hdrModeBtn = document.getElementById('kritoHeaderDataModeBtnV1638');
+    var hdrIsAll = !!(hdrModeBtn && hdrModeBtn.classList.contains('is-all'));
+
+    var pinnedThs = pinnedHeaders.map(function(h) { return '<th style="background:#f3e8ff;color:#6d28d9;text-align:center;">📌 ' + esc40B(h) + '</th>'; }).join('');
+    var rowsHtml = rowsData.map(function(x, idx) {
+      var c = x.c, l = x.l;
+      var cm = calcKpiVals40B(c.tV, c.tQ, c.bills);
+      var lm = calcKpiVals40B(l.tV, l.tQ, l.bills);
+      var uCnt = Math.max(1, c.units ? c.units.size : 1);
+      var dCnt = c.dates ? c.dates.size : 0;
+
+      var pTds = pinnedHeaders.map(function(h) {
+        var aObj = cur.tertAttrs[h];
+        if (!aObj) return '<td style="text-align:center;color:#94a3b8;">-</td>';
+        var sMap = isCluster ? aObj.byMgr[x.key] : aObj.byStore[x.key];
+        var sm = sumAttrMap40B(sMap, h);
+        return '<td style="text-align:center;">' + (sm.count > 0
+          ? '<button type="button" class="krito-sub-attr-btn-v1633" data-open-sub-attr-v1633="1" data-type="TERTIARY" data-scope="' + (isCluster ? 'MANAGER' : 'STORE') + '" data-entity="' + esc40B(c.name) + '" data-hdr="' + esc40B(h) + '"><span class="krito-sub-attr-ico-v1633">+</span><span>' + fmtQ40B(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button>'
+          : '<span style="color:#94a3b8;">-</span>') + '</td>';
+      }).join('');
+
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><b>' + esc40B(c.name) + '</b></td>' +
+        (!isCluster ? '<td style="text-align:center;"><button type="button" class="krito-sub-unit-btn-v1633" data-rep40-unit="KPIS|' + esc40B(c.name) + '">+ ' + uCnt + '</button></td>' : '') +
+        '<td class="krito-td-dw-v1637"><button type="button" class="krito-dw-btn-v1637" data-rep40-date="KPIS|' + (isCluster ? 'CLUSTER' : 'PARTY') + '|' + esc40B(isCluster ? '' : c.name) + '||' + esc40B(isCluster ? c.name : '') + '"><span class="krito-dw-ico-v1637">+</span>' + (dCnt > 0 ? (' ' + dCnt) : '') + '</button></td>' +
+        (!isCluster ? '<td>' + esc40B(c.mgr || '-') + '</td>' : '') +
+        pTds +
+        '<td class="num" style="font-weight:800;">' + fmtQ40B(c.bills) + '</td>' +
+        (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.bills) + '</td><td class="num">' + growthHtml40B(c.bills, l.bills) + '</td>' : '') +
+        '<td class="num">' + fmtQ40B(c.tQ) + '</td>' +
+        '<td class="num" style="color:#0284c7;font-weight:800;">' + fmtI40B(c.tV) + '</td>' +
+        '<td class="num" style="font-weight:900;color:#0f766e;">' + fmtI40B(cm.abv) + '</td>' +
+        (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.abv) + '</td><td class="num">' + growthHtml40B(cm.abv, lm.abv) + '</td>' : '') +
+        '<td class="num" style="font-weight:900;color:#4338ca;">' + fmtI40B(cm.asp) + '</td>' +
+        (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.asp) + '</td><td class="num">' + growthHtml40B(cm.asp, lm.asp) + '</td>' : '') +
+        '<td class="num" style="font-weight:900;color:#b45309;">' + fmtDec40B(cm.upt) + '</td>' +
+        (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtDec40B(lm.upt) + '</td><td class="num">' + growthHtml40B(cm.upt, lm.upt) + '</td>' : '') +
+      '</tr>';
+    }).join('') || '<tr><td colspan="22" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">Selected period mein KPI data nahi mila.</td></tr>';
+
+    var pTotTds = pinnedHeaders.map(function(h) {
+      var aObj = cur.tertAttrs[h];
+      var sm = aObj ? sumAttrMap40B(aObj.totals, h) : { qty: 0, count: 0 };
+      return '<td style="text-align:center;"><b>' + (sm.count > 0 ? (fmtQ40B(sm.qty) + ' Qty') : '-') + '</b></td>';
+    }).join('');
+
+    var totalRowHtml = rowsData.length > 0 ? (
+      '<tr class="total-row">' +
+        '<td></td><td>TOTAL (' + rowsData.length + ')</td>' +
+        (!isCluster ? '<td>-</td>' : '') + '<td>-</td>' + (!isCluster ? '<td>-</td>' : '') +
+        pTotTds +
+        '<td class="num">' + fmtQ40B(tot.bills) + '</td>' +
+        (rs.compareLY ? '<td class="num">' + fmtQ40B(tot.lyBills) + '</td><td class="num">' + growthHtml40B(tot.bills, tot.lyBills) + '</td>' : '') +
+        '<td class="num">' + fmtQ40B(tot.qty) + '</td>' +
+        '<td class="num" style="color:#0284c7;">' + fmtI40B(tot.net) + '</td>' +
+        '<td class="num" style="color:#0f766e;">' + fmtI40B(totCurK.abv) + '</td>' +
+        (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.abv) + '</td><td class="num">' + growthHtml40B(totCurK.abv, totLyK.abv) + '</td>' : '') +
+        '<td class="num" style="color:#4338ca;">' + fmtI40B(totCurK.asp) + '</td>' +
+        (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.asp) + '</td><td class="num">' + growthHtml40B(totCurK.asp, totLyK.asp) + '</td>' : '') +
+        '<td class="num" style="color:#b45309;">' + fmtDec40B(totCurK.upt) + '</td>' +
+        (rs.compareLY ? '<td class="num">' + fmtDec40B(totLyK.upt) + '</td><td class="num">' + growthHtml40B(totCurK.upt, totLyK.upt) + '</td>' : '') +
+      '</tr>'
+    ) : '';
+
+    return '' +
+      '<div class="krito-rep-head-v1631">' +
+        '<div class="krito-rep-title-v1631">' +
+          '<span>📈 KPI\'S REPORT (ABV • ASP • UPT)</span>' +
+          '<span style="font-size:11px;background:#eef2ff;color:#4338ca;padding:2px 9px;border-radius:99px;">' + esc40B(spec.label) + (rs.compareLY ? (' vs ' + esc40B(spec.lyLabel)) : '') + '</span>' +
+        '</div>' +
+        '<div class="krito-rep-controls-v1631">' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (rs.view === 'CLUSTER' ? ' is-on' : '') + '" data-rep40-act="KPIS|VIEW_CLUSTER">👨‍💼 Cluster Wise</button>' +
+          '<button type="button" class="krito-rep-pill-v1631 is-green' + (rs.view === 'PARTY' ? ' is-on' : '') + '" data-rep40-act="KPIS|VIEW_PARTY">🏪 Party Wise</button>' +
+          '<input type="text" class="krito-rep-search-v1631" id="kritoRep40Search" data-rep40-search="KPIS" value="' + esc40B(rs.search) + '" placeholder="🔍 Search Cluster / Party...">' +
+          '<button type="button" class="krito-hdrmode-btn-v1638' + (hdrIsAll ? ' is-all' : '') + '" style="margin-left:0;" data-rep40-act="KPIS|TOGGLE_HDR_MODE">' + (hdrIsAll ? '<span>🌐 All Header Data</span><span class="krito-hdrmode-tag-v1638">⇄ Default</span>' : '<span>🔒 Link Default</span><span class="krito-hdrmode-tag-v1638">⇄ Show All</span>') + '</button>' +
+          '<button type="button" class="krito-expand-fs-btn-v1624' + (rs.fullscreen ? ' is-expanded' : '') + '" style="margin-left:0;" data-rep40-act="KPIS|TOGGLE_FS">' + (rs.fullscreen ? '✖ Exit Full Screen' : '⛶ Full Screen') + '</button>' +
+          '<button type="button" class="krito-rep-pill-v1631" data-rep40-act="KPIS|CLOSE" style="background:#fee2e2;border-color:#fca5a5;color:#b91c1c;">✖ Close</button>' +
+        '</div>' +
+      '</div>' +
+      buildPeriodControlsHtml40B('KPIS', rs, spec) +
+      '<div class="krito-rep-kpis-v1631">' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🧾 TOTAL BILLS</span><span class="kval">' + fmtQ40B(tot.bills) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtQ40B(tot.lyBills) + ' | ' + growthHtml40B(tot.bills, tot.lyBills) + '</span>' : '') + '</div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">💰 ABV (NET SALE / BILLS)</span><span class="kval" style="color:#34d399;">' + fmtI40B(totCurK.abv) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.abv) + ' | ' + growthHtml40B(totCurK.abv, totLyK.abv) + '</span>' : '') + '</div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🏷️ ASP (NET SALE / QTY)</span><span class="kval" style="color:#38bdf8;">' + fmtI40B(totCurK.asp) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.asp) + ' | ' + growthHtml40B(totCurK.asp, totLyK.asp) + '</span>' : '') + '</div>' +
+        '<div class="krito-rep-kpi-box-v1631"><span class="klbl">📦 UPT (QTY / BILLS)</span><span class="kval" style="color:#fbbf24;">' + fmtDec40B(totCurK.upt) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtDec40B(totLyK.upt) + ' | ' + growthHtml40B(totCurK.upt, totLyK.upt) + '</span>' : '') + '</div>' +
+      '</div>' +
+      '<div class="table-scroll" style="max-height:480px;overflow:auto;">' +
+        '<table class="krito-rep40-tbl"><thead><tr>' +
+          '<th>#</th>' +
+          '<th>' + (isCluster ? 'Cluster / Manager' : 'Party / Store Name') + '</th>' +
+          (!isCluster ? '<th style="text-align:center;">Unit / Location</th>' : '') +
+          '<th class="krito-th-dw-v1637">Date Wise</th>' +
+          (!isCluster ? '<th>Cluster</th>' : '') +
+          pinnedThs +
+          '<th class="num">Total Bills</th>' +
+          (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY Bills</th><th class="num krito-rep40-ly-th">Bills Gr%</th>' : '') +
+          '<th class="num">Total Qty</th><th class="num">Net Sale</th>' +
+          '<th class="num">ABV</th>' +
+          (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ABV</th><th class="num krito-rep40-ly-th">ABV Gr%</th>' : '') +
+          '<th class="num">ASP</th>' +
+          (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ASP</th><th class="num krito-rep40-ly-th">ASP Gr%</th>' : '') +
+          '<th class="num">UPT</th>' +
+          (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY UPT</th><th class="num krito-rep40-ly-th">UPT Gr%</th>' : '') +
+        '</tr></thead><tbody>' + rowsHtml + totalRowHtml + '</tbody></table>' +
+      '</div>';
+  }
+
+  // =========================================================================
+  // FULL-SCREEN UNIT / LOCATION POPUP (100% COMPLETE DATA MATCHING MAIN SHEET)
+  // =========================================================================
+  window.closeRep40UnitModal = function() {
+    UNIT_MODAL.open = false;
+    UNIT_MODAL.openAttrKey = '';
+    unitPopupRoot.innerHTML = '';
+  };
+
+  function renderUnitModal40B() {
+    if (!UNIT_MODAL.open) { unitPopupRoot.innerHTML = ''; return; }
+    var um = UNIT_MODAL;
+    var rs = RSTATE[um.kind] || RSTATE.SELL_THRU;
+    var spec = resolvePeriodSpec40B(rs);
+    var cur = collectSnapshot40B(spec, false);
+    var ly = rs.compareLY ? collectSnapshot40B(spec, true) : null;
+    var isST = (um.kind === 'SELL_THRU');
+    var showBilled = isST && (rs.stMode === 'BILLED' || rs.stMode === 'BOTH');
+    var showNet = isST && (rs.stMode === 'NET' || rs.stMode === 'BOTH');
+    var pinnedHeaders = getPinnedHeaders40B();
+    var pPrefix = String(um.party || '').trim().toUpperCase() + '||';
+
+    var activeFocus = (document.activeElement && document.activeElement.id === 'kritoRep40UnitSearch') ? (document.activeElement.selectionStart || 0) : -1;
+    var q = (um.search || '').trim().toLowerCase();
+
+    var unitKeys = Array.from(new Set(
+      Object.keys(cur.byUnit).filter(function(k) { return k.indexOf(pPrefix) === 0; })
+      .concat(ly ? Object.keys(ly.byUnit).filter(function(k) { return k.indexOf(pPrefix) === 0; }) : [])
+    ));
+
+    var list = unitKeys.map(function(uk) {
+      var c = cur.byUnit[uk] || { party: um.party, unit: uk.slice(pPrefix.length), mgr: '-', tQ:0, tV:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, attrs: {} };
+      var l = (ly && ly.byUnit[uk]) || { tQ:0, tV:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0 };
+      return { uk: uk, c: c, l: l };
+    }).filter(function(x) { return !q || x.c.unit.toLowerCase().indexOf(q) !== -1; });
+
+    list.sort(function(a, b) { return (b.c.tV - a.c.tV) || (b.c.nV - a.c.nV) || a.c.unit.localeCompare(b.c.unit); });
+
+    var tot = { bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, tQ:0, tV:0, bills:0, lyNQ:0, lyNV:0, lyTQ:0, lyTV:0, lyBills:0 };
+    list.forEach(function(x) {
+      tot.bQ += x.c.bQ; tot.bV += x.c.bV; tot.rQ += x.c.rQ; tot.rV += x.c.rV;
+      tot.nQ += x.c.nQ; tot.nV += x.c.nV; tot.tQ += x.c.tQ; tot.tV += x.c.tV; tot.bills += x.c.bills;
+      tot.lyNQ += x.l.nQ; tot.lyNV += x.l.nV; tot.lyTQ += x.l.tQ; tot.lyTV += x.l.tV; tot.lyBills += x.l.bills;
+    });
+
+    var pinnedThs = pinnedHeaders.map(function(h) { return '<th style="background:#f3e8ff;color:#6d28d9;text-align:center;">📌 ' + esc40B(h) + '</th>'; }).join('');
+    var colCount = 4 + pinnedHeaders.length + (isST ? (8 + (showBilled ? 2 : 0) + (showNet ? 2 : 0) + (rs.compareLY ? 9 : 0)) : (6 + (rs.compareLY ? 8 : 0)));
+
+    var rowsHtml = '';
+    list.forEach(function(x, idx) {
+      var c = x.c, l = x.l;
+      var openDr = null;
+      var pTds = pinnedHeaders.map(function(h) {
+        var sm = sumAttrMap40B(c.attrs ? getCaseEntry40B(c.attrs, h) : null, h);
+        if (sm.count === 0) return '<td style="text-align:center;color:#94a3b8;">-</td>';
+        var aKey = idx + '|' + h;
+        var isOp = (um.openAttrKey === aKey);
+        if (isOp) openDr = { hdr: h, sm: sm };
+        return '<td style="text-align:center;"><button type="button" class="krito-sub-attr-btn-v1633' + (isOp ? ' is-open-v1634' : '') + '" data-rep40-uattr="' + esc40B(aKey) + '"><span class="krito-sub-attr-ico-v1633">' + (isOp ? '−' : '+') + '</span><span>' + fmtQ40B(sm.qty) + ' Qty</span><span class="krito-sub-attr-cnt-v1633">(' + sm.count + ')</span></button></td>';
+      }).join('');
+
+      var dwBtn = '<button type="button" class="krito-dw-btn-v1637" data-rep40-date="' + um.kind + '|UNIT|' + esc40B(um.party) + '|' + esc40B(c.unit) + '|"><span class="krito-dw-ico-v1637">+</span> Date Wise</button>';
+
+      if (isST) {
+        var cSNQ = c.nQ > 0 ? (c.tQ / c.nQ) * 100 : null, lSNQ = l.nQ > 0 ? (l.tQ / l.nQ) * 100 : null;
+        var cSNV = c.nV > 0 ? (c.tV / c.nV) * 100 : null, lSNV = l.nV > 0 ? (l.tV / l.nV) * 100 : null;
+        rowsHtml += '<tr>' +
+          '<td>' + (idx + 1) + '</td><td><b>' + esc40B(c.unit) + '</b></td><td class="krito-td-dw-v1637">' + dwBtn + '</td><td>' + esc40B(c.mgr) + '</td>' + pTds +
+          '<td class="num">' + fmtQ40B(c.bQ) + '</td><td class="num">' + fmtI40B(c.bV) + '</td>' +
+          '<td class="num" style="color:#dc2626;font-weight:700;">' + fmtQ40B(c.rQ) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + fmtI40B(c.rV) + '</td>' +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.nQ) + '</td><td class="num" style="font-weight:800;color:#6d28d9;">' + fmtI40B(c.nV) + '</td>' +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.tQ) + '</td><td class="num" style="font-weight:800;color:#0284c7;">' + fmtI40B(c.tV) + '</td>' +
+          (showBilled ? '<td class="num">' + stPctBadge40B(c.tQ, c.bQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.bV) + '</td>' : '') +
+          (showNet ? '<td class="num">' + stPctBadge40B(c.tQ, c.nQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.nV) + '</td>' : '') +
+          (rs.compareLY ? (
+            '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.nQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.nV) + '</td>' +
+            '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.tQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.tV) + '</td>' +
+            '<td class="num">' + growthHtml40B(c.tV, l.tV) + '</td>' +
+            '<td class="num">' + stPctBadge40B(l.tQ, l.nQ) + '</td><td class="num">' + stDiffBadge40B(cSNQ, lSNQ) + '</td>' +
+            '<td class="num">' + stPctBadge40B(l.tV, l.nV) + '</td><td class="num">' + stDiffBadge40B(cSNV, lSNV) + '</td>'
+          ) : '') +
+        '</tr>';
+      } else {
+        var cm = calcKpiVals40B(c.tV, c.tQ, c.bills), lm = calcKpiVals40B(l.tV, l.tQ, l.bills);
+        rowsHtml += '<tr>' +
+          '<td>' + (idx + 1) + '</td><td><b>' + esc40B(c.unit) + '</b></td><td class="krito-td-dw-v1637">' + dwBtn + '</td><td>' + esc40B(c.mgr) + '</td>' + pTds +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.bills) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.bills) + '</td><td class="num">' + growthHtml40B(c.bills, l.bills) + '</td>' : '') +
+          '<td class="num">' + fmtQ40B(c.tQ) + '</td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI40B(c.tV) + '</td>' +
+          '<td class="num" style="font-weight:900;color:#0f766e;">' + fmtI40B(cm.abv) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.abv) + '</td><td class="num">' + growthHtml40B(cm.abv, lm.abv) + '</td>' : '') +
+          '<td class="num" style="font-weight:900;color:#4338ca;">' + fmtI40B(cm.asp) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.asp) + '</td><td class="num">' + growthHtml40B(cm.asp, lm.asp) + '</td>' : '') +
+          '<td class="num" style="font-weight:900;color:#b45309;">' + fmtDec40B(cm.upt) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtDec40B(lm.upt) + '</td><td class="num">' + growthHtml40B(cm.upt, lm.upt) + '</td>' : '') +
+        '</tr>';
+      }
+
+      if (openDr) {
+        var pills = openDr.sm.entries.map(function(e) {
+          var pct = openDr.sm.qty ? ((e.qty / openDr.sm.qty) * 100).toFixed(1) : '0.0';
+          return '<div class="krito-iad-pill-v1634"><span>' + esc40B(e.val) + '</span><span class="krito-iad-pill-qty-v1634">' + fmtQ40B(e.qty) + '</span><span class="krito-iad-pill-pct-v1634">(' + pct + '%)</span></div>';
+        }).join('');
+        rowsHtml += '<tr class="krito-inline-attr-drawer-v1634"><td colspan="' + colCount + '"><div class="krito-iad-card-v1634"><div class="krito-iad-head-v1634"><div class="krito-iad-meta-v1634"><span>📍 Unit: ' + esc40B(c.unit) + '</span><span class="krito-iad-hdr-pill-v1634">📌 ' + esc40B(openDr.hdr) + '</span><span class="krito-iad-tot-pill-v1634">Total Qty: ' + fmtQ40B(openDr.sm.qty) + '</span></div><button type="button" class="krito-iad-hide-btn-v1634" data-rep40-uattr="">− Hide</button></div><div class="krito-iad-grid-v1634">' + pills + '</div></div></td></tr>';
+      }
+    });
+
+    var pBlank = pinnedHeaders.map(function() { return '<td style="text-align:center;">-</td>'; }).join('');
+    var totK = calcKpiVals40B(tot.tV, tot.tQ, tot.bills), totLyK = calcKpiVals40B(tot.lyTV, tot.lyTQ, tot.lyBills);
+    var tCSNQ = tot.nQ > 0 ? (tot.tQ / tot.nQ) * 100 : null, tLSNQ = tot.lyNQ > 0 ? (tot.lyTQ / tot.lyNQ) * 100 : null;
+    var tCSNV = tot.nV > 0 ? (tot.tV / tot.nV) * 100 : null, tLSNV = tot.lyNV > 0 ? (tot.lyTV / tot.lyNV) * 100 : null;
+
+    var totRowHtml = list.length > 0 ? (isST ? (
+      '<tr class="total-row"><td></td><td>TOTAL (' + list.length + ' Units)</td><td>-</td><td>-</td>' + pBlank +
+      '<td class="num">' + fmtQ40B(tot.bQ) + '</td><td class="num">' + fmtI40B(tot.bV) + '</td>' +
+      '<td class="num" style="color:#dc2626;">' + fmtQ40B(tot.rQ) + '</td><td class="num" style="color:#dc2626;">' + fmtI40B(tot.rV) + '</td>' +
+      '<td class="num">' + fmtQ40B(tot.nQ) + '</td><td class="num" style="color:#6d28d9;">' + fmtI40B(tot.nV) + '</td>' +
+      '<td class="num">' + fmtQ40B(tot.tQ) + '</td><td class="num" style="color:#0284c7;">' + fmtI40B(tot.tV) + '</td>' +
+      (showBilled ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.bQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.bV) + '</td>' : '') +
+      (showNet ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.nQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.nV) + '</td>' : '') +
+      (rs.compareLY ? (
+        '<td class="num">' + fmtQ40B(tot.lyNQ) + '</td><td class="num">' + fmtI40B(tot.lyNV) + '</td>' +
+        '<td class="num">' + fmtQ40B(tot.lyTQ) + '</td><td class="num">' + fmtI40B(tot.lyTV) + '</td>' +
+        '<td class="num">' + growthHtml40B(tot.tV, tot.lyTV) + '</td>' +
+        '<td class="num">' + stPctBadge40B(tot.lyTQ, tot.lyNQ) + '</td><td class="num">' + stDiffBadge40B(tCSNQ, tLSNQ) + '</td>' +
+        '<td class="num">' + stPctBadge40B(tot.lyTV, tot.lyNV) + '</td><td class="num">' + stDiffBadge40B(tCSNV, tLSNV) + '</td>'
+      ) : '') + '</tr>'
+    ) : (
+      '<tr class="total-row"><td></td><td>TOTAL (' + list.length + ' Units)</td><td>-</td><td>-</td>' + pBlank +
+      '<td class="num">' + fmtQ40B(tot.bills) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtQ40B(tot.lyBills) + '</td><td class="num">' + growthHtml40B(tot.bills, tot.lyBills) + '</td>' : '') +
+      '<td class="num">' + fmtQ40B(tot.tQ) + '</td><td class="num" style="color:#0284c7;">' + fmtI40B(tot.tV) + '</td>' +
+      '<td class="num" style="color:#0f766e;">' + fmtI40B(totK.abv) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.abv) + '</td><td class="num">' + growthHtml40B(totK.abv, totLyK.abv) + '</td>' : '') +
+      '<td class="num" style="color:#4338ca;">' + fmtI40B(totK.asp) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.asp) + '</td><td class="num">' + growthHtml40B(totK.asp, totLyK.asp) + '</td>' : '') +
+      '<td class="num" style="color:#b45309;">' + fmtDec40B(totK.upt) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtDec40B(totLyK.upt) + '</td><td class="num">' + growthHtml40B(totK.upt, totLyK.upt) + '</td>' : '') + '</tr>'
+    )) : '';
+
+    var theadHtml = isST ? (
+      '<tr><th>#</th><th>Unit / Location</th><th class="krito-th-dw-v1637">Date Wise</th><th>Manager</th>' + pinnedThs +
+      '<th class="num">Sell Out (Billed) Qty</th><th class="num">Sell Out (Billed) Val</th>' +
+      '<th class="num" style="color:#dc2626;">RTV Qty</th><th class="num" style="color:#dc2626;">RTV Val</th>' +
+      '<th class="num">Sell Out (Net) Qty</th><th class="num">Sell Out (Net) Val</th>' +
+      '<th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th>' +
+      (showBilled ? '<th class="num">Sell Thru Qty % (Billed)</th><th class="num">Sell Thru Val % (Billed)</th>' : '') +
+      (showNet ? '<th class="num">Sell Thru Qty % (Net)</th><th class="num">Sell Thru Val % (Net)</th>' : '') +
+      (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY Sell Out Qty</th><th class="num krito-rep40-ly-th">LY Sell Out Val</th><th class="num krito-rep40-ly-th">LY Tertiary Qty</th><th class="num krito-rep40-ly-th">LY Tertiary Val</th><th class="num krito-rep40-ly-th">Tert Val Gr%</th><th class="num krito-rep40-ly-th">LY ST Qty%</th><th class="num krito-rep40-ly-th">ST Qty +/-</th><th class="num krito-rep40-ly-th">LY ST Val%</th><th class="num krito-rep40-ly-th">ST Val +/-</th>' : '') + '</tr>'
+    ) : (
+      '<tr><th>#</th><th>Unit / Location</th><th class="krito-th-dw-v1637">Date Wise</th><th>Manager</th>' + pinnedThs +
+      '<th class="num">Total Bills</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY Bills</th><th class="num krito-rep40-ly-th">Bills Gr%</th>' : '') +
+      '<th class="num">Total Qty</th><th class="num">Net Sale</th>' +
+      '<th class="num">ABV</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ABV</th><th class="num krito-rep40-ly-th">ABV Gr%</th>' : '') +
+      '<th class="num">ASP</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ASP</th><th class="num krito-rep40-ly-th">ASP Gr%</th>' : '') +
+      '<th class="num">UPT</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY UPT</th><th class="num krito-rep40-ly-th">UPT Gr%</th>' : '') + '</tr>'
+    );
+
+    var kpisHtml = isST ? (
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (BILLED)</span><span class="kval">' + fmtQ40B(tot.bQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.bV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">RTV (NEGATIVE)</span><span class="kval" style="color:#fb7185;">' + fmtQ40B(tot.rQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.rV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (NET)</span><span class="kval" style="color:#c4b5fd;">' + fmtQ40B(tot.nQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.nV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TERTIARY SALE</span><span class="kval" style="color:#38bdf8;">' + fmtQ40B(tot.tQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.tV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (NET)</span><span class="kval" style="color:#34d399;">Qty: ' + (tot.nQ > 0 ? ((tot.tQ / tot.nQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.nV > 0 ? ((tot.tV / tot.nV) * 100).toFixed(1) + '%' : '-') + '</span></div>'
+    ) : (
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🧾 TOTAL BILLS</span><span class="kval">' + fmtQ40B(tot.bills) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtQ40B(tot.lyBills) + ' | ' + growthHtml40B(tot.bills, tot.lyBills) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">💰 ABV</span><span class="kval" style="color:#34d399;">' + fmtI40B(totK.abv) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.abv) + ' | ' + growthHtml40B(totK.abv, totLyK.abv) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🏷️ ASP</span><span class="kval" style="color:#38bdf8;">' + fmtI40B(totK.asp) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.asp) + ' | ' + growthHtml40B(totK.asp, totLyK.asp) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">📦 UPT</span><span class="kval" style="color:#fbbf24;">' + fmtDec40B(totK.upt) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtDec40B(totLyK.upt) + ' | ' + growthHtml40B(totK.upt, totLyK.upt) + '</span>' : '') + '</div>'
+    );
+
+    unitPopupRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeRep40UnitModal();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:18px;font-weight:900;color:#ffffff;">🏢 ' + esc40B(um.party) + ' — Unit Wise ' + (isST ? 'Sell Thru' : 'KPI\'s') + ' (' + list.length + ' Units)</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">Brand: <b style="color:#fff;">' + esc40B(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') + '</b> | Period: <b style="color:#6ee7b7;">' + esc40B(spec.label) + (rs.compareLY ? (' vs ' + esc40B(spec.lyLabel)) : '') + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;align-items:center;">' +
+              '<input type="text" id="kritoRep40UnitSearch" value="' + esc40B(um.search) + '" placeholder="🔍 Search Unit..." style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:210px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeRep40UnitModal()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            '<div class="krito-rep-kpis-v1631" style="margin-bottom:0;">' + kpisHtml + '</div>' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table class="krito-rep40-tbl"><thead>' + theadHtml + '</thead><tbody>' + (rowsHtml || '<tr><td colspan="' + colCount + '" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">No units found.</td></tr>') + totRowHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (activeFocus >= 0) {
+      var sEl = document.getElementById('kritoRep40UnitSearch');
+      if (sEl) { sEl.focus(); try { sEl.setSelectionRange(activeFocus, activeFocus); } catch (e) {} }
+    }
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+  }
+
+  // =========================================================================
+  // FULL-SCREEN DATE WISE POPUP (100% COMPLETE DATA MATCHING MAIN SHEET)
+  // =========================================================================
+  window.closeRep40DateModal = function() {
+    DATE_MODAL.open = false;
+    DATE_MODAL.openIso = '';
+    datePopupRoot.innerHTML = '';
+  };
+
+  function renderDateModal40B() {
+    if (!DATE_MODAL.open) { datePopupRoot.innerHTML = ''; return; }
+    var dm = DATE_MODAL;
+    var rs = RSTATE[dm.kind] || RSTATE.SELL_THRU;
+    var spec = resolvePeriodSpec40B(rs);
+    var cur = collectSnapshot40B(spec, false);
+    var ly = rs.compareLY ? collectSnapshot40B(spec, true) : null;
+    var isST = (dm.kind === 'SELL_THRU');
+    var showBilled = isST && (rs.stMode === 'BILLED' || rs.stMode === 'BOTH');
+    var showNet = isST && (rs.stMode === 'NET' || rs.stMode === 'BOTH');
+
+    var activeFocus = (document.activeElement && document.activeElement.id === 'kritoRep40DateSearch') ? (document.activeElement.selectionStart || 0) : -1;
+    var q = (dm.search || '').trim().toLowerCase();
+
+    var entKey = dm.scope === 'UNIT'
+      ? (dm.party + '||' + dm.unit).toUpperCase()
+      : (dm.scope === 'CLUSTER' ? dm.cluster.toUpperCase() : dm.party.toUpperCase());
+    var bucketName = dm.scope === 'UNIT' ? 'byUnit' : (dm.scope === 'CLUSTER' ? 'byMgr' : 'byParty');
+    var entityTitle = dm.scope === 'UNIT' ? (dm.unit + ' (' + dm.party + ')') : (dm.scope === 'CLUSTER' ? ('Cluster: ' + dm.cluster) : dm.party);
+
+    var lyByMd = {};
+    if (ly && ly.byDate) {
+      Object.keys(ly.byDate).forEach(function(lIso) {
+        var dObj = ly.byDate[lIso];
+        var rec = dObj[bucketName] && dObj[bucketName][entKey];
+        if (!rec) return;
+        var md = lIso.slice(4);
+        if (!lyByMd[md]) lyByMd[md] = { tQ:0, tV:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0 };
+        var d = lyByMd[md];
+        d.tQ += rec.tQ; d.tV += rec.tV; d.bills += rec.bills;
+        d.bQ += rec.bQ; d.bV += rec.bV; d.rQ += rec.rQ; d.rV += rec.rV;
+        d.nQ += rec.nQ; d.nV += rec.nV;
+      });
+    }
+
+    var pPrefix = String(dm.party || '').trim().toUpperCase() + '||';
+    var dateRows = [];
+    Object.keys(cur.byDate).sort().forEach(function(iso) {
+      var dObj = cur.byDate[iso];
+      var rec = dObj[bucketName] && dObj[bucketName][entKey];
+      if (!rec) return;
+      if (q && String(dObj.label || iso).toLowerCase().indexOf(q) === -1) return;
+
+      var unitSubs = [];
+      if (dm.scope === 'PARTY' && dObj.byUnit) {
+        Object.keys(dObj.byUnit).forEach(function(uk) {
+          if (uk.indexOf(pPrefix) === 0) unitSubs.push({ unit: uk.slice(pPrefix.length), rec: dObj.byUnit[uk] });
+        });
+        unitSubs.sort(function(a, b) { return (b.rec.tV - a.rec.tV) || (b.rec.nV - a.rec.nV); });
+      }
+      var lRec = lyByMd[iso.slice(4)] || { tQ:0, tV:0, bills:0, bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0 };
+      dateRows.push({ iso: iso, label: dObj.label || iso, c: rec, l: lRec, units: unitSubs });
+    });
+
+    var hasUnitCol = (dm.scope === 'PARTY' && dateRows.some(function(r) { return r.units.length > 0; }));
+    var tot = { bQ:0, bV:0, rQ:0, rV:0, nQ:0, nV:0, tQ:0, tV:0, bills:0, lyNQ:0, lyNV:0, lyTQ:0, lyTV:0, lyBills:0 };
+    dateRows.forEach(function(x) {
+      tot.bQ += x.c.bQ; tot.bV += x.c.bV; tot.rQ += x.c.rQ; tot.rV += x.c.rV;
+      tot.nQ += x.c.nQ; tot.nV += x.c.nV; tot.tQ += x.c.tQ; tot.tV += x.c.tV; tot.bills += x.c.bills;
+      tot.lyNQ += x.l.nQ; tot.lyNV += x.l.nV; tot.lyTQ += x.l.tQ; tot.lyTV += x.l.tV; tot.lyBills += x.l.bills;
+    });
+
+    var colCount = 2 + (hasUnitCol ? 1 : 0) + (isST ? (8 + (showBilled ? 2 : 0) + (showNet ? 2 : 0) + (rs.compareLY ? 9 : 0)) : (6 + (rs.compareLY ? 8 : 0)));
+    var rowsHtml = '';
+
+    dateRows.forEach(function(x, idx) {
+      var c = x.c, l = x.l;
+      var isOp = (dm.openIso === x.iso);
+      var uTd = hasUnitCol
+        ? ('<td style="text-align:center;">' + (x.units.length > 0 ? '<button type="button" class="krito-sub-unit-btn-v1633' + (isOp ? ' is-open' : '') + '" data-rep40-diso="' + esc40B(x.iso) + '">' + (isOp ? '− ' : '+ ') + x.units.length + '</button>' : '-') + '</td>')
+        : '';
+
+      if (isST) {
+        var cSNQ = c.nQ > 0 ? (c.tQ / c.nQ) * 100 : null, lSNQ = l.nQ > 0 ? (l.tQ / l.nQ) * 100 : null;
+        var cSNV = c.nV > 0 ? (c.tV / c.nV) * 100 : null, lSNV = l.nV > 0 ? (l.tV / l.nV) * 100 : null;
+        rowsHtml += '<tr>' +
+          '<td>' + (idx + 1) + '</td><td><b>' + esc40B(x.label) + '</b></td>' + uTd +
+          '<td class="num">' + fmtQ40B(c.bQ) + '</td><td class="num">' + fmtI40B(c.bV) + '</td>' +
+          '<td class="num" style="color:#dc2626;font-weight:700;">' + fmtQ40B(c.rQ) + '</td><td class="num" style="color:#dc2626;font-weight:700;">' + fmtI40B(c.rV) + '</td>' +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.nQ) + '</td><td class="num" style="font-weight:800;color:#6d28d9;">' + fmtI40B(c.nV) + '</td>' +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.tQ) + '</td><td class="num" style="font-weight:800;color:#0284c7;">' + fmtI40B(c.tV) + '</td>' +
+          (showBilled ? '<td class="num">' + stPctBadge40B(c.tQ, c.bQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.bV) + '</td>' : '') +
+          (showNet ? '<td class="num">' + stPctBadge40B(c.tQ, c.nQ) + '</td><td class="num">' + stPctBadge40B(c.tV, c.nV) + '</td>' : '') +
+          (rs.compareLY ? (
+            '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.nQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.nV) + '</td>' +
+            '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.tQ) + '</td><td class="num krito-rep40-ly-td">' + fmtI40B(l.tV) + '</td>' +
+            '<td class="num">' + growthHtml40B(c.tV, l.tV) + '</td>' +
+            '<td class="num">' + stPctBadge40B(l.tQ, l.nQ) + '</td><td class="num">' + stDiffBadge40B(cSNQ, lSNQ) + '</td>' +
+            '<td class="num">' + stPctBadge40B(l.tV, l.nV) + '</td><td class="num">' + stDiffBadge40B(cSNV, lSNV) + '</td>'
+          ) : '') +
+        '</tr>';
+      } else {
+        var cm = calcKpiVals40B(c.tV, c.tQ, c.bills), lm = calcKpiVals40B(l.tV, l.tQ, l.bills);
+        rowsHtml += '<tr>' +
+          '<td>' + (idx + 1) + '</td><td><b>' + esc40B(x.label) + '</b></td>' + uTd +
+          '<td class="num" style="font-weight:800;">' + fmtQ40B(c.bills) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtQ40B(l.bills) + '</td><td class="num">' + growthHtml40B(c.bills, l.bills) + '</td>' : '') +
+          '<td class="num">' + fmtQ40B(c.tQ) + '</td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI40B(c.tV) + '</td>' +
+          '<td class="num" style="font-weight:900;color:#0f766e;">' + fmtI40B(cm.abv) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.abv) + '</td><td class="num">' + growthHtml40B(cm.abv, lm.abv) + '</td>' : '') +
+          '<td class="num" style="font-weight:900;color:#4338ca;">' + fmtI40B(cm.asp) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtI40B(lm.asp) + '</td><td class="num">' + growthHtml40B(cm.asp, lm.asp) + '</td>' : '') +
+          '<td class="num" style="font-weight:900;color:#b45309;">' + fmtDec40B(cm.upt) + '</td>' +
+          (rs.compareLY ? '<td class="num krito-rep40-ly-td">' + fmtDec40B(lm.upt) + '</td><td class="num">' + growthHtml40B(cm.upt, lm.upt) + '</td>' : '') +
+        '</tr>';
+      }
+
+      if (isOp && x.units.length > 0) {
+        var subTable = isST ? (
+          '<table class="krito-dw-unit-tbl-v1638"><thead><tr><th>#</th><th>Unit / Location</th><th class="num">Sell Out (Billed)</th><th class="num">RTV</th><th class="num">Sell Out (Net)</th><th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th><th class="num">ST Qty %</th><th class="num">ST Val %</th></tr></thead><tbody>' +
+          x.units.map(function(u, ui) {
+            var r = u.rec;
+            return '<tr><td>' + (ui + 1) + '</td><td><b>' + esc40B(u.unit) + '</b></td><td class="num">' + fmtQ40B(r.bQ) + ' / ' + fmtI40B(r.bV) + '</td><td class="num" style="color:#dc2626;">' + fmtQ40B(r.rQ) + ' / ' + fmtI40B(r.rV) + '</td><td class="num" style="color:#6d28d9;font-weight:700;">' + fmtQ40B(r.nQ) + ' / ' + fmtI40B(r.nV) + '</td><td class="num"><b>' + fmtQ40B(r.tQ) + '</b></td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI40B(r.tV) + '</td><td class="num">' + stPctBadge40B(r.tQ, r.nQ) + '</td><td class="num">' + stPctBadge40B(r.tV, r.nV) + '</td></tr>';
+          }).join('') + '</tbody></table>'
+        ) : (
+          '<table class="krito-dw-unit-tbl-v1638"><thead><tr><th>#</th><th>Unit / Location</th><th class="num">Bills</th><th class="num">Qty</th><th class="num">Net Sale</th><th class="num">ABV</th><th class="num">ASP</th><th class="num">UPT</th></tr></thead><tbody>' +
+          x.units.map(function(u, ui) {
+            var r = u.rec, uk = calcKpiVals40B(r.tV, r.tQ, r.bills);
+            return '<tr><td>' + (ui + 1) + '</td><td><b>' + esc40B(u.unit) + '</b></td><td class="num"><b>' + fmtQ40B(r.bills) + '</b></td><td class="num">' + fmtQ40B(r.tQ) + '</td><td class="num" style="color:#0284c7;font-weight:800;">' + fmtI40B(r.tV) + '</td><td class="num" style="color:#0f766e;font-weight:800;">' + fmtI40B(uk.abv) + '</td><td class="num" style="color:#4338ca;font-weight:800;">' + fmtI40B(uk.asp) + '</td><td class="num" style="color:#b45309;font-weight:800;">' + fmtDec40B(uk.upt) + '</td></tr>';
+          }).join('') + '</tbody></table>'
+        );
+        rowsHtml += '<tr class="krito-dw-unit-subrow-v1638"><td colspan="' + colCount + '"><div class="krito-dw-unit-box-v1638"><div class="krito-dw-unit-head-v1638"><span>📍 Unit-Wise Breakdown on ' + esc40B(x.label) + ' (' + x.units.length + ' Units)</span></div>' + subTable + '</div></td></tr>';
+      }
+    });
+
+    var totK = calcKpiVals40B(tot.tV, tot.tQ, tot.bills), totLyK = calcKpiVals40B(tot.lyTV, tot.lyTQ, tot.lyBills);
+    var tCSNQ = tot.nQ > 0 ? (tot.tQ / tot.nQ) * 100 : null, tLSNQ = tot.lyNQ > 0 ? (tot.lyTQ / tot.lyNQ) * 100 : null;
+    var tCSNV = tot.nV > 0 ? (tot.tV / tot.nV) * 100 : null, tLSNV = tot.lyNV > 0 ? (tot.lyTV / tot.lyNV) * 100 : null;
+
+    var totRowHtml = dateRows.length > 0 ? (isST ? (
+      '<tr class="total-row"><td></td><td>TOTAL (' + dateRows.length + ' Days)</td>' + (hasUnitCol ? '<td>-</td>' : '') +
+      '<td class="num">' + fmtQ40B(tot.bQ) + '</td><td class="num">' + fmtI40B(tot.bV) + '</td>' +
+      '<td class="num" style="color:#dc2626;">' + fmtQ40B(tot.rQ) + '</td><td class="num" style="color:#dc2626;">' + fmtI40B(tot.rV) + '</td>' +
+      '<td class="num">' + fmtQ40B(tot.nQ) + '</td><td class="num" style="color:#6d28d9;">' + fmtI40B(tot.nV) + '</td>' +
+      '<td class="num">' + fmtQ40B(tot.tQ) + '</td><td class="num" style="color:#0284c7;">' + fmtI40B(tot.tV) + '</td>' +
+      (showBilled ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.bQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.bV) + '</td>' : '') +
+      (showNet ? '<td class="num">' + stPctBadge40B(tot.tQ, tot.nQ) + '</td><td class="num">' + stPctBadge40B(tot.tV, tot.nV) + '</td>' : '') +
+      (rs.compareLY ? '<td class="num">' + fmtQ40B(tot.lyNQ) + '</td><td class="num">' + fmtI40B(tot.lyNV) + '</td><td class="num">' + fmtQ40B(tot.lyTQ) + '</td><td class="num">' + fmtI40B(tot.lyTV) + '</td><td class="num">' + growthHtml40B(tot.tV, tot.lyTV) + '</td><td class="num">' + stPctBadge40B(tot.lyTQ, tot.lyNQ) + '</td><td class="num">' + stDiffBadge40B(tCSNQ, tLSNQ) + '</td><td class="num">' + stPctBadge40B(tot.lyTV, tot.lyNV) + '</td><td class="num">' + stDiffBadge40B(tCSNV, tLSNV) + '</td>' : '') + '</tr>'
+    ) : (
+      '<tr class="total-row"><td></td><td>TOTAL (' + dateRows.length + ' Days)</td>' + (hasUnitCol ? '<td>-</td>' : '') +
+      '<td class="num">' + fmtQ40B(tot.bills) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtQ40B(tot.lyBills) + '</td><td class="num">' + growthHtml40B(tot.bills, tot.lyBills) + '</td>' : '') +
+      '<td class="num">' + fmtQ40B(tot.tQ) + '</td><td class="num" style="color:#0284c7;">' + fmtI40B(tot.tV) + '</td>' +
+      '<td class="num" style="color:#0f766e;">' + fmtI40B(totK.abv) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.abv) + '</td><td class="num">' + growthHtml40B(totK.abv, totLyK.abv) + '</td>' : '') +
+      '<td class="num" style="color:#4338ca;">' + fmtI40B(totK.asp) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtI40B(totLyK.asp) + '</td><td class="num">' + growthHtml40B(totK.asp, totLyK.asp) + '</td>' : '') +
+      '<td class="num" style="color:#b45309;">' + fmtDec40B(totK.upt) + '</td>' +
+      (rs.compareLY ? '<td class="num">' + fmtDec40B(totLyK.upt) + '</td><td class="num">' + growthHtml40B(totK.upt, totLyK.upt) + '</td>' : '') + '</tr>'
+    )) : '';
+
+    var theadHtml = isST ? (
+      '<tr><th>#</th><th>Date</th>' + (hasUnitCol ? '<th style="text-align:center;">Unit / Location</th>' : '') +
+      '<th class="num">Sell Out (Billed) Qty</th><th class="num">Sell Out (Billed) Val</th>' +
+      '<th class="num" style="color:#dc2626;">RTV Qty</th><th class="num" style="color:#dc2626;">RTV Val</th>' +
+      '<th class="num">Sell Out (Net) Qty</th><th class="num">Sell Out (Net) Val</th>' +
+      '<th class="num">Tertiary Qty</th><th class="num">Tertiary Val</th>' +
+      (showBilled ? '<th class="num">Sell Thru Qty % (Billed)</th><th class="num">Sell Thru Val % (Billed)</th>' : '') +
+      (showNet ? '<th class="num">Sell Thru Qty % (Net)</th><th class="num">Sell Thru Val % (Net)</th>' : '') +
+      (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY Sell Out Qty</th><th class="num krito-rep40-ly-th">LY Sell Out Val</th><th class="num krito-rep40-ly-th">LY Tertiary Qty</th><th class="num krito-rep40-ly-th">LY Tertiary Val</th><th class="num krito-rep40-ly-th">Tert Val Gr%</th><th class="num krito-rep40-ly-th">LY ST Qty%</th><th class="num krito-rep40-ly-th">ST Qty +/-</th><th class="num krito-rep40-ly-th">LY ST Val%</th><th class="num krito-rep40-ly-th">ST Val +/-</th>' : '') + '</tr>'
+    ) : (
+      '<tr><th>#</th><th>Date</th>' + (hasUnitCol ? '<th style="text-align:center;">Unit / Location</th>' : '') +
+      '<th class="num">Total Bills</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY Bills</th><th class="num krito-rep40-ly-th">Bills Gr%</th>' : '') +
+      '<th class="num">Total Qty</th><th class="num">Net Sale</th>' +
+      '<th class="num">ABV</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ABV</th><th class="num krito-rep40-ly-th">ABV Gr%</th>' : '') +
+      '<th class="num">ASP</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY ASP</th><th class="num krito-rep40-ly-th">ASP Gr%</th>' : '') +
+      '<th class="num">UPT</th>' + (rs.compareLY ? '<th class="num krito-rep40-ly-th">LY UPT</th><th class="num krito-rep40-ly-th">UPT Gr%</th>' : '') + '</tr>'
+    );
+
+    var kpisHtml = isST ? (
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (BILLED)</span><span class="kval">' + fmtQ40B(tot.bQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.bV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">RTV (NEGATIVE)</span><span class="kval" style="color:#fb7185;">' + fmtQ40B(tot.rQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.rV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL OUT (NET)</span><span class="kval" style="color:#c4b5fd;">' + fmtQ40B(tot.nQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.nV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">TERTIARY SALE</span><span class="kval" style="color:#38bdf8;">' + fmtQ40B(tot.tQ) + ' Qty</span><span class="ksub">' + fmtI40B(tot.tV) + '</span></div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">SELL THRU % (NET)</span><span class="kval" style="color:#34d399;">Qty: ' + (tot.nQ > 0 ? ((tot.tQ / tot.nQ) * 100).toFixed(1) + '%' : '-') + '</span><span class="ksub">Val: ' + (tot.nV > 0 ? ((tot.tV / tot.nV) * 100).toFixed(1) + '%' : '-') + '</span></div>'
+    ) : (
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🧾 TOTAL BILLS</span><span class="kval">' + fmtQ40B(tot.bills) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtQ40B(tot.lyBills) + ' | ' + growthHtml40B(tot.bills, tot.lyBills) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">💰 ABV</span><span class="kval" style="color:#34d399;">' + fmtI40B(totK.abv) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.abv) + ' | ' + growthHtml40B(totK.abv, totLyK.abv) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">🏷️ ASP</span><span class="kval" style="color:#38bdf8;">' + fmtI40B(totK.asp) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtI40B(totLyK.asp) + ' | ' + growthHtml40B(totK.asp, totLyK.asp) + '</span>' : '') + '</div>' +
+      '<div class="krito-rep-kpi-box-v1631"><span class="klbl">📦 UPT</span><span class="kval" style="color:#fbbf24;">' + fmtDec40B(totK.upt) + '</span>' + (rs.compareLY ? '<span class="ksub">LY: ' + fmtDec40B(totLyK.upt) + ' | ' + growthHtml40B(totK.upt, totLyK.upt) + '</span>' : '') + '</div>'
+    );
+
+    datePopupRoot.innerHTML =
+      '<div class="fs-modal-backdrop" onclick="if(event.target===this) window.closeRep40DateModal();">' +
+        '<div class="fs-modal-card">' +
+          '<div class="fs-modal-head">' +
+            '<div>' +
+              '<div style="font-size:18px;font-weight:900;color:#ffffff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<span>📅 Date Wise ' + (isST ? 'Sell Thru' : 'KPI\'s') + ' — ' + esc40B(entityTitle) + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#cbd5e1;margin-top:3px;">Brand: <b style="color:#fff;">' + esc40B(typeof ACTIVE_BRAND !== 'undefined' ? ACTIVE_BRAND : '') + '</b> | Period: <b style="color:#6ee7b7;">' + esc40B(spec.label) + (rs.compareLY ? (' vs ' + esc40B(spec.lyLabel)) : '') + '</b></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;align-items:center;">' +
+              '<input type="text" id="kritoRep40DateSearch" value="' + esc40B(dm.search) + '" placeholder="🔍 Search Date..." style="padding:7px 12px;border-radius:8px;border:1px solid #6366f1;font-size:12.5px;width:210px;background:#fff;color:#0f172a;">' +
+              '<button type="button" onclick="window.closeRep40DateModal()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;">✖ Close</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fs-modal-body">' +
+            '<div class="krito-rep-kpis-v1631" style="margin-bottom:0;">' + kpisHtml + '</div>' +
+            '<div class="table-scroll" style="flex:1;max-height:none;background:#fff;">' +
+              '<table class="krito-rep40-tbl"><thead>' + theadHtml + '</thead><tbody>' + (rowsHtml || '<tr><td colspan="' + colCount + '" style="text-align:center;padding:24px;color:#64748b;font-weight:700;">No Date-Wise records found.</td></tr>') + totRowHtml + '</tbody></table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (activeFocus >= 0) {
+      var sEl = document.getElementById('kritoRep40DateSearch');
+      if (sEl) { sEl.focus(); try { sEl.setSelectionRange(activeFocus, activeFocus); } catch (e) {} }
+    }
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+  }
+
+  // =========================================================================
+  // MAIN RENDERER OVERRIDE
+  // =========================================================================
+  function findReportsMountAnchor40B() {
+    var btnBar = document.getElementById('kritoMultiTypeBtnBarV1631');
+    if (btnBar) {
+      var card = btnBar.parentElement;
+      while (card && card.parentElement && !card.querySelector('table')) card = card.parentElement;
+      if (card && card.parentElement) return card;
+    }
+    return null;
+  }
+
+  function renderReportsPanelV1640B() {
+    if (typeof window.normalizeSellOutDatasetInPlaceV1640 === 'function') window.normalizeSellOutDatasetInPlaceV1640();
+
+    var st = window._kritoMultiTypeStateV1631 || { activeReport: '' };
+    var oldCard = document.getElementById('kritoReportsPanelV1631');
+    var isTert = (typeof ACTIVE_DATA_TYPE === 'undefined' || ACTIVE_DATA_TYPE === 'TERTIARY');
+
+    if (!isTert || !st.activeReport) {
+      if (oldCard) oldCard.remove();
+      document.body.style.overflow = '';
+      return;
+    }
+
+    var anchor = findReportsMountAnchor40B();
+    if (!anchor || !anchor.parentElement) return;
+
+    if (!oldCard) {
+      oldCard = document.createElement('div');
+      oldCard.id = 'kritoReportsPanelV1631';
+      oldCard.className = 'krito-rep-card-v1631';
+      anchor.insertAdjacentElement('afterend', oldCard);
+    }
+
+    var activeFocus = (document.activeElement && document.activeElement.id === 'kritoRep40Search') ? (document.activeElement.selectionStart || 0) : -1;
+    var rs = RSTATE[st.activeReport] || RSTATE.SELL_THRU;
+
+    oldCard.classList.toggle('krito-rep-fullscreen-v1637', !!rs.fullscreen);
+    document.body.style.overflow = rs.fullscreen ? 'hidden' : '';
+
+    if (st.activeReport === 'SELL_THRU') {
+      oldCard.innerHTML = buildSellThruPanelHtml40B();
+    } else if (st.activeReport === 'KPIS') {
+      oldCard.innerHTML = buildKpisPanelHtml40B();
+    }
+
+    if (activeFocus >= 0) {
+      var inp = document.getElementById('kritoRep40Search');
+      if (inp) { inp.focus(); try { inp.setSelectionRange(activeFocus, activeFocus); } catch (e) {} }
+    }
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+  }
+
+  window.renderKritoReportsPanelV1631 = renderReportsPanelV1640B;
+  window.renderKritoReportsPanelV1631._v1636 = true;
+  window.renderKritoReportsPanelV1631._v1637B = true;
+  window.renderKritoReportsPanelV1631._v1638 = true;
+  window.renderKritoReportsPanelV1631._v1640B = true;
+
+  // =========================================================================
+  // INTERACTION HANDLERS
+  // =========================================================================
+  window.addEventListener('click', function(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var actBtn = t.closest('[data-rep40-act]');
+    if (actBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var pts = (actBtn.getAttribute('data-rep40-act') || '').split('|');
+      var kind = pts[0], act = pts[1];
+      var rs = RSTATE[kind];
+      if (!rs) return;
+
+      if (act === 'VIEW_CLUSTER') rs.view = 'CLUSTER';
+      else if (act === 'VIEW_PARTY') rs.view = 'PARTY';
+      else if (act === 'MODE_BILLED') rs.stMode = 'BILLED';
+      else if (act === 'MODE_NET') rs.stMode = 'NET';
+      else if (act === 'MODE_BOTH') rs.stMode = 'BOTH';
+      else if (act === 'TOGGLE_LY') rs.compareLY = !rs.compareLY;
+      else if (act === 'TOGGLE_FS') rs.fullscreen = !rs.fullscreen;
+      else if (act === 'CLEAR_DATES') { rs.dateFrom = ''; rs.dateTo = ''; rs.periodMode = rs.months.length > 0 ? 'CUSTOM_MONTHS' : 'ACTIVE'; }
+      else if (act === 'PRESET_ACTIVE') { rs.periodMode = 'ACTIVE'; rs.months = []; rs.dateFrom = ''; rs.dateTo = ''; rs.fy = 'ALL'; }
+      else if (act === 'PRESET_ALL') {
+        var cat = getBrandMonthsAndFys40B();
+        var listM = (rs.fy && rs.fy !== 'ALL') ? cat.months.filter(function(m) { return monthToFy40B(m) === rs.fy; }) : cat.months;
+        rs.periodMode = 'CUSTOM_MONTHS'; rs.months = listM.slice(); rs.dateFrom = ''; rs.dateTo = '';
+      } else if (act === 'TOGGLE_HDR_MODE') {
+        var hb = document.getElementById('kritoHeaderDataModeBtnV1638');
+        if (hb) hb.click();
+        return;
+      } else if (act === 'CLOSE') {
+        rs.fullscreen = false;
+        document.body.style.overflow = '';
+        if (window._kritoMultiTypeStateV1631) window._kritoMultiTypeStateV1631.activeReport = '';
+        if (typeof window.applyAllMultiTypeTablesV1631 === 'function') window.applyAllMultiTypeTablesV1631();
+        else renderReportsPanelV1640B();
+        return;
+      }
+      renderReportsPanelV1640B();
+      return;
+    }
+
+    var unitBtn = t.closest('[data-rep40-unit]');
+    if (unitBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var up = (unitBtn.getAttribute('data-rep40-unit') || '').split('|');
+      UNIT_MODAL = { open: true, kind: up[0] || 'SELL_THRU', party: up[1] || '', search: '', openAttrKey: '' };
+      renderUnitModal40B();
+      return;
+    }
+
+    var dateBtn = t.closest('[data-rep40-date]');
+    if (dateBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var dp = (dateBtn.getAttribute('data-rep40-date') || '').split('|');
+      DATE_MODAL = {
+        open: true, kind: dp[0] || 'SELL_THRU', scope: dp[1] || 'PARTY',
+        party: dp[2] || '', unit: dp[3] || '', cluster: dp[4] || '', search: '', openIso: ''
+      };
+      renderDateModal40B();
+      return;
+    }
+
+    var uAttrBtn = t.closest('[data-rep40-uattr]');
+    if (uAttrBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var ak = uAttrBtn.getAttribute('data-rep40-uattr') || '';
+      UNIT_MODAL.openAttrKey = (UNIT_MODAL.openAttrKey === ak) ? '' : ak;
+      renderUnitModal40B();
+      return;
+    }
+
+    var dIsoBtn = t.closest('[data-rep40-diso]');
+    if (dIsoBtn) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      var iso = dIsoBtn.getAttribute('data-rep40-diso') || '';
+      DATE_MODAL.openIso = (DATE_MODAL.openIso === iso) ? '' : iso;
+      renderDateModal40B();
+      return;
+    }
+  }, true);
+
+  window.addEventListener('change', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+
+    var fyKind = el.getAttribute('data-rep40-fy');
+    if (fyKind && RSTATE[fyKind]) {
+      var rs = RSTATE[fyKind];
+      rs.fy = el.value || 'ALL';
+      rs.dateFrom = ''; rs.dateTo = '';
+      rs.months = [];
+      rs.periodMode = (rs.fy === 'ALL') ? 'ACTIVE' : 'FY_ALL';
+      renderReportsPanelV1640B();
+      return;
+    }
+
+    var dfKind = el.getAttribute('data-rep40-dfrom');
+    if (dfKind && RSTATE[dfKind]) {
+      RSTATE[dfKind].dateFrom = el.value || '';
+      if (RSTATE[dfKind].dateFrom || RSTATE[dfKind].dateTo) RSTATE[dfKind].periodMode = 'DATE_RANGE';
+      else RSTATE[dfKind].periodMode = 'ACTIVE';
+      renderReportsPanelV1640B();
+      return;
+    }
+
+    var dtKind = el.getAttribute('data-rep40-dto');
+    if (dtKind && RSTATE[dtKind]) {
+      RSTATE[dtKind].dateTo = el.value || '';
+      if (RSTATE[dtKind].dateFrom || RSTATE[dtKind].dateTo) RSTATE[dtKind].periodMode = 'DATE_RANGE';
+      else RSTATE[dtKind].periodMode = 'ACTIVE';
+      renderReportsPanelV1640B();
+      return;
+    }
+
+    var mcAttr = el.getAttribute('data-rep40-mchk');
+    if (mcAttr) {
+      var pts = mcAttr.split('|');
+      var k = pts[0], mon = pts[1];
+      var rsM = RSTATE[k];
+      if (!rsM) return;
+      var s = new Set(rsM.periodMode === 'CUSTOM_MONTHS' ? rsM.months : (rsM.periodMode === 'FY_ALL' ? getBrandMonthsAndFys40B().months.filter(function(m) { return rsM.fy === 'ALL' || monthToFy40B(m) === rsM.fy; }) : []));
+      if (el.checked) s.add(mon); else s.delete(mon);
+      rsM.months = Array.from(s);
+      rsM.dateFrom = ''; rsM.dateTo = '';
+      rsM.periodMode = rsM.months.length > 0 ? 'CUSTOM_MONTHS' : 'ACTIVE';
+      renderReportsPanelV1640B();
+    }
+  }, true);
+
+  window.addEventListener('input', function(ev) {
+    var el = ev.target;
+    if (!el) return;
+    if (el.id === 'kritoRep40Search') {
+      var k = el.getAttribute('data-rep40-search');
+      if (k && RSTATE[k]) { RSTATE[k].search = el.value || ''; renderReportsPanelV1640B(); }
+    } else if (el.id === 'kritoRep40UnitSearch') {
+      UNIT_MODAL.search = el.value || ''; renderUnitModal40B();
+    } else if (el.id === 'kritoRep40DateSearch') {
+      DATE_MODAL.search = el.value || ''; renderDateModal40B();
+    }
+  });
+
+  window.addEventListener('keydown', function(ev) {
+    if (ev.key !== 'Escape') return;
+    if (DATE_MODAL.open) { ev.stopPropagation(); window.closeRep40DateModal(); return; }
+    if (UNIT_MODAL.open) { ev.stopPropagation(); window.closeRep40UnitModal(); return; }
+    var st = window._kritoMultiTypeStateV1631;
+    if (st && st.activeReport && RSTATE[st.activeReport] && RSTATE[st.activeReport].fullscreen) {
+      RSTATE[st.activeReport].fullscreen = false;
+      renderReportsPanelV1640B();
+    }
+  }, true);
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    renderReportsPanelV1640B();
+  }
+
+})();
+</script>
 </body>
 </html>
