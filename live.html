@@ -12487,5 +12487,549 @@ start30SecCountdownLoop();
 
 })();
 </script>
+ <!-- ============================================================================
+     🎯 SURGICAL LIVE LINK ADDON ONLY: STICKY TOP TOTAL ROW ABOVE HEADERS (v16.39)
+     - live.html ONLY — NO need to delete old code (paste right after v16.38 & before </body>)
+     - Places TOTAL row(s) right ABOVE the column headers in ALL Live Link tables
+       (Manager Summary, Individual Store Data, Date & Month Wise, Sell Thru, KPI's
+        and all Full-Screen Popups)
+     - Adds live auto-calculated TOTAL row(s) to Individual Store Data & Date/Month Report
+     - 100% synced with Freeze Panes, Hide Columns, Multi-Type & Search/Global Filters
+     ============================================================================ -->
+<script>
+(function installTopTotalsAboveHeadersEverywhereV1639() {
+
+  if (window._kritoTopTotalsV1639Installed) return;
+  window._kritoTopTotalsV1639Installed = true;
+
+  var css = [
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639{display:table-header-group !important;}',
+    'table.krito-has-top-total-v1639 > thead{display:table-row-group !important;}',
+    'table.krito-has-top-total-v1639 > thead th{position:sticky !important;top:var(--krito-top-tot-h-v1639, 34px) !important;z-index:12 !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639 > td{position:sticky !important;top:0px;z-index:22 !important;background:#eef2ff !important;color:#0f172a !important;font-weight:900 !important;font-size:12px !important;padding:8px 10px !important;white-space:nowrap !important;border-top:2px solid #6366f1 !important;border-bottom:1.5px solid #a5b4fc !important;box-sizing:border-box !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639.is-sub-tot-v1639 > td{background:#f0f9ff !important;border-top:1px dashed #93c5fd !important;border-bottom:1.5px solid #93c5fd !important;font-size:11.5px !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 tr.krito-top-total-row-v1639.is-last-tot-v1639 > td{border-bottom:2px solid #4f46e5 !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 td.krito-top-tot-frozen-v1639{z-index:35 !important;}',
+    'table.krito-has-top-total-v1639 > tfoot.krito-top-total-tfoot-v1639 td.krito-top-tot-frozen-edge-v1639{border-right:2px solid #0284c7 !important;box-shadow:3px 0 6px -2px rgba(2,132,199,0.22) !important;}',
+    'tr.krito-bottom-tot-hidden-v1639{display:none !important;}'
+  ].join('\n');
+
+  var stEl = document.createElement('style');
+  stEl.id = 'kritoTopTotalsCssV1639';
+  stEl.textContent = css;
+  document.head.appendChild(stEl);
+
+  var rafPending = false;
+
+  function esc39(s) {
+    if (typeof escHtml === 'function') return escHtml(s);
+    return String(s == null ? '' : s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+  }
+
+  function fmtQ39(v) {
+    if (typeof fmtNum === 'function') return fmtNum(Math.round(Number(v) || 0));
+    return Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtI39(v) {
+    if (typeof fmtINR === 'function') return fmtINR(Math.round(Number(v) || 0));
+    return '₹' + Math.round(Number(v) || 0).toLocaleString('en-IN');
+  }
+
+  function fmtDec39(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(2) : '0.00';
+  }
+
+  function growthHtml39(cur, ly) {
+    if (typeof calcGrowthBadgeHtml === 'function') return calcGrowthBadgeHtml(cur, ly);
+    if (!ly || ly === 0) return cur > 0 ? '<span style="background:#e0f2fe;color:#0284c7;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:800;">★ NEW</span>' : '0.0%';
+    var p = (((cur - ly) / Math.abs(ly)) * 100).toFixed(1);
+    var col = Number(p) >= 0 ? '#16a34a' : '#dc2626';
+    return '<span style="color:' + col + ';font-weight:800;">' + (Number(p) >= 0 ? '+' : '') + p + '%</span>';
+  }
+
+  function sellThruBadge39(tert, base) {
+    if (!base || base <= 0) return '<span style="color:#94a3b8;font-weight:700;">-</span>';
+    var pct = (tert / base) * 100;
+    var cls = pct >= 60 ? 'krito-st-hi' : (pct >= 30 ? 'krito-st-mid' : 'krito-st-lo');
+    return '<span class="krito-st-pct-v1631 ' + cls + '">' + pct.toFixed(1) + '%</span>';
+  }
+
+  function parseCellNum39(text) {
+    var s = String(text || '').trim();
+    if (!s || s === '-' || s === '—') return 0;
+    var qm = s.match(/([-+]?[\d,]+(?:\.\d+)?)\s*Qty/i);
+    if (qm) {
+      var qn = parseFloat(qm[1].replace(/,/g, ''));
+      return isNaN(qn) ? 0 : qn;
+    }
+    var m = s.match(/-?[\d,]+(?:\.\d+)?/);
+    if (!m) return 0;
+    var n = parseFloat(m[0].replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function cleanThLabel39(th) {
+    if (!th) return '';
+    var raw = th.getAttribute('data-orig-title-v1626') || th.getAttribute('data-orig-title-v1624') || th.textContent || '';
+    return raw.replace(/❄️|Frozen|Freeze/g, '').replace(/\+\s*$/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function classifyColumn39(th, idx) {
+    var raw = cleanThLabel39(th);
+    var clean = raw.replace(/📌/g, '').trim();
+    var u = clean.toUpperCase();
+    var isNumCls = th.classList.contains('num') || th.classList.contains('ly-th');
+
+    var kind = 'TEXT';
+    if (th.classList.contains('krito-th-type-v1631') || u === 'TYPE') kind = 'TYPE';
+    else if (u === '#') kind = 'HASH';
+    else if (u === 'VAL RANK' || u === 'QTY RANK') kind = 'RANK';
+    else if (u.indexOf('PARTY / STORE') !== -1 || u.indexOf('CUSTOMER NAME') !== -1 || u.indexOf('CLUSTER / MANAGER') !== -1) kind = 'ENTITY';
+    else if ((u === 'MANAGER' || u === 'CLUSTER' || u === 'DATE' || u === 'MONTH' || u === 'UNIT / LOCATION') && idx <= 1) kind = 'ENTITY';
+    else if (u === 'UNIT / LOCATION') kind = 'UNIT_COUNT';
+    else if (u === 'DATE WISE' || u.indexOf('LAST REPORT DATE') !== -1 || u === 'MANAGER' || u === 'CLUSTER' || u === 'PARTY NAME') kind = 'META_DASH';
+    else if ((th.textContent || '').indexOf('📌') !== -1 || clean.indexOf('Master_') === 0) kind = 'PINNED_QTY';
+    else if (u === 'STORES') kind = 'INT_SUM';
+    else if (u === 'QTY' || u === 'TOTAL QTY') kind = 'QTY';
+    else if (u.indexOf('LY QTY') === 0) kind = 'LY_QTY';
+    else if (u.indexOf('QTY GROWTH') !== -1) kind = 'QTY_GR';
+    else if (u === 'TOTAL BILLS' || u === 'BILLS') kind = 'BILLS';
+    else if (u === 'LY BILLS') kind = 'LY_BILLS';
+    else if (u.indexOf('BILLS GR') !== -1) kind = 'BILLS_GR';
+    else if (u === 'SELL OUT (BILLED) QTY') kind = 'SO_BQ';
+    else if (u === 'SELL OUT (BILLED) VAL') kind = 'SO_BV';
+    else if (u === 'RTV QTY') kind = 'RTV_Q';
+    else if (u === 'RTV VAL') kind = 'RTV_V';
+    else if (u === 'SELL OUT (NET) QTY' || u === 'SELL OUT QTY') kind = 'SO_NQ';
+    else if (u === 'SELL OUT (NET) VAL' || u === 'SELL OUT VAL') kind = 'SO_NV';
+    else if (u === 'TERTIARY QTY') kind = 'TERT_Q';
+    else if (u === 'TERTIARY VAL') kind = 'TERT_V';
+    else if (u === 'SELL THRU QTY % (BILLED)') kind = 'ST_QB';
+    else if (u === 'SELL THRU VAL % (BILLED)') kind = 'ST_VB';
+    else if (u === 'SELL THRU QTY % (NET)' || u === 'SELL THRU QTY %') kind = 'ST_QN';
+    else if (u === 'SELL THRU VAL % (NET)' || u === 'SELL THRU VAL %') kind = 'ST_VN';
+    else if (u === 'ABV') kind = 'ABV';
+    else if (u === 'LY ABV') kind = 'LY_ABV';
+    else if (u.indexOf('ABV GR') !== -1) kind = 'ABV_GR';
+    else if (u === 'ASP') kind = 'ASP';
+    else if (u === 'LY ASP') kind = 'LY_ASP';
+    else if (u.indexOf('ASP GR') !== -1) kind = 'ASP_GR';
+    else if (u === 'UPT') kind = 'UPT';
+    else if (u === 'LY UPT') kind = 'LY_UPT';
+    else if (u.indexOf('UPT GR') !== -1) kind = 'UPT_GR';
+    else if (u.indexOf('VAL GROWTH') !== -1) kind = 'VAL_GR';
+    else if (u.indexOf('LY ') === 0) kind = 'LY_VAL';
+    else if (u === 'MRP' || u === 'TOTAL MRP') kind = 'MRP';
+    else if (u.indexOf('DIS %') !== -1 || u === 'DISCOUNT %') kind = 'DIS_PCT';
+    else if (u.indexOf('SHARE %') !== -1) kind = 'SHARE_PCT';
+    else if (u === 'DISCOUNT') kind = 'CUR_SUM';
+    else if (u.indexOf('NET VALUE') !== -1 || u === 'NET SALE' || u.indexOf('VALUE') !== -1 || u.indexOf('COLLECTION') !== -1 || u.indexOf('TARGET') !== -1 || u.indexOf('ORDER') !== -1) kind = 'VAL';
+    else if (isNumCls) kind = 'INT_SUM';
+
+    return {
+      idx: idx,
+      kind: kind,
+      isNum: isNumCls || th.style.textAlign === 'right',
+      isCenter: th.style.textAlign === 'center' || kind === 'TYPE' || kind === 'UNIT_COUNT' || kind === 'PINNED_QTY' || kind === 'HASH' || kind === 'RANK' || kind === 'META_DASH'
+    };
+  }
+
+  function isRowVisible39(tr) {
+    if (!tr || tr.tagName !== 'TR') return false;
+    if (tr.classList.contains('krito-gfilt-hidden-v1637') || tr.classList.contains('krito-hidden-primary-v1631')) return false;
+    if (tr.style.display === 'none') return false;
+    return true;
+  }
+
+  function isDataRow39(tr) {
+    if (!tr || tr.tagName !== 'TR') return false;
+    if (tr.classList.contains('total-row') || tr.classList.contains('is-total-sub')) return false;
+    if (tr.classList.contains('expand-drawer-row') || tr.classList.contains('krito-inline-attr-drawer-v1634') || tr.classList.contains('krito-dw-unit-subrow-v1638') || tr.classList.contains('krito-gfilt-unit-row-v1637') || tr.classList.contains('krito-sub-unit-drawer-v1633')) return false;
+    var firstTd = tr.children[0];
+    if (firstTd && parseInt(firstTd.getAttribute('colspan') || '1', 10) > 1) return false;
+    if (firstTd && String(firstTd.textContent || '').trim().toUpperCase() === 'TOTAL') return false;
+    return true;
+  }
+
+  function isBottomTotalRow39(tr) {
+    if (!tr || tr.tagName !== 'TR') return false;
+    if (tr.classList.contains('total-row') || tr.classList.contains('is-total-sub')) return true;
+    var firstTd = tr.children[0];
+    if (firstTd && String(firstTd.textContent || '').trim().toUpperCase() === 'TOTAL') return true;
+    return false;
+  }
+
+  function getRowTypeKeyAndHtml39(tr, typeColIdx) {
+    if (typeColIdx < 0 || !tr.children[typeColIdx]) return { key: '__SINGLE__', html: '' };
+    var td = tr.children[typeColIdx];
+    var pill = td.querySelector('.krito-type-pill-v1631');
+    if (pill) {
+      return { key: String(pill.textContent || '').trim().toUpperCase(), html: pill.outerHTML };
+    }
+    var txt = String(td.textContent || '').trim().toUpperCase();
+    return { key: txt || '__SINGLE__', html: esc39(txt) };
+  }
+
+  function buildComputedTotalTrs39(cols, dataRows, tableColCount) {
+    var typeCol = cols.find(function(c) { return c.kind === 'TYPE'; });
+    var typeColIdx = typeCol ? typeCol.idx : -1;
+
+    var groupsOrder = [];
+    var groupsMap = {};
+    for (var i = 0; i < dataRows.length; i++) {
+      var tr = dataRows[i];
+      if (!isRowVisible39(tr)) continue;
+      if (tr.children.length < tableColCount) continue;
+      var tInfo = getRowTypeKeyAndHtml39(tr, typeColIdx);
+      if (!groupsMap[tInfo.key]) {
+        groupsMap[tInfo.key] = { key: tInfo.key, typeHtml: tInfo.html, rows: [] };
+        groupsOrder.push(groupsMap[tInfo.key]);
+      }
+      groupsMap[tInfo.key].rows.push(tr);
+    }
+
+    if (groupsOrder.length === 0) return [];
+
+    var entityColIdx = -1;
+    for (var ec = 0; ec < cols.length; ec++) {
+      if (cols[ec].kind === 'ENTITY') { entityColIdx = ec; break; }
+    }
+    if (entityColIdx < 0) entityColIdx = (cols.length > 1 && cols[0].kind === 'HASH') ? 1 : 0;
+
+    return groupsOrder.map(function(grp, gIdx) {
+      var sums = new Array(tableColCount).fill(0);
+      var anyCurrencyByCol = new Array(tableColCount).fill(false);
+      var rowCount = grp.rows.length;
+
+      for (var r = 0; r < rowCount; r++) {
+        var tr = grp.rows[r];
+        for (var c = 0; c < tableColCount; c++) {
+          var td = tr.children[c];
+          if (!td) continue;
+          var k = cols[c].kind;
+          if (k === 'TYPE' || k === 'HASH' || k === 'RANK' || k === 'ENTITY' || k === 'META_DASH' || k === 'QTY_GR' || k === 'VAL_GR' || k === 'BILLS_GR' || k === 'ABV' || k === 'LY_ABV' || k === 'ABV_GR' || k === 'ASP' || k === 'LY_ASP' || k === 'ASP_GR' || k === 'UPT' || k === 'LY_UPT' || k === 'UPT_GR' || k === 'DIS_PCT' || k === 'SHARE_PCT' || k === 'ST_QB' || k === 'ST_VB' || k === 'ST_QN' || k === 'ST_VN' || k === 'TEXT') {
+            continue;
+          }
+          var txt = td.textContent || '';
+          if (txt.indexOf('₹') !== -1) anyCurrencyByCol[c] = true;
+          sums[c] += parseCellNum39(txt);
+        }
+      }
+
+      function sumOf(kindName) {
+        for (var j = 0; j < cols.length; j++) {
+          if (cols[j].kind === kindName) return sums[j];
+        }
+        return 0;
+      }
+
+      var totQty = sumOf('QTY'), totLyQty = sumOf('LY_QTY');
+      var totVal = sumOf('VAL'), totLyVal = sumOf('LY_VAL');
+      var totMrp = sumOf('MRP');
+      var totBills = sumOf('BILLS'), totLyBills = sumOf('LY_BILLS');
+      var totSoBQ = sumOf('SO_BQ'), totSoBV = sumOf('SO_BV');
+      var totSoNQ = sumOf('SO_NQ'), totSoNV = sumOf('SO_NV');
+      var totTertQ = sumOf('TERT_Q'), totTertV = sumOf('TERT_V');
+
+      var curAbv = totBills > 0 ? (totVal / totBills) : 0;
+      var lyAbv = totLyBills > 0 ? (totLyVal / totLyBills) : 0;
+      var curAsp = totQty > 0 ? (totVal / totQty) : 0;
+      var lyAsp = totLyQty > 0 ? (totLyVal / totLyQty) : 0;
+      var curUpt = totBills > 0 ? (totQty / totBills) : 0;
+      var lyUpt = totLyBills > 0 ? (totLyQty / totLyBills) : 0;
+
+      var outTr = document.createElement('tr');
+      outTr.className = 'krito-top-total-row-v1639' + (gIdx > 0 ? ' is-sub-tot-v1639' : '') + (gIdx === groupsOrder.length - 1 ? ' is-last-tot-v1639' : '');
+
+      var htmlParts = [];
+      for (var c2 = 0; c2 < tableColCount; c2++) {
+        var cs = cols[c2];
+        var k2 = cs.kind;
+        var tdCls = cs.isNum ? ' class="num"' : '';
+        var alignStyle = (!cs.isNum && cs.isCenter) ? ' style="text-align:center;"' : '';
+        var valHtml = '';
+
+        if (c2 === entityColIdx) {
+          valHtml = 'TOTAL (' + rowCount + ')';
+        } else if (k2 === 'HASH') {
+          valHtml = gIdx === 0 ? 'Σ' : '';
+        } else if (k2 === 'TYPE') {
+          valHtml = grp.typeHtml;
+        } else if (k2 === 'RANK' || k2 === 'META_DASH' || k2 === 'TEXT') {
+          valHtml = '<span style="color:#94a3b8;">-</span>';
+        } else if (k2 === 'UNIT_COUNT') {
+          valHtml = sums[c2] > 0 ? ('<span style="color:#1d4ed8;">' + fmtQ39(sums[c2]) + '</span>') : '-';
+        } else if (k2 === 'PINNED_QTY') {
+          valHtml = sums[c2] !== 0 ? ('<span style="color:#5b21b6;">' + fmtQ39(sums[c2]) + ' Qty</span>') : '<span style="color:#94a3b8;">-</span>';
+        } else if (k2 === 'QTY' || k2 === 'LY_QTY' || k2 === 'BILLS' || k2 === 'LY_BILLS' || k2 === 'SO_BQ' || k2 === 'SO_NQ' || k2 === 'TERT_Q' || k2 === 'INT_SUM') {
+          valHtml = fmtQ39(sums[c2]);
+        } else if (k2 === 'RTV_Q') {
+          valHtml = '<span style="color:#dc2626;">' + fmtQ39(sums[c2]) + '</span>';
+        } else if (k2 === 'RTV_V') {
+          valHtml = '<span style="color:#dc2626;">' + fmtI39(sums[c2]) + '</span>';
+        } else if (k2 === 'VAL' || k2 === 'TERT_V') {
+          valHtml = '<span style="color:#0369a1;">' + fmtI39(sums[c2]) + '</span>';
+        } else if (k2 === 'SO_NV') {
+          valHtml = '<span style="color:#6d28d9;">' + fmtI39(sums[c2]) + '</span>';
+        } else if (k2 === 'SO_BV' || k2 === 'LY_VAL' || k2 === 'MRP' || k2 === 'CUR_SUM') {
+          valHtml = fmtI39(sums[c2]);
+        } else if (k2 === 'QTY_GR') {
+          valHtml = growthHtml39(totQty, totLyQty);
+        } else if (k2 === 'VAL_GR') {
+          valHtml = growthHtml39(totVal, totLyVal);
+        } else if (k2 === 'BILLS_GR') {
+          valHtml = growthHtml39(totBills, totLyBills);
+        } else if (k2 === 'DIS_PCT') {
+          var dp = totMrp > 0 ? (((totMrp - totVal) / totMrp) * 100).toFixed(2) : '0.00';
+          valHtml = '<span style="color:#dc2626;">' + dp + '%</span>';
+        } else if (k2 === 'SHARE_PCT') {
+          valHtml = '100.0%';
+        } else if (k2 === 'ST_QB') {
+          valHtml = sellThruBadge39(totTertQ, totSoBQ);
+        } else if (k2 === 'ST_VB') {
+          valHtml = sellThruBadge39(totTertV, totSoBV);
+        } else if (k2 === 'ST_QN') {
+          valHtml = sellThruBadge39(totTertQ, totSoNQ);
+        } else if (k2 === 'ST_VN') {
+          valHtml = sellThruBadge39(totTertV, totSoNV);
+        } else if (k2 === 'ABV') {
+          valHtml = '<span style="color:#0f766e;">' + (totBills > 0 ? fmtI39(curAbv) : '-') + '</span>';
+        } else if (k2 === 'LY_ABV') {
+          valHtml = totLyBills > 0 ? fmtI39(lyAbv) : '-';
+        } else if (k2 === 'ABV_GR') {
+          valHtml = growthHtml39(curAbv, lyAbv);
+        } else if (k2 === 'ASP') {
+          valHtml = '<span style="color:#4338ca;">' + fmtI39(curAsp) + '</span>';
+        } else if (k2 === 'LY_ASP') {
+          valHtml = fmtI39(lyAsp);
+        } else if (k2 === 'ASP_GR') {
+          valHtml = growthHtml39(curAsp, lyAsp);
+        } else if (k2 === 'UPT') {
+          valHtml = '<span style="color:#b45309;">' + (totBills > 0 ? fmtDec39(curUpt) : '-') + '</span>';
+        } else if (k2 === 'LY_UPT') {
+          valHtml = totLyBills > 0 ? fmtDec39(lyUpt) : '-';
+        } else if (k2 === 'UPT_GR') {
+          valHtml = growthHtml39(curUpt, lyUpt);
+        } else {
+          valHtml = anyCurrencyByCol[c2] ? fmtI39(sums[c2]) : fmtQ39(sums[c2]);
+        }
+
+        htmlParts.push('<td' + tdCls + alignStyle + '>' + valHtml + '</td>');
+      }
+
+      outTr.innerHTML = htmlParts.join('');
+      return outTr;
+    });
+  }
+
+  function cloneBottomTotalTrs39(bottomTotRows, tableColCount) {
+    var out = [];
+    for (var i = 0; i < bottomTotRows.length; i++) {
+      var srcTr = bottomTotRows[i];
+      if (!srcTr || srcTr.children.length !== tableColCount) continue;
+      if (srcTr.classList.contains('krito-hidden-primary-v1631')) continue;
+      var newTr = document.createElement('tr');
+      newTr.className = 'krito-top-total-row-v1639' + (out.length > 0 ? ' is-sub-tot-v1639' : '');
+      for (var c = 0; c < tableColCount; c++) {
+        var srcTd = srcTr.children[c];
+        var td = document.createElement('td');
+        td.className = srcTd.className || '';
+        if (srcTd.style.textAlign) td.style.textAlign = srcTd.style.textAlign;
+        td.innerHTML = srcTd.innerHTML;
+        newTr.appendChild(td);
+      }
+      out.push(newTr);
+    }
+    if (out.length > 0) out[out.length - 1].classList.add('is-last-tot-v1639');
+    return out;
+  }
+
+  function syncStickyAndFreezeAlignment39(table, theadRow, tfoot) {
+    if (!table || !theadRow || !tfoot) return;
+    var ths = Array.from(theadRow.children);
+    var totRows = Array.from(tfoot.children);
+    if (totRows.length === 0) return;
+
+    var lastFrozenIdx = -1;
+    var colMeta = ths.map(function(th, idx) {
+      var hidden = th.classList.contains('krito-col-hidden-v1626') || th.style.display === 'none';
+      var isFrozen = !hidden && (th.style.left !== '' || /frz|freez|frozen/i.test(th.className || ''));
+      if (isFrozen) lastFrozenIdx = idx;
+      return {
+        hidden: hidden,
+        isFrozen: isFrozen,
+        leftVal: isFrozen ? (th.style.left || '0px') : ''
+      };
+    });
+
+    var cumTop = 0;
+    for (var r = 0; r < totRows.length; r++) {
+      var tr = totRows[r];
+      var rowH = tr.getBoundingClientRect().height || 33;
+      for (var c = 0; c < ths.length && c < tr.children.length; c++) {
+        var td = tr.children[c];
+        var cm = colMeta[c];
+        td.classList.toggle('krito-col-hidden-v1626', cm.hidden);
+        td.style.setProperty('top', cumTop + 'px', 'important');
+        if (cm.isFrozen) {
+          td.classList.add('krito-top-tot-frozen-v1639');
+          td.classList.toggle('krito-top-tot-frozen-edge-v1639', c === lastFrozenIdx);
+          td.style.setProperty('left', cm.leftVal, 'important');
+        } else {
+          td.classList.remove('krito-top-tot-frozen-v1639', 'krito-top-tot-frozen-edge-v1639');
+          td.style.removeProperty('left');
+        }
+      }
+      cumTop += Math.round(rowH);
+    }
+
+    table.style.setProperty('--krito-top-tot-h-v1639', cumTop + 'px');
+    for (var h = 0; h < ths.length; h++) {
+      ths[h].style.setProperty('top', cumTop + 'px', 'important');
+    }
+  }
+
+  function processSingleTableTopTotal39(table) {
+    if (!table || table.tagName !== 'TABLE') return;
+    if (table.classList.contains('krito-dw-unit-tbl-v1638') || table.classList.contains('krito-sub-unit-tbl-v1633')) return;
+
+    var theadRow = table.querySelector('thead tr');
+    var tbody = table.querySelector('tbody');
+    if (!theadRow || !tbody) return;
+    var tableColCount = theadRow.children.length;
+    if (tableColCount < 3) return;
+
+    var allBodyTrs = Array.from(tbody.children);
+    var bottomTotRows = [];
+    var dataRows = [];
+    var hasHiddenDataByFilter = false;
+
+    for (var i = 0; i < allBodyTrs.length; i++) {
+      var tr = allBodyTrs[i];
+      if (!tr || tr.tagName !== 'TR') continue;
+      if (isBottomTotalRow39(tr)) {
+        bottomTotRows.push(tr);
+      } else if (isDataRow39(tr)) {
+        dataRows.push(tr);
+        if (tr.classList.contains('krito-gfilt-hidden-v1637')) hasHiddenDataByFilter = true;
+      }
+    }
+
+    if (dataRows.length === 0 && bottomTotRows.length === 0) {
+      var staleTf = table.querySelector('tfoot.krito-top-total-tfoot-v1639');
+      if (staleTf) staleTf.remove();
+      table.classList.remove('krito-has-top-total-v1639');
+      return;
+    }
+
+    var cols = Array.from(theadRow.children).map(function(th, idx) {
+      return classifyColumn39(th, idx);
+    });
+
+    var newTopTrs = [];
+    var useCloned = (bottomTotRows.length > 0 && !hasHiddenDataByFilter);
+    if (useCloned) {
+      newTopTrs = cloneBottomTotalTrs39(bottomTotRows, tableColCount);
+    }
+    if (newTopTrs.length === 0) {
+      newTopTrs = buildComputedTotalTrs39(cols, dataRows, tableColCount);
+    }
+
+    if (newTopTrs.length === 0) {
+      var oldTf = table.querySelector('tfoot.krito-top-total-tfoot-v1639');
+      if (oldTf) oldTf.remove();
+      table.classList.remove('krito-has-top-total-v1639');
+      return;
+    }
+
+    for (var b = 0; b < bottomTotRows.length; b++) {
+      bottomTotRows[b].classList.add('krito-bottom-tot-hidden-v1639');
+    }
+
+    var tfoot = table.querySelector('tfoot.krito-top-total-tfoot-v1639');
+    if (!tfoot) {
+      tfoot = document.createElement('tfoot');
+      tfoot.className = 'krito-top-total-tfoot-v1639';
+      table.appendChild(tfoot);
+    }
+    tfoot.innerHTML = '';
+    for (var nt = 0; nt < newTopTrs.length; nt++) {
+      tfoot.appendChild(newTopTrs[nt]);
+    }
+    table.classList.add('krito-has-top-total-v1639');
+
+    syncStickyAndFreezeAlignment39(table, theadRow, tfoot);
+  }
+
+  function applyTopTotalsToAllLiveTables39() {
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      processSingleTableTopTotal39(tables[i]);
+    }
+  }
+
+  function scheduleTopTotalsSync39() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(function() {
+      rafPending = false;
+      applyTopTotalsToAllLiveTables39();
+    });
+  }
+
+  ['renderApp', 'updateStoreTableBodyOnly', 'applyAllMultiTypeTablesV1631', 'renderKritoReportsPanelV1631', 'applyGlobalFilterEverywhereV1637'].forEach(function(fnName) {
+    if (typeof window[fnName] === 'function' && !window[fnName]._v1639) {
+      var orig = window[fnName];
+      window[fnName] = function() {
+        var res = orig.apply(this, arguments);
+        scheduleTopTotalsSync39();
+        return res;
+      };
+      window[fnName]._v1639 = true;
+    }
+  });
+
+  document.addEventListener('click', function() {
+    setTimeout(scheduleTopTotalsSync39, 30);
+    setTimeout(scheduleTopTotalsSync39, 140);
+  }, true);
+
+  document.addEventListener('change', function() {
+    setTimeout(scheduleTopTotalsSync39, 30);
+    setTimeout(scheduleTopTotalsSync39, 120);
+  }, true);
+
+  document.addEventListener('input', function() {
+    setTimeout(scheduleTopTotalsSync39, 40);
+  }, true);
+
+  window.addEventListener('resize', function() {
+    scheduleTopTotalsSync39();
+  });
+
+  if (typeof MutationObserver === 'function') {
+    var mObs = new MutationObserver(function(muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var tg = muts[i].target;
+        if (tg && tg.closest && tg.closest('tfoot.krito-top-total-tfoot-v1639')) continue;
+        scheduleTopTotalsSync39();
+        return;
+      }
+    });
+    ['kritoUnitFsModalRootV1634', 'kritoDateWiseDrillModalRootV1637', 'kritoDateUnitPopupRootV1637', 'kritoDateDetailModalRootV1626', 'kritoReportsPanelV1631'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) mObs.observe(el, { childList: true });
+    });
+  }
+
+  if (typeof LIVE_PAYLOAD !== 'undefined' && LIVE_PAYLOAD) {
+    scheduleTopTotalsSync39();
+    setTimeout(scheduleTopTotalsSync39, 250);
+  }
+
+})();
+</script>
 </body>
 </html>
